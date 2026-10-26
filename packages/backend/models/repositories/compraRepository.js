@@ -13,6 +13,10 @@ export class CompraRepository extends InMemoryRepository {
     );
   }
 
+  async findByCodigo(codigo) {
+    return this.findOneBy((compra) => compra.codigo === codigo);
+  }
+
   async findByCompradorYEstadoEnEvento(compradorId, eventoId, estado) {
     return this.findBy(
       (compra) =>

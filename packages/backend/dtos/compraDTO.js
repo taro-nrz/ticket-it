@@ -39,6 +39,8 @@ export function compraDTO(compra, { usuario, ahora, yaResenio = false, conDetall
       compra.estado === EstadoCompra.CONFIRMADA ? compra.diasParaElEvento(ahora) : null,
     cantidadMensajes: compra.mensajes.length,
     mensajesSinLeer: compra.mensajesSinLeerPara(usuario),
+    // D-33: el código de la entrada sólo lo ve su dueño (es lo que se muestra como QR en la puerta)
+    codigo: compra.esDelComprador(usuario) ? compra.codigo : null,
     accionesDisponibles: compra.accionesDisponiblesPara(usuario, ahora, { yaResenio }),
   };
   if (conDetalle) {

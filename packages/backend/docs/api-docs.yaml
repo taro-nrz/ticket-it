@@ -410,6 +410,10 @@ components:
           type: integer
           description: Mensajes de la otra parte que quien consulta todavía no leyó (D-26)
           example: 1
+        codigo:
+          type: [string, "null"]
+          description: Código de la entrada (QR), sólo para el comprador y desde que se paga (D-33)
+          example: TK-JUAN-H7Y5
         accionesDisponibles:
           type: array
           description: Acciones que el usuario que consulta puede realizar ahora sobre la compra
@@ -1015,6 +1019,37 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  /evento/{id}/validar:
+    post:
+      tags: [Ciclo de vida de la compra]
+      summary: Validar una entrada en la puerta con su código QR (D-33)
+      description: |-
+        El organizador del evento escanea o escribe el código (acepta minúsculas, espacios y sin guiones).
+        Si la entrada está CONFIRMADA y es el día del evento, pasa a UTILIZADA.
+        Probar como Lucía sobre el evento 6 con el código `TK-JUAN-H7Y5`.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codigo]
+              properties:
+                codigo: { type: string, example: TK-JUAN-H7Y5 }
+      responses:
+        "200":
+          description: Entrada válida, ya marcada como utilizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Compra" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
 
   /evento/{id}/compras:
     get:

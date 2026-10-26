@@ -11,6 +11,7 @@ import { EstadoCompra } from "../models/entities/estadoCompra.js";
 import { ordenarProximosPrimero } from "../utils/orden.js";
 import { paginar } from "../utils/paginacion.js";
 import { SIN_NOTIFICACIONES } from "./notificacionService.js";
+import { generarCodigoEntrada, normalizarCodigoEntrada } from "../utils/codigo.js";
 
 export class CompraService {
   constructor(
@@ -115,7 +116,7 @@ export class CompraService {
     if (!compra.esDelComprador(usuario)) {
       throw new ForbiddenError("Sólo el comprador puede pagar la compra");
     }
-    compra.pagar(usuario, this.reloj.ahora());
+    compra.pagar(usuario, this.reloj.ahora(), await this.codigoUnico());
     await this.compraRepository.save(compra);
     await this.notificaciones.compraPagada(compra);
     return this.aDTO(compra, usuario, { conDetalle: true });
@@ -146,6 +147,45 @@ export class CompraService {
     await this.compraRepository.save(compra);
     await this.notificaciones.compraCanceladaPorComprador(compra);
     return this.aDTO(compra, usuario, { conDetalle: true });
+  }
+
+  // D-33: control de acceso en la puerta: el organizador valida la entrada con su código (QR)
+  async validarEntrada(eventoId, codigoIngresado, organizador) {
+    const evento = await this.eventoRepository.findById(eventoId);
+    if (!evento) {
+      throw new NotFoundError(`No existe el evento con id ${eventoId}`);
+    }
+    if (!evento.esOrganizadoPor(organizador)) {
+      throw new ForbiddenError("Sólo el organizador del evento puede validar sus entradas");
+    }
+    const codigo = normalizarCodigoEntrada(codigoIngresado);
+    const compra = codigo && (await this.compraRepository.findByCodigo(codigo));
+    if (!compra) {
+      throw new NotFoundError("No existe ninguna entrada con ese código");
+    }
+    if (compra.evento.id !== evento.id) {
+      throw new BusinessRuleError(`La entrada es de otro evento: ${compra.evento.nombre}`);
+    }
+    if (compra.estado === EstadoCompra.UTILIZADA) {
+      throw new BusinessRuleError(
+        `Esta entrada ya se usó (${compra.cantidad} × ${compra.tipoEntrada.nombre} de ${compra.comprador.nombre} ${compra.comprador.apellido})`,
+      );
+    }
+    if (!compra.tieneEntradaVigente()) {
+      throw new BusinessRuleError(`La entrada no es válida: la compra está ${compra.estado}`);
+    }
+    compra.utilizar(organizador, this.reloj.ahora());
+    await this.compraRepository.save(compra);
+    await this.notificaciones.entradaUtilizada(compra);
+    return this.aDTO(compra, organizador, { conDetalle: true });
+  }
+
+  async codigoUnico() {
+    let codigo;
+    do {
+      codigo = generarCodigoEntrada();
+    } while (await this.compraRepository.findByCodigo(codigo));
+    return codigo;
   }
 
   async historial(id, usuario) {

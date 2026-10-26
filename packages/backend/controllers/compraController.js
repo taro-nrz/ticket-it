@@ -14,6 +14,10 @@ const listarComprasSchema = z.object({
   limit: z.string().optional(),
 });
 
+const validarEntradaSchema = z.object({
+  codigo: z.string().trim().min(1, "Ingresá el código de la entrada").max(30),
+});
+
 export class CompraController {
   constructor(compraService) {
     this.compraService = compraService;
@@ -74,6 +78,20 @@ export class CompraController {
   async utilizar(req, res, next) {
     try {
       const compra = await this.compraService.utilizar(parsearId(req.params.id), req.usuario);
+      res.json(compra);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async validarEntrada(req, res, next) {
+    try {
+      const { codigo } = validar(validarEntradaSchema, req.body);
+      const compra = await this.compraService.validarEntrada(
+        parsearId(req.params.id),
+        codigo,
+        req.usuario,
+      );
       res.json(compra);
     } catch (error) {
       next(error);

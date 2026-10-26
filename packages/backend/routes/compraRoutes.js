@@ -39,6 +39,11 @@ export default function compraRoutes(getController, auth) {
     getController(CompraController).utilizar(req, res, next);
   });
 
+  // D-33: control de acceso con el código (QR) de la entrada
+  router.post("/evento/:id/validar", ...soloOrganizador, (req, res, next) => {
+    getController(CompraController).validarEntrada(req, res, next);
+  });
+
   // HU-06: compras de un evento (organizador)
   router.get("/evento/:id/compras", ...soloOrganizador, (req, res, next) => {
     getController(CompraController).comprasDeEvento(req, res, next);
