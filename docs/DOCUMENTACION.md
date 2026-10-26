@@ -371,6 +371,13 @@ Formato: **contexto → opciones → decisión → justificación**.
   - `x-user-id` se eliminó por completo (no queda como "modo desarrollo") para no dejar una puerta trasera.
   - Los usuarios demo comparten la contraseña `ticketit123` y el hash se calcula una sola vez al arrancar.
 
+### D-30 — Perfil (M10)
+- "Mi perfil" en el menú Cuenta: editar nombre y apellido (`PATCH /usuario/me`) y cambiar la contraseña
+  (`POST /auth/cambiar-password`, pide la actual: si alguien agarra el celular desbloqueado no puede cambiarla).
+- **Sin consultar**: el email no se puede cambiar (identifica la cuenta; cambiarlo requeriría verificar el nuevo
+  por correo, fuera de alcance). Cambiar la contraseña no invalida los otros tokens ya emitidos (con JWT sin
+  estado haría falta una lista de revocación; se anota como mejora).
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

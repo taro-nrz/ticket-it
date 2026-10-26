@@ -18,7 +18,7 @@ export class Server {
     this.#app.use(
       cors({
         origin: allowedOrigins === "*" ? "*" : allowedOrigins.split(",").map((o) => o.trim()),
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       }),
     );
     this.#app.use(loggerMiddleware);

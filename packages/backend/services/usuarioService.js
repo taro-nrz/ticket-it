@@ -31,6 +31,12 @@ export class UsuarioService {
     return usuarioPropioDTO(usuario);
   }
 
+  async actualizarPerfil(usuario, cambios) {
+    usuario.actualizarDatos(cambios);
+    await this.usuarioRepository.save(usuario);
+    return usuarioPropioDTO(usuario);
+  }
+
   // R-01: favoritos del comprador
   async favoritos(usuario, page, limit) {
     const resumenes = await Promise.all(

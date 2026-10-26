@@ -76,3 +76,30 @@ test("el diálogo de cancelar una compra es propio y accesible", async ({ page }
   await dialogo.getByRole("button", { name: "No, conservarla" }).click();
   await expect(page.getByText("Confirmada").first()).toBeVisible();
 });
+
+test("D-30: editar el perfil y cambiar la contraseña", async ({ page }) => {
+  await entrarComo(page, SOFIA);
+  await page.goto("/explorar");
+  await page.getByRole("button", { name: /Cuenta/ }).click();
+  await page
+    .getByRole("dialog", { name: "Tu cuenta" })
+    .getByRole("button", { name: "Mi perfil" })
+    .click();
+  await expect(page.getByRole("heading", { name: "Mi perfil", level: 1 })).toBeVisible();
+
+  // Datos
+  await page.getByLabel("Nombre").fill("Sofi");
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByRole("status")).toContainText("Guardamos tus datos");
+
+  // Contraseña: la actual incorrecta se marca en su campo
+  await page.getByLabel("Contraseña actual").fill("incorrecta1");
+  await page.getByLabel("Contraseña nueva", { exact: true }).fill("nueva4567");
+  await page.getByLabel("Repetir contraseña nueva").fill("nueva4567");
+  await page.getByRole("button", { name: "Cambiar contraseña" }).click();
+  await expect(page.getByText("La contraseña actual no es correcta")).toBeVisible();
+
+  await page.getByLabel("Contraseña actual").fill("ticketit123");
+  await page.getByRole("button", { name: "Cambiar contraseña" }).click();
+  await expect(page.getByRole("status")).toContainText("Cambiaste tu contraseña");
+});

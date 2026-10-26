@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { usuarioPropioDTO } from "../dtos/usuarioDTO.js";
-import { ConflictError, UnauthorizedError } from "../error/appError.js";
+import { ConflictError, UnauthorizedError, ValidationError } from "../error/appError.js";
 import { Usuario } from "../models/entities/usuario.js";
 
 const CREDENCIALES_INVALIDAS = "Email o contraseña incorrectos";
@@ -30,6 +30,22 @@ export class AuthService {
       throw new UnauthorizedError(CREDENCIALES_INVALIDAS);
     }
     return this.sesion(usuario);
+  }
+
+  // D-30: cambiar la contraseña exige la actual (si alguien toma el celular desbloqueado no puede cambiarla)
+  async cambiarPassword(usuario, { passwordActual, passwordNueva }) {
+    if (!(await bcrypt.compare(passwordActual, usuario.passwordHash))) {
+      throw new ValidationError("La contraseña actual no es correcta", [
+        { campo: "passwordActual", mensaje: "La contraseña actual no es correcta" },
+      ]);
+    }
+    if (passwordActual === passwordNueva) {
+      throw new ValidationError("La contraseña nueva tiene que ser distinta de la actual", [
+        { campo: "passwordNueva", mensaje: "Tiene que ser distinta de la actual" },
+      ]);
+    }
+    usuario.passwordHash = await this.hashear(passwordNueva);
+    await this.usuarioRepository.save(usuario);
   }
 
   hashear(password) {
