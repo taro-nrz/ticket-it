@@ -1,0 +1,1037 @@
+openapi: 3.1.1
+info:
+  title: API de AI Ticket It
+  version: 1.0.0
+  description: |-
+    API REST de la plataforma de venta de entradas **AI Ticket It** (TP de Desarrollo de Software, UTN FRBA).
+
+    **Cómo probar**
+    1. Hacé clic en **Authorize** y cargá el id de un usuario en `x-user-id`.
+    2. Usuarios de prueba (datos semilla):
+       - `1` Lucía Fernández — ORGANIZADOR (eventos 1, 3, 6, 7, 9)
+       - `2` Martín Gómez — ORGANIZADOR (eventos 2, 4, 5, 8)
+       - `3` Sofía Pérez — COMPRADOR (compras 1 a 5)
+       - `4` Juan Rodríguez — COMPRADOR (compras 6 a 9; la compra 6 está UTILIZADA y sin reseñar)
+       - `5` Valentina López — COMPRADOR (compras 10 a 13)
+    3. `POST /dev/reset` vuelve a cargar los datos semilla.
+
+    **Convenciones**
+    - Persistencia en memoria: los datos se reinician al reiniciar el servidor.
+    - Fechas en ISO 8601. Listados paginados con `page` y `limit` (máx. 100).
+    - Errores con formato `{ status, message, errores? }`.
+    - Estados de una compra: `PENDIENTE → CONFIRMADA → UTILIZADA`; cancelar lleva a `CANCELADA`
+      (y a `REEMBOLSADA` automáticamente si estaba pagada).
+servers:
+  - url: http://localhost:3000
+    description: Local
+tags:
+  - name: Sistema
+  - name: Usuarios
+    description: Usuarios, identificación y favoritos (M1)
+  - name: Categorías
+    description: Categorías de eventos (M1)
+  - name: Eventos
+    description: Publicación, búsqueda y detalle de eventos (M2 — HU-01, HU-02, HU-03)
+  - name: Compras
+    description: Compra de entradas y consulta (M3 — HU-04, HU-05, HU-06)
+  - name: Ciclo de vida de la compra
+    description: Pagar, utilizar, cancelar e historial (M4 — HU-09, HU-10)
+  - name: Mensajes
+    description: Chat de la compra (M5 — HU-07, HU-08)
+  - name: Reseñas
+    description: Reseñas y reputación del organizador (M6 — HU-11, HU-12)
+  - name: Desarrollo
+
+components:
+  securitySchemes:
+    usuario:
+      type: apiKey
+      in: header
+      name: x-user-id
+      description: Id del usuario que realiza la operación (ver usuarios de prueba en la descripción).
+
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      schema: { type: integer, minimum: 1 }
+    EventoId:
+      in: path
+      name: eventoId
+      required: true
+      schema: { type: integer, minimum: 1 }
+    Page:
+      in: query
+      name: page
+      schema: { type: integer, minimum: 1, default: 1 }
+      description: Número de página (1-indexado)
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      description: Elementos por página
+    EstadoCompra:
+      in: query
+      name: estado
+      schema: { $ref: "#/components/schemas/EstadoCompra" }
+      description: Filtra por estado de la compra
+
+  responses:
+    BadRequest:
+      description: Datos de validación inválidos
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example:
+            status: fail
+            message: Datos de validación inválidos
+            errores:
+              - campo: cantidad
+                mensaje: Demasiado pequeño, se esperaba que el número fuera >0
+    Unauthorized:
+      description: Falta el header x-user-id o es inválido
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: fail, message: Falta el header x-user-id para identificar al usuario }
+    Forbidden:
+      description: El usuario no tiene permisos para la acción (rol o pertenencia)
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: fail, message: Esta acción es sólo para usuarios con rol COMPRADOR }
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: fail, message: No existe el evento con id 99 }
+    Conflict:
+      description: Conflicto con un recurso existente
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    BusinessRule:
+      description: La operación viola una regla de negocio
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { status: fail, message: No se puede pasar una compra de UTILIZADA a CANCELADA }
+
+  schemas:
+    Error:
+      type: object
+      required: [status, message]
+      properties:
+        status: { type: string, enum: [fail, error] }
+        message: { type: string }
+        errores:
+          type: array
+          items:
+            type: object
+            properties:
+              campo: { type: string }
+              mensaje: { type: string }
+
+    Paginado:
+      type: object
+      properties:
+        pagina: { type: integer, example: 1 }
+        perPage: { type: integer, example: 10 }
+        total: { type: integer, example: 6 }
+        totalPaginas: { type: integer, example: 1 }
+
+    RolUsuario:
+      type: string
+      enum: [COMPRADOR, ORGANIZADOR]
+
+    EstadoCompra:
+      type: string
+      enum: [PENDIENTE, CONFIRMADA, UTILIZADA, CANCELADA, REEMBOLSADA]
+
+    AccionCompra:
+      type: string
+      enum: [PAGAR, CANCELAR, UTILIZAR, RESENIAR, CHATEAR]
+
+    UsuarioResumen:
+      type: object
+      properties:
+        id: { type: integer, example: 3 }
+        nombre: { type: string, example: Sofía }
+        apellido: { type: string, example: Pérez }
+        rol: { $ref: "#/components/schemas/RolUsuario" }
+
+    Usuario:
+      allOf:
+        - $ref: "#/components/schemas/UsuarioResumen"
+        - type: object
+          properties:
+            cantidadFavoritos:
+              type: integer
+              description: Sólo para compradores
+              example: 2
+
+    Categoria:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Recitales }
+        descripcion: { type: string, example: Shows en vivo de bandas y solistas }
+
+    Organizador:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Lucía }
+        apellido: { type: string, example: Fernández }
+        puntajePromedio:
+          type: [number, "null"]
+          description: Promedio de las reseñas de sus eventos (null si no tiene)
+          example: 4.5
+        cantidadResenias: { type: integer, example: 2 }
+
+    TipoEntrada:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: General }
+        descripcion: { type: string, example: Campo de pie }
+        precio: { type: number, example: 15000 }
+        cupo: { type: integer, description: Capacidad total, example: 500 }
+        vendidas: { type: integer, example: 2 }
+        disponibles: { type: integer, example: 498 }
+        agotado: { type: boolean, example: false }
+
+    TipoEntradaInput:
+      type: object
+      required: [nombre, precio, cupo]
+      properties:
+        nombre: { type: string, minLength: 1, maxLength: 50, example: VIP }
+        descripcion: { type: string, maxLength: 200, example: Acceso preferencial }
+        precio: { type: number, minimum: 0, example: 50000 }
+        cupo: { type: integer, minimum: 1, example: 50 }
+
+    EventoReferencia:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Noche Indie en Obras }
+        fecha: { type: string, format: date-time }
+        lugar: { type: string, example: Estadio Obras }
+        imagen: { type: [string, "null"], example: "https://picsum.photos/seed/indie1/800/450" }
+
+    EventoResumen:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        nombre: { type: string, example: Noche Indie en Obras }
+        categoria: { $ref: "#/components/schemas/Categoria" }
+        fecha: { type: string, format: date-time }
+        lugar: { type: string, example: Estadio Obras }
+        imagen: { type: [string, "null"] }
+        precioDesde: { type: number, example: 15000 }
+        precioHasta: { type: number, example: 50000 }
+        agotado: { type: boolean }
+        yaSeRealizo: { type: boolean }
+        esFavorito:
+          type: boolean
+          description: true si el comprador identificado lo tiene en favoritos
+        organizador: { $ref: "#/components/schemas/Organizador" }
+
+    EventoDetalle:
+      allOf:
+        - $ref: "#/components/schemas/EventoResumen"
+        - type: object
+          properties:
+            descripcion: { type: string }
+            direccion: { type: string, example: "Av. del Libertador 7395, CABA" }
+            multimedia:
+              type: array
+              items: { type: string, format: uri }
+            tiposEntrada:
+              type: array
+              items: { $ref: "#/components/schemas/TipoEntrada" }
+            ultimasResenias:
+              type: array
+              description: Últimas 5 reseñas de los eventos del organizador (HU-12)
+              items: { $ref: "#/components/schemas/Resenia" }
+
+    EventoInput:
+      type: object
+      required: [nombre, descripcion, categoriaId, fecha, lugar, direccion, tiposEntrada]
+      properties:
+        nombre: { type: string, minLength: 3, maxLength: 100, example: Recital de Rock Nacional }
+        descripcion:
+          type: string
+          minLength: 10
+          maxLength: 2000
+          example: Una noche con los grandes clásicos del rock nacional.
+        categoriaId: { type: integer, example: 1 }
+        fecha:
+          type: string
+          format: date-time
+          description: Debe ser futura
+          example: "2027-03-15T21:00:00.000Z"
+        lugar: { type: string, minLength: 2, maxLength: 100, example: Estadio Luna Park }
+        direccion: { type: string, minLength: 3, maxLength: 200, example: "Av. Madero 420, CABA" }
+        multimedia:
+          type: array
+          maxItems: 10
+          items: { type: string, format: uri }
+          example: ["https://picsum.photos/seed/rock/800/450"]
+        tiposEntrada:
+          type: array
+          minItems: 1
+          maxItems: 10
+          description: Nombres únicos dentro del evento
+          items: { $ref: "#/components/schemas/TipoEntradaInput" }
+
+    VentasEvento:
+      type: object
+      properties:
+        cupoTotal: { type: integer, example: 720 }
+        entradasVendidas: { type: integer, example: 3 }
+        cantidadCompras: { type: integer, example: 2 }
+        comprasPendientes: { type: integer, example: 1 }
+        recaudacion:
+          type: number
+          description: Suma de compras CONFIRMADAS y UTILIZADAS
+          example: 30000
+        mensajesSinLeer:
+          type: integer
+          description: Mensajes de los compradores que el organizador todavía no leyó (D-26)
+          example: 1
+
+    ReputacionEvento:
+      type: object
+      properties:
+        puntajePromedio: { type: [number, "null"], example: 4.5 }
+        cantidadResenias: { type: integer, example: 2 }
+
+    CambioEstado:
+      type: object
+      properties:
+        estado: { $ref: "#/components/schemas/EstadoCompra" }
+        quien: { $ref: "#/components/schemas/UsuarioResumen" }
+        fechaHora: { type: string, format: date-time }
+
+    Compra:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        evento: { $ref: "#/components/schemas/EventoReferencia" }
+        comprador: { $ref: "#/components/schemas/UsuarioResumen" }
+        tipoEntrada:
+          type: object
+          properties:
+            id: { type: integer, example: 1 }
+            nombre: { type: string, example: General }
+            precio: { type: number, example: 15000 }
+        cantidad: { type: integer, example: 2 }
+        total: { type: number, example: 30000 }
+        estado: { $ref: "#/components/schemas/EstadoCompra" }
+        fechaCompra: { type: string, format: date-time }
+        diasRestantes:
+          type: [integer, "null"]
+          description: Días que faltan para el evento (sólo si está CONFIRMADA; 0 si es hoy)
+          example: 20
+        cantidadMensajes: { type: integer, example: 3 }
+        mensajesSinLeer:
+          type: integer
+          description: Mensajes de la otra parte que quien consulta todavía no leyó (D-26)
+          example: 1
+        accionesDisponibles:
+          type: array
+          description: Acciones que el usuario que consulta puede realizar ahora sobre la compra
+          items: { $ref: "#/components/schemas/AccionCompra" }
+
+    CompraDetalle:
+      allOf:
+        - $ref: "#/components/schemas/Compra"
+        - type: object
+          properties:
+            organizador: { $ref: "#/components/schemas/UsuarioResumen" }
+            historial:
+              type: array
+              items: { $ref: "#/components/schemas/CambioEstado" }
+
+    CompraInput:
+      type: object
+      required: [eventoId, tipoEntradaId, cantidad]
+      properties:
+        eventoId: { type: integer, example: 1 }
+        tipoEntradaId: { type: integer, example: 2 }
+        cantidad:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Máximo configurable (MAX_ENTRADAS_POR_COMPRA)
+          example: 2
+
+    ComprasDeEvento:
+      allOf:
+        - $ref: "#/components/schemas/Paginado"
+        - type: object
+          properties:
+            evento: { $ref: "#/components/schemas/EventoReferencia" }
+            disponibilidad:
+              type: array
+              description: Entradas disponibles por tipo
+              items: { $ref: "#/components/schemas/TipoEntrada" }
+            resumenPorEstado:
+              type: object
+              description: Cantidad de compras en cada estado
+              additionalProperties: { type: integer }
+              example: { PENDIENTE: 1, CONFIRMADA: 1, UTILIZADA: 0, CANCELADA: 0, REEMBOLSADA: 0 }
+            data:
+              type: array
+              items: { $ref: "#/components/schemas/Compra" }
+
+    Mensaje:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        usuario: { $ref: "#/components/schemas/UsuarioResumen" }
+        mensaje: { type: string, example: "Hola! ¿A qué hora abren las puertas?" }
+        enviado: { type: string, format: date-time }
+
+    MensajeInput:
+      type: object
+      required: [mensaje]
+      properties:
+        mensaje:
+          { type: string, minLength: 1, maxLength: 1000, example: "¿Hay estacionamiento cerca?" }
+
+    Resenia:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        puntuacion: { type: integer, minimum: 1, maximum: 5, example: 5 }
+        detalle: { type: string, example: "Un show hermoso, el sonido impecable." }
+        fecha: { type: string, format: date-time }
+        comprador: { $ref: "#/components/schemas/UsuarioResumen" }
+        evento:
+          type: object
+          properties:
+            id: { type: integer, example: 7 }
+            nombre: { type: string, example: Recital Acústico en el Konex }
+            fecha: { type: string, format: date-time }
+
+    ReseniaInput:
+      type: object
+      required: [puntuacion, detalle]
+      properties:
+        puntuacion: { type: integer, minimum: 1, maximum: 5, example: 5 }
+        detalle: { type: string, minLength: 1, maxLength: 1000, example: "Excelente organización." }
+
+paths:
+  /health:
+    get:
+      tags: [Sistema]
+      summary: Estado del servidor
+      responses:
+        "200":
+          description: Servidor funcionando
+          content:
+            application/json:
+              example: { status: ok }
+
+  # ---------------------------------------------------------------- USUARIOS
+  /usuario:
+    get:
+      tags: [Usuarios]
+      summary: Listar usuarios
+      description: Público. Sirve para elegir con qué usuario operar en el front.
+      parameters:
+        - in: query
+          name: rol
+          schema: { $ref: "#/components/schemas/RolUsuario" }
+      responses:
+        "200":
+          description: Usuarios
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Usuario" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+
+  /usuario/me:
+    get:
+      tags: [Usuarios]
+      summary: Usuario identificado por x-user-id
+      security: [{ usuario: [] }]
+      responses:
+        "200":
+          description: Usuario actual
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /usuario/{id}:
+    get:
+      tags: [Usuarios]
+      summary: Obtener un usuario
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Usuario
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /usuario/me/favoritos:
+    get:
+      tags: [Usuarios]
+      summary: Mis eventos favoritos (comprador)
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Favoritos paginados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/EventoResumen" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /usuario/me/favoritos/{eventoId}:
+    post:
+      tags: [Usuarios]
+      summary: Agregar un evento a favoritos (comprador)
+      description: Idempotente — si ya estaba en favoritos no se duplica.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/EventoId" }]
+      responses:
+        "201":
+          description: Evento agregado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventoResumen" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      tags: [Usuarios]
+      summary: Quitar un evento de favoritos (comprador)
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/EventoId" }]
+      responses:
+        "204": { description: Evento quitado }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- CATEGORÍAS
+  /categoria:
+    get:
+      tags: [Categorías]
+      summary: Listar categorías (HU-02, explorar por categorías)
+      responses:
+        "200":
+          description: Categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Categoria" }
+
+  /categoria/{id}:
+    get:
+      tags: [Categorías]
+      summary: Obtener una categoría
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Categoría
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Categoria" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- EVENTOS
+  /evento:
+    get:
+      tags: [Eventos]
+      summary: Buscar, filtrar y ordenar eventos (HU-02, HU-03)
+      description: |-
+        Público. Por defecto sólo devuelve eventos que todavía no se realizaron.
+        Si se envía `x-user-id` de un comprador, cada evento indica `esFavorito`.
+      security: [{}, { usuario: [] }]
+      parameters:
+        - in: query
+          name: texto
+          schema: { type: string }
+          description: Busca en nombre, descripción, lugar y categoría (sin distinguir mayúsculas ni acentos)
+        - in: query
+          name: categoria
+          schema: { type: integer }
+          description: Id de categoría
+        - in: query
+          name: precioMin
+          schema: { type: number, minimum: 0 }
+          description: Algún tipo de entrada con precio ≥ precioMin (Evento.tuPrecioEstaEntre)
+        - in: query
+          name: precioMax
+          schema: { type: number, minimum: 0 }
+        - in: query
+          name: fechaDesde
+          schema: { type: string, format: date-time }
+        - in: query
+          name: fechaHasta
+          schema: { type: string, format: date-time }
+        - in: query
+          name: incluirPasados
+          schema: { type: boolean, default: false }
+        - in: query
+          name: orden
+          schema: { type: string, enum: [fecha, precio, puntaje], default: fecha }
+          description: "precio = precio más bajo del evento; puntaje = promedio del organizador (sin reseñas van al final)"
+        - in: query
+          name: dir
+          schema: { type: string, enum: [asc, desc], default: asc }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Eventos paginados
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/EventoResumen" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+    post:
+      tags: [Eventos]
+      summary: Crear un evento con sus tipos de entrada (HU-01)
+      description: Sólo organizadores. El organizador del evento es el usuario identificado.
+      security: [{ usuario: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventoInput" }
+            example:
+              nombre: Recital de Rock Nacional
+              descripcion: Una noche con los grandes clásicos del rock nacional.
+              categoriaId: 1
+              fecha: "2027-03-15T21:00:00.000Z"
+              lugar: Estadio Luna Park
+              direccion: "Av. Madero 420, CABA"
+              multimedia: ["https://picsum.photos/seed/rock/800/450"]
+              tiposEntrada:
+                - { nombre: General, descripcion: Campo, precio: 20000, cupo: 1000 }
+                - { nombre: Platea, descripcion: Sentado, precio: 35000, cupo: 300 }
+                - { nombre: VIP, descripcion: Acceso preferencial, precio: 60000, cupo: 50 }
+      responses:
+        "201":
+          description: Evento creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventoDetalle" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+
+  /evento/mios:
+    get:
+      tags: [Eventos]
+      summary: Mis eventos con resumen de ventas (organizador)
+      description: Próximos primero (el más cercano antes) y luego los pasados.
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Eventos del organizador
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          allOf:
+                            - $ref: "#/components/schemas/EventoResumen"
+                            - type: object
+                              properties:
+                                tiposEntrada:
+                                  type: array
+                                  items: { $ref: "#/components/schemas/TipoEntrada" }
+                                ventas: { $ref: "#/components/schemas/VentasEvento" }
+                                resenias: { $ref: "#/components/schemas/ReputacionEvento" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /evento/{id}:
+    get:
+      tags: [Eventos]
+      summary: Detalle de un evento
+      description: Incluye tipos de entrada con disponibilidad, reputación del organizador y sus últimas reseñas (HU-12).
+      security: [{}, { usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Evento
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventoDetalle" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- COMPRAS
+  /compra:
+    post:
+      tags: [Compras]
+      summary: Comprar entradas (HU-04)
+      description: |-
+        Sólo compradores. Reserva el cupo y la compra queda `PENDIENTE` de pago.
+        Falla con 422 si no hay cupo suficiente o el evento ya se realizó.
+      security: [{ usuario: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CompraInput" }
+      responses:
+        "201":
+          description: Compra creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompraDetalle" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /compra/mias:
+    get:
+      tags: [Compras]
+      summary: Mis compras (HU-05)
+      description: |-
+        Sólo compradores. Cada compra indica su estado y, si está CONFIRMADA, los días que faltan para el evento.
+        Orden: próximos eventos primero, luego los pasados.
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/EstadoCompra"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Compras paginadas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Compra" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /compra/{id}:
+    get:
+      tags: [Compras]
+      summary: Detalle de una compra
+      description: Accesible para el comprador o el organizador del evento.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Compra
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompraDetalle" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /evento/{id}/compras:
+    get:
+      tags: [Compras]
+      summary: Compras de un evento (HU-06)
+      description: Sólo el organizador del evento. Incluye disponibilidad por tipo de entrada y resumen por estado.
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/EstadoCompra"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Compras del evento
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ComprasDeEvento" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- CICLO DE VIDA
+  /compra/{id}/pagar:
+    post:
+      tags: [Ciclo de vida de la compra]
+      summary: Pagar una compra (simulado)
+      description: Sólo el comprador. PENDIENTE → CONFIRMADA.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Compra confirmada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompraDetalle" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /compra/{id}/utilizar:
+    post:
+      tags: [Ciclo de vida de la compra]
+      summary: Marcar la entrada como utilizada (control de acceso)
+      description: Sólo el organizador del evento, a partir del día del evento. CONFIRMADA → UTILIZADA.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Entrada utilizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompraDetalle" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /compra/{id}/cancelar:
+    post:
+      tags: [Ciclo de vida de la compra]
+      summary: Cancelar una compra y obtener el reembolso (HU-09, HU-10)
+      description: |-
+        Sólo el comprador. Permitido si la compra no está UTILIZADA (ni ya cancelada) y el evento no se realizó.
+        PENDIENTE → CANCELADA. CONFIRMADA → CANCELADA → REEMBOLSADA (automático). Libera el cupo.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Compra cancelada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CompraDetalle" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /compra/{id}/historial:
+    get:
+      tags: [Ciclo de vida de la compra]
+      summary: Historial de estados de la compra
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Cambios de estado en orden cronológico
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CambioEstado" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- MENSAJES
+  /compra/{id}/mensajes:
+    get:
+      tags: [Mensajes]
+      summary: Mensajes del chat de la compra (HU-07, HU-08)
+      description: Comprador u organizador del evento. Usar `desde` para traer sólo los mensajes nuevos (polling).
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - in: query
+          name: desde
+          schema: { type: string, format: date-time }
+          description: Devuelve sólo los mensajes enviados después de esta fecha
+      responses:
+        "200":
+          description: Mensajes en orden cronológico
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Mensaje" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Mensajes]
+      summary: Enviar un mensaje en el chat de la compra (HU-07, HU-08)
+      description: Comprador u organizador del evento, en cualquier estado de la compra.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MensajeInput" }
+      responses:
+        "201":
+          description: Mensaje enviado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Mensaje" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /compra/{id}/mensajes/leidos:
+    post:
+      tags: [Mensajes]
+      summary: Marcar como leídos los mensajes del chat (D-26)
+      description: |-
+        El front lo llama al abrir el chat. Deja `mensajesSinLeer` en 0 para quien lo llama.
+        Es un endpoint aparte para que el GET del chat (usado por el sondeo) no modifique datos.
+        Probar con `x-user-id: 1` sobre la compra 1.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "204": { description: Mensajes marcados como leídos }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- RESEÑAS
+  /evento/{id}/resenias:
+    get:
+      tags: [Reseñas]
+      summary: Reseñas de un evento
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Reseñas paginadas (más recientes primero), con el evento y su promedio
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - $ref: "#/components/schemas/ReputacionEvento"
+                  - type: object
+                    properties:
+                      evento:
+                        type: object
+                        properties:
+                          id: { type: integer, example: 7 }
+                          nombre: { type: string, example: "Recital Acústico en el Konex" }
+                          fecha: { type: string, format: date-time }
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Resenia" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      tags: [Reseñas]
+      summary: Reseñar un evento (HU-11)
+      description: |-
+        Sólo compradores con una compra UTILIZADA en el evento. Una reseña por comprador y evento.
+        Probar con `x-user-id: 4` sobre el evento 7.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReseniaInput" }
+      responses:
+        "201":
+          description: Reseña creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Resenia" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /usuario/{id}/resenias:
+    get:
+      tags: [Reseñas]
+      summary: Reseñas de los eventos de un organizador (HU-12)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Reputación del organizador y sus reseñas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - type: object
+                    properties:
+                      organizador: { $ref: "#/components/schemas/Organizador" }
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Resenia" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- DESARROLLO
+  /dev/reset:
+    post:
+      tags: [Desarrollo]
+      summary: Recargar los datos semilla
+      description: Borra los datos en memoria y vuelve a cargar los de prueba. No disponible con NODE_ENV=production.
+      responses:
+        "200":
+          description: Datos recargados
+          content:
+            application/json:
+              example:
+                {
+                  message: Datos semilla recargados,
+                  usuarios: 5,
+                  categorias: 5,
+                  eventos: 9,
+                  compras: 13,
+                  resenias: 4,
+                }
+        "403": { $ref: "#/components/responses/Forbidden" }
