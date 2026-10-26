@@ -12,6 +12,7 @@ import { Evento } from "../models/entities/evento.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { ordenarProximosPrimero } from "../utils/orden.js";
 import { paginar } from "../utils/paginacion.js";
+import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 
 const CANTIDAD_ULTIMAS_RESENIAS = 5;
 
@@ -22,12 +23,20 @@ export const OrdenEvento = Object.freeze({
 });
 
 export class EventoService {
-  constructor(eventoRepository, categoriaRepository, compraRepository, reseniaRepository, reloj) {
+  constructor(
+    eventoRepository,
+    categoriaRepository,
+    compraRepository,
+    reseniaRepository,
+    reloj,
+    notificaciones = SIN_NOTIFICACIONES,
+  ) {
     this.eventoRepository = eventoRepository;
     this.categoriaRepository = categoriaRepository;
     this.compraRepository = compraRepository;
     this.reseniaRepository = reseniaRepository;
     this.reloj = reloj;
+    this.notificaciones = notificaciones;
   }
 
   // HU-01: el organizador publica un evento con sus tipos de entrada
@@ -70,6 +79,7 @@ export class EventoService {
       await this.compraRepository.save(compra);
     }
     await this.eventoRepository.save(evento);
+    await this.notificaciones.eventoCancelado(evento, activas);
     return {
       evento: await this.aDetalle(evento, organizador),
       comprasCanceladas: activas.length,

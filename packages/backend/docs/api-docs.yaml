@@ -41,6 +41,8 @@ tags:
     description: Pagar, utilizar, cancelar e historial (M4 — HU-09, HU-10)
   - name: Mensajes
     description: Chat de la compra (M5 — HU-07, HU-08)
+  - name: Notificaciones
+    description: Avisos dentro de la app (M12 — D-32)
   - name: Reseñas
     description: Reseñas y reputación del organizador (M6 — HU-11, HU-12)
   - name: Desarrollo
@@ -215,6 +217,23 @@ components:
           description: Al menos una letra y un número
           example: secreta123
         rol: { type: string, enum: [COMPRADOR, ORGANIZADOR] }
+
+    Notificacion:
+      type: object
+      properties:
+        id: { type: integer, example: 2 }
+        tipo:
+          type: string
+          enum: [NUEVA_VENTA, COMPRA_CANCELADA, NUEVO_MENSAJE, ENTRADA_UTILIZADA, EVENTO_CANCELADO, NUEVA_RESENIA]
+        titulo: { type: string, example: Mensaje de Sofía Pérez }
+        mensaje: { type: string, example: "Noche Indie en Obras: “Genial, ¡gracias!”" }
+        link: { type: string, description: Ruta de la app a la que lleva, example: /compra/1/chat }
+        fecha: { type: string, format: date-time }
+        estado: { type: string, enum: [NO_LEIDA, LEIDA] }
+        cantidad:
+          type: integer
+          description: Cuántos avisos iguales sin leer se agruparon (ej. varios mensajes del mismo chat)
+          example: 1
 
     Categoria:
       type: object
@@ -1151,6 +1170,76 @@ paths:
       parameters: [{ $ref: "#/components/parameters/Id" }]
       responses:
         "204": { description: Mensajes marcados como leídos }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- NOTIFICACIONES
+  /notificacion:
+    get:
+      tags: [Notificaciones]
+      summary: Notificaciones del usuario (más recientes primero)
+      security: [{ usuario: [] }]
+      parameters:
+        - in: query
+          name: estado
+          schema: { type: string, enum: [NO_LEIDA, LEIDA] }
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Notificaciones paginadas y total sin leer
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Paginado"
+                  - type: object
+                    properties:
+                      noLeidas: { type: integer, example: 2 }
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Notificacion" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /notificacion/resumen:
+    get:
+      tags: [Notificaciones]
+      summary: Cantidad sin leer (liviano, para el sondeo de la campana)
+      security: [{ usuario: [] }]
+      responses:
+        "200":
+          description: Total sin leer
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  noLeidas: { type: integer, example: 2 }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /notificacion/leer-todas:
+    post:
+      tags: [Notificaciones]
+      summary: Marcar todas como leídas
+      security: [{ usuario: [] }]
+      responses:
+        "204": { description: Listo }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /notificacion/{id}/leer:
+    post:
+      tags: [Notificaciones]
+      summary: Marcar una notificación como leída
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Notificación actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notificacion" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }

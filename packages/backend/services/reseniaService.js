@@ -4,14 +4,23 @@ import { BusinessRuleError, ConflictError, NotFoundError } from "../error/appErr
 import { EstadoCompra } from "../models/entities/estadoCompra.js";
 import { Resenia } from "../models/entities/resenia.js";
 import { paginar } from "../utils/paginacion.js";
+import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 
 export class ReseniaService {
-  constructor(reseniaRepository, eventoRepository, compraRepository, usuarioRepository, reloj) {
+  constructor(
+    reseniaRepository,
+    eventoRepository,
+    compraRepository,
+    usuarioRepository,
+    reloj,
+    notificaciones = SIN_NOTIFICACIONES,
+  ) {
     this.reseniaRepository = reseniaRepository;
     this.eventoRepository = eventoRepository;
     this.compraRepository = compraRepository;
     this.usuarioRepository = usuarioRepository;
     this.reloj = reloj;
+    this.notificaciones = notificaciones;
   }
 
   // HU-11: sólo quien utilizó su entrada puede reseñar el evento, una vez
@@ -37,6 +46,7 @@ export class ReseniaService {
 
     const resenia = new Resenia(comprador, evento, detalle, puntuacion, this.reloj.ahora());
     const guardada = await this.reseniaRepository.save(resenia);
+    await this.notificaciones.reseniaRecibida(guardada);
     return reseniaDTO(guardada);
   }
 

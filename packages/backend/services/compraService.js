@@ -10,14 +10,23 @@ import { Compra } from "../models/entities/compra.js";
 import { EstadoCompra } from "../models/entities/estadoCompra.js";
 import { ordenarProximosPrimero } from "../utils/orden.js";
 import { paginar } from "../utils/paginacion.js";
+import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 
 export class CompraService {
-  constructor(compraRepository, eventoRepository, reseniaRepository, reloj, config) {
+  constructor(
+    compraRepository,
+    eventoRepository,
+    reseniaRepository,
+    reloj,
+    config,
+    notificaciones = SIN_NOTIFICACIONES,
+  ) {
     this.compraRepository = compraRepository;
     this.eventoRepository = eventoRepository;
     this.reseniaRepository = reseniaRepository;
     this.reloj = reloj;
     this.maxEntradasPorCompra = config.maxEntradasPorCompra;
+    this.notificaciones = notificaciones;
   }
 
   // HU-04: comprar un tipo de entrada sin superar el cupo
@@ -108,6 +117,7 @@ export class CompraService {
     }
     compra.pagar(usuario, this.reloj.ahora());
     await this.compraRepository.save(compra);
+    await this.notificaciones.compraPagada(compra);
     return this.aDTO(compra, usuario, { conDetalle: true });
   }
 
@@ -121,6 +131,7 @@ export class CompraService {
     }
     compra.utilizar(usuario, this.reloj.ahora());
     await this.compraRepository.save(compra);
+    await this.notificaciones.entradaUtilizada(compra);
     return this.aDTO(compra, usuario, { conDetalle: true });
   }
 
@@ -133,6 +144,7 @@ export class CompraService {
     compra.cancelar(usuario, this.reloj.ahora());
     await this.eventoRepository.save(compra.evento);
     await this.compraRepository.save(compra);
+    await this.notificaciones.compraCanceladaPorComprador(compra);
     return this.aDTO(compra, usuario, { conDetalle: true });
   }
 

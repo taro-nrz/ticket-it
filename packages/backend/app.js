@@ -12,6 +12,7 @@ import { CategoriaRepository } from "./models/repositories/categoriaRepository.j
 import { EventoRepository } from "./models/repositories/eventoRepository.js";
 import { CompraRepository } from "./models/repositories/compraRepository.js";
 import { ReseniaRepository } from "./models/repositories/reseniaRepository.js";
+import { NotificacionRepository } from "./models/repositories/notificacionRepository.js";
 
 import { AuthService } from "./services/authService.js";
 import { UsuarioService } from "./services/usuarioService.js";
@@ -20,6 +21,7 @@ import { EventoService } from "./services/eventoService.js";
 import { CompraService } from "./services/compraService.js";
 import { MensajeService } from "./services/mensajeService.js";
 import { ReseniaService } from "./services/reseniaService.js";
+import { NotificacionService } from "./services/notificacionService.js";
 
 import { AuthController } from "./controllers/authController.js";
 import { UsuarioController } from "./controllers/usuarioController.js";
@@ -28,6 +30,7 @@ import { EventoController } from "./controllers/eventoController.js";
 import { CompraController } from "./controllers/compraController.js";
 import { MensajeController } from "./controllers/mensajeController.js";
 import { ReseniaController } from "./controllers/reseniaController.js";
+import { NotificacionController } from "./controllers/notificacionController.js";
 import { DevController } from "./controllers/devController.js";
 
 // Arma la aplicación completa (inyección de dependencias manual, como en clase).
@@ -45,6 +48,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     eventoRepository: new EventoRepository(),
     compraRepository: new CompraRepository(),
     reseniaRepository: new ReseniaRepository(),
+    notificacionRepository: new NotificacionRepository(),
   };
   const {
     usuarioRepository,
@@ -52,15 +56,19 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     eventoRepository,
     compraRepository,
     reseniaRepository,
+    notificacionRepository,
   } = repositorios;
 
   // ---------- SERVICES ----------
+  // D-32: los services avisan al de notificaciones lo que pasó (compras, mensajes, cancelaciones, reseñas)
+  const notificacionService = new NotificacionService(notificacionRepository, reloj);
   const eventoService = new EventoService(
     eventoRepository,
     categoriaRepository,
     compraRepository,
     reseniaRepository,
     reloj,
+    notificacionService,
   );
   const authService = new AuthService(usuarioRepository, config);
   const usuarioService = new UsuarioService(usuarioRepository, eventoService);
@@ -71,14 +79,21 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     reseniaRepository,
     reloj,
     config,
+    notificacionService,
   );
-  const mensajeService = new MensajeService(compraService, compraRepository, reloj);
+  const mensajeService = new MensajeService(
+    compraService,
+    compraRepository,
+    reloj,
+    notificacionService,
+  );
   const reseniaService = new ReseniaService(
     reseniaRepository,
     eventoRepository,
     compraRepository,
     usuarioRepository,
     reloj,
+    notificacionService,
   );
 
   // ---------- DATOS SEMILLA ----------
@@ -100,6 +115,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   server.setController(CompraController, new CompraController(compraService));
   server.setController(MensajeController, new MensajeController(mensajeService));
   server.setController(ReseniaController, new ReseniaController(reseniaService));
+  server.setController(NotificacionController, new NotificacionController(notificacionService));
   server.setController(DevController, new DevController(recargarDatos));
 
   // ---------- RUTAS ----------

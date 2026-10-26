@@ -389,6 +389,18 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: el motivo de cancelación es obligatorio (los compradores lo ven); los eventos cancelados no
   se borran (baja lógica, como recomienda la clase) y quedan en "Mis eventos" > Cancelados.
 
+### D-32 — Notificaciones in-app (M12)
+- Contexto: el usuario se enteraba de una venta, un mensaje o una cancelación sólo si entraba a la pantalla.
+- Decisión: entidad `Notificacion` con estados `LEIDA`/`NO_LEIDA` (como la rama de notificaciones de clase) más
+  destinatario, tipo y link. Un `NotificacionService` arma los textos; los demás services sólo le avisan qué
+  pasó (`compraPagada`, `mensajeNuevo`, `eventoCancelado`...). Se inyecta por constructor con un valor por
+  defecto que no hace nada (`SIN_NOTIFICACIONES`), así los tests unitarios existentes no cambiaron.
+- Frontend: campana en el encabezado con el contador (contexto compartido + sondeo cada 15 s, mismo patrón que el
+  chat y el popup de clase), pantalla de notificaciones, "marcar todas como leídas". El encabezado se reorganizó:
+  arriba saludo + campana + Cuenta, abajo el título + la acción de la pantalla (no entraba todo en una fila).
+- **Sin consultar**: sondeo en lugar de WebSockets/push (más simple y alcanza para la demo; push real requiere
+  servicios externos). Los avisos de mensajes de un mismo chat se agrupan para no inundar la lista.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)
