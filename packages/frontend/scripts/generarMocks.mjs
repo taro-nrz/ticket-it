@@ -88,6 +88,9 @@ for (const [id, email] of Object.entries(USUARIOS)) {
 
 http.close();
 const salida = new URL("../src/mocks/datos.json", import.meta.url);
-await writeFile(salida, JSON.stringify({ generadoEn: new Date().toISOString(), publico, porUsuario }));
+await writeFile(
+  salida,
+  JSON.stringify({ generadoEn: new Date().toISOString(), publico, porUsuario }),
+);
 console.log(`Mocks generados en ${salida.pathname}`);
 process.exit(0);
