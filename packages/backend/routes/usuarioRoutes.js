@@ -18,6 +18,10 @@ export default function usuarioRoutes(getController, auth) {
     getController(UsuarioController).me(req, res, next);
   });
 
+  router.patch(pathUsuario + "/me", requiereUsuario, (req, res, next) => {
+    getController(UsuarioController).actualizarPerfil(req, res, next);
+  });
+
   router.get(pathUsuario + "/me/favoritos", ...soloComprador, (req, res, next) => {
     getController(UsuarioController).favoritos(req, res, next);
   });

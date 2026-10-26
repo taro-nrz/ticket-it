@@ -15,6 +15,10 @@ export default function authRoutes(getController, auth) {
     getController(AuthController).login(req, res, next);
   });
 
+  router.post(pathAuth + "/cambiar-password", requiereUsuario, (req, res, next) => {
+    getController(AuthController).cambiarPassword(req, res, next);
+  });
+
   router.get(pathAuth + "/me", requiereUsuario, (req, res, next) => {
     getController(AuthController).me(req, res, next);
   });

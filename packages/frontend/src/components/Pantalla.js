@@ -183,7 +183,7 @@ export function BotonCuenta({ claro = false }) {
         onPress={() => setAbierto(true)}
         accessibilityRole="button"
         aria-haspopup="dialog"
-        accessibilityHint="Abre el tema y la opción para cerrar sesión"
+        accessibilityHint="Abre tu perfil, el tema y la opción para cerrar sesión"
         {...etiquetaMobile(`Cuenta de ${nombre}`)}
         style={[styles.boton, claro && styles.botonClaro]}
       >
@@ -203,8 +203,19 @@ export function BotonCuenta({ claro = false }) {
           <View style={{ flex: 1 }}>
             <Text style={[texto.cuerpoFuerte, { fontSize: 17 }]}>{nombre}</Text>
             <Text style={texto.secundario}>{NOMBRE_ROL[usuario.rol]}</Text>
+            {usuario.email && <Text style={texto.chico}>{usuario.email}</Text>}
           </View>
         </View>
+        <Boton
+          titulo="Mi perfil"
+          icono="person-outline"
+          variante="secundario"
+          accessibilityHint="Editar tus datos y cambiar la contraseña"
+          onPress={() => {
+            setAbierto(false);
+            router.push("/perfil");
+          }}
+        />
         <SelectorTema />
         <View style={styles.separador} />
         <Boton

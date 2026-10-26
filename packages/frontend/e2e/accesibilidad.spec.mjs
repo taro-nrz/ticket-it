@@ -35,6 +35,7 @@ const PANTALLAS = [
     usuario: SOFIA,
     titulo: "Recital Acústico en el Konex",
   },
+  { nombre: "Mi perfil", ruta: "/perfil", usuario: SOFIA, titulo: "Mi perfil" },
   { nombre: "Mis eventos", ruta: "/mis-eventos", usuario: LUCIA, titulo: "Mis eventos" },
   {
     nombre: "Compras de un evento",

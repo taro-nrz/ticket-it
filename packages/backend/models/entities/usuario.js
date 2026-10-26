@@ -17,6 +17,12 @@ export class Usuario {
     return email?.trim().toLowerCase();
   }
 
+  // D-30: el usuario puede corregir su nombre y apellido (el email identifica la cuenta y no cambia)
+  actualizarDatos({ nombre, apellido }) {
+    if (nombre !== undefined) this.nombre = nombre;
+    if (apellido !== undefined) this.apellido = apellido;
+  }
+
   esOrganizador() {
     return this.rol === RolUsuario.ORGANIZADOR;
   }

@@ -8,6 +8,9 @@ const datos = (promesa) => promesa.then((response) => response.data);
 export const login = (email, password) => datos(cliente.post("/auth/login", { email, password }));
 export const registrarse = (datosRegistro) => datos(cliente.post("/auth/registro", datosRegistro));
 export const getUsuarioActual = () => datos(cliente.get("/auth/me"));
+export const cambiarPassword = (passwordActual, passwordNueva) =>
+  cliente.post("/auth/cambiar-password", { passwordActual, passwordNueva });
+export const actualizarPerfil = (cambios) => datos(cliente.patch("/usuario/me", cambios));
 export const getCategorias = () => datos(cliente.get("/categoria"));
 
 // ---------- FAVORITOS ----------

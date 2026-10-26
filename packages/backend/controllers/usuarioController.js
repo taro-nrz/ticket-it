@@ -2,6 +2,13 @@ import { z } from "zod";
 import { RolUsuario } from "../models/entities/rolUsuario.js";
 import { parsearId, validar } from "../utils/validacion.js";
 
+const nombreSchema = z.string().trim().min(2).max(50);
+const perfilSchema = z
+  .object({ nombre: nombreSchema.optional(), apellido: nombreSchema.optional() })
+  .refine((datos) => datos.nombre !== undefined || datos.apellido !== undefined, {
+    message: "Enviá al menos nombre o apellido",
+  });
+
 const listarSchema = z.object({
   rol: z.enum(Object.values(RolUsuario)).optional(),
 });
@@ -25,6 +32,15 @@ export class UsuarioController {
     try {
       const usuario = await this.usuarioService.perfil(req.usuario.id);
       res.json(usuario);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async actualizarPerfil(req, res, next) {
+    try {
+      const cambios = validar(perfilSchema, req.body);
+      res.json(await this.usuarioService.actualizarPerfil(req.usuario, cambios));
     } catch (error) {
       next(error);
     }

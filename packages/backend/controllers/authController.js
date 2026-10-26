@@ -32,6 +32,11 @@ const loginSchema = z.object({
   password: z.string().min(1, "Ingresá tu contraseña"),
 });
 
+const cambiarPasswordSchema = z.object({
+  passwordActual: z.string().min(1, "Ingresá tu contraseña actual"),
+  passwordNueva: passwordSchema,
+});
+
 export class AuthController {
   constructor(authService, usuarioService) {
     this.authService = authService;
@@ -53,6 +58,16 @@ export class AuthController {
       const credenciales = validar(loginSchema, req.body);
       const sesion = await this.authService.login(credenciales);
       res.json(sesion);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async cambiarPassword(req, res, next) {
+    try {
+      const datos = validar(cambiarPasswordSchema, req.body);
+      await this.authService.cambiarPassword(req.usuario, datos);
+      res.status(204).send();
     } catch (error) {
       next(error);
     }
