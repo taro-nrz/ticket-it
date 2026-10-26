@@ -39,9 +39,7 @@ export function ImagenEvento({
       {conGaleria ? (
         <Galeria imagenes={evento.multimedia} margenInferior={margenInferior} />
       ) : (
-        imagen && (
-          <ImagenConCarga uri={imagen} style={StyleSheet.absoluteFill} />
-        )
+        imagen && <ImagenConCarga uri={imagen} style={StyleSheet.absoluteFill} />
       )}
       <View
         style={styles.fecha}
