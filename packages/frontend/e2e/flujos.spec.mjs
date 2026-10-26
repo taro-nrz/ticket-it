@@ -143,3 +143,17 @@ test("D-31: el comprador ve que el organizador canceló el evento", async ({ pag
   await expect(page.getByText(/El organizador canceló este evento/)).toBeVisible();
   await expect(page.getByText("Reembolsada").first()).toBeVisible();
 });
+
+test("D-34: el organizador ve las estadísticas del evento y su tabla", async ({ page }) => {
+  await entrarComo(page, LUCIA);
+  await page.goto("/evento/1");
+  await page.getByRole("button", { name: "Estadísticas" }).click();
+
+  await expect(page.getByRole("heading", { name: "Estadísticas", level: 1 })).toBeVisible();
+  await expect(page.getByText("$ 30.000").first()).toBeVisible();
+  await expect(page.getByText(/2 entradas pagadas del/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Ver como tabla" }).click();
+  await expect(page.getByRole("table", { name: "Entradas pagadas por día" })).toBeVisible();
+  await expect(page.getByRole("row")).toHaveCount(15);
+});

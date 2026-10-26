@@ -913,6 +913,62 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/BusinessRule" }
 
+  /evento/{id}/estadisticas:
+    get:
+      tags: [Eventos]
+      summary: Estadísticas del evento para su organizador (D-34)
+      description: Totales (ocupación, recaudación, ticket promedio, cancelaciones, asistencia, reseñas), ventas por tipo, compras por estado y entradas pagadas por día (últimos 14 días).
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Estadísticas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evento: { $ref: "#/components/schemas/EventoReferencia" }
+                  totales:
+                    type: object
+                    properties:
+                      cupoTotal: { type: integer, example: 720 }
+                      entradasVendidas: { type: integer, description: Incluye pendientes de pago, example: 3 }
+                      entradasPagadas: { type: integer, example: 2 }
+                      recaudacion: { type: number, example: 30000 }
+                      ticketPromedio: { type: number, example: 30000 }
+                      ocupacion: { type: number, description: Porcentaje del cupo pagado, example: 0.3 }
+                      compras: { type: integer, example: 2 }
+                      tasaCancelacion: { type: number, description: Porcentaje, example: 0 }
+                      entradasUtilizadas: { type: integer, example: 0 }
+                      puntajePromedio: { type: [number, "null"] }
+                      cantidadResenias: { type: integer }
+                  porTipo:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        nombre: { type: string }
+                        cupo: { type: integer }
+                        vendidas: { type: integer }
+                        pagadas: { type: integer }
+                        recaudacion: { type: number }
+                  porEstado:
+                    type: object
+                    additionalProperties: { type: integer }
+                  ventasPorDia:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fecha: { type: string, example: "2026-10-21" }
+                        entradas: { type: integer }
+                        recaudacion: { type: number }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /evento/{id}/cancelar:
     post:
       tags: [Eventos]

@@ -124,6 +124,18 @@ export class EventoController {
     }
   }
 
+  async estadisticas(req, res, next) {
+    try {
+      const estadisticas = await this.eventoService.estadisticas(
+        parsearId(req.params.id),
+        req.usuario,
+      );
+      res.json(estadisticas);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async misEventos(req, res, next) {
     try {
       const { page, limit } = req.query;

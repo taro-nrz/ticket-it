@@ -11,6 +11,7 @@ import { EstadoCompra } from "../models/entities/estadoCompra.js";
 import { Evento } from "../models/entities/evento.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { ordenarProximosPrimero } from "../utils/orden.js";
+import { sumarDias } from "../utils/reloj.js";
 import { paginar } from "../utils/paginacion.js";
 import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 
@@ -86,6 +87,63 @@ export class EventoService {
       comprasReembolsadas: activas.filter((compra) => compra.estado === EstadoCompra.REEMBOLSADA)
         .length,
       compras: activas,
+    };
+  }
+
+  // D-34: panel de estadísticas del evento para su organizador
+  async estadisticas(id, organizador) {
+    const ahora = this.reloj.ahora();
+    const evento = await this.obtenerPropio(id, organizador);
+    const compras = await this.compraRepository.findByEvento(evento.id);
+    const pagadas = compras.filter((compra) =>
+      [EstadoCompra.CONFIRMADA, EstadoCompra.UTILIZADA].includes(compra.estado),
+    );
+    const sumar = (lista, valor) => lista.reduce((total, item) => total + valor(item), 0);
+
+    const cupoTotal = sumar(evento.tiposEntrada, (tipo) => tipo.cupo);
+    const entradasPagadas = sumar(pagadas, (compra) => compra.cantidad);
+    const recaudacion = sumar(pagadas, (compra) => compra.total);
+    const utilizadas = compras.filter((compra) => compra.estado === EstadoCompra.UTILIZADA);
+    const canceladas = compras.filter((compra) =>
+      [EstadoCompra.CANCELADA, EstadoCompra.REEMBOLSADA].includes(compra.estado),
+    );
+    const reputacion = await this.reseniaRepository.reputacionDeEvento(evento.id);
+
+    return {
+      evento: { id: evento.id, nombre: evento.nombre, fecha: evento.fecha },
+      totales: {
+        cupoTotal,
+        entradasVendidas: sumar(evento.tiposEntrada, (tipo) => tipo.vendidas),
+        entradasPagadas,
+        recaudacion,
+        ticketPromedio: pagadas.length ? Math.round(recaudacion / pagadas.length) : 0,
+        ocupacion: cupoTotal ? Math.round((entradasPagadas / cupoTotal) * 1000) / 10 : 0,
+        compras: compras.length,
+        tasaCancelacion: compras.length
+          ? Math.round((canceladas.length / compras.length) * 1000) / 10
+          : 0,
+        entradasUtilizadas: sumar(utilizadas, (compra) => compra.cantidad),
+        puntajePromedio: reputacion.puntajePromedio,
+        cantidadResenias: reputacion.cantidadResenias,
+      },
+      porTipo: evento.tiposEntrada.map((tipo) => {
+        const delTipo = pagadas.filter((compra) => compra.tipoEntrada.id === tipo.id);
+        return {
+          id: tipo.id,
+          nombre: tipo.nombre,
+          cupo: tipo.cupo,
+          vendidas: tipo.vendidas,
+          pagadas: sumar(delTipo, (compra) => compra.cantidad),
+          recaudacion: sumar(delTipo, (compra) => compra.total),
+        };
+      }),
+      porEstado: Object.fromEntries(
+        Object.values(EstadoCompra).map((estado) => [
+          estado,
+          compras.filter((compra) => compra.estado === estado).length,
+        ]),
+      ),
+      ventasPorDia: ventasPorDia(pagadas, ahora < evento.fecha ? ahora : evento.fecha),
     };
   }
 
@@ -213,6 +271,39 @@ export class EventoService {
       ),
     };
   }
+}
+
+const DIAS_DEL_GRAFICO = 14;
+
+// Entradas pagadas por día (según la fecha en que se confirmó el pago), con los días sin ventas en 0.
+// Se muestran los 14 días hasta hoy (o hasta el evento); si en ese período no hubo ventas, los 14 días
+// que terminan en la última venta, para que un evento viejo no muestre un gráfico vacío.
+function ventasPorDia(pagadas, limite) {
+  const clave = (fecha) => aTextoFecha(fecha);
+  const fechaDePago = (compra) =>
+    compra.historial.find((cambio) => cambio.estado === EstadoCompra.CONFIRMADA)?.fechaHora;
+  const pagos = pagadas.map(fechaDePago).filter((fecha) => fecha && fecha <= limite);
+  const inicioVentana = sumarDias(limite, -(DIAS_DEL_GRAFICO - 1));
+  const hayVentasRecientes = pagos.some((fecha) => clave(fecha) >= clave(inicioVentana));
+  const hasta = pagos.length && !hayVentasRecientes ? new Date(Math.max(...pagos)) : limite;
+  const dias = Array.from({ length: DIAS_DEL_GRAFICO }, (_, i) =>
+    clave(sumarDias(hasta, i - DIAS_DEL_GRAFICO + 1)),
+  );
+  const porDia = Object.fromEntries(dias.map((dia) => [dia, { entradas: 0, recaudacion: 0 }]));
+  for (const compra of pagadas) {
+    const pago = fechaDePago(compra);
+    const dia = pago && clave(pago);
+    if (porDia[dia]) {
+      porDia[dia].entradas += compra.cantidad;
+      porDia[dia].recaudacion += compra.total;
+    }
+  }
+  return dias.map((dia) => ({ fecha: dia, ...porDia[dia] }));
+}
+
+function aTextoFecha(fecha) {
+  const f = new Date(fecha);
+  return `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, "0")}-${String(f.getDate()).padStart(2, "0")}`;
 }
 
 function crearTipoEntrada(tipo) {

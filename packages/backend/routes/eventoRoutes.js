@@ -26,6 +26,10 @@ export default function eventoRoutes(getController, auth) {
     getController(EventoController).findById(req, res, next);
   });
 
+  router.get(pathEvento + "/:id/estadisticas", ...soloOrganizador, (req, res, next) => {
+    getController(EventoController).estadisticas(req, res, next);
+  });
+
   router.put(pathEvento + "/:id", ...soloOrganizador, (req, res, next) => {
     getController(EventoController).update(req, res, next);
   });

@@ -412,6 +412,17 @@ Formato: **contexto → opciones → decisión → justificación**.
   el código (no datos personales); el escaneo con cámara se ofrece sólo en el celular. `app.json` pasó a
   `userInterfaceStyle: automatic` para que el modo oscuro del sistema también llegue en el celular.
 
+### D-34 — Estadísticas del evento (M14)
+- Decisión: endpoint `GET /evento/:id/estadisticas` que calcula todo en el service a partir de las compras (como
+  los campos calculados con `toObject()` de la clase, sin guardar números duplicados).
+- Gráficos hechos con `View` (sin librería: funcionan igual en web y celular y respetan el tema). Siguiendo la
+  guía de visualización: indicadores grandes para los números sueltos, columnas por día para la evolución (un solo
+  dato → sin leyenda, el título lo nombra), etiqueta sólo en el máximo, barras de 4 px redondeadas y separadas 2
+  px, y el color de las marcas **validado** con el script de la guía en los dos temas (en oscuro el coral de la
+  marca no pasaba la banda de luminosidad: se usa `#F0532F`, token `dato`).
+- Accesibilidad: resumen en texto + "Ver como tabla" (en el celular no hay *hover*, así que la tabla reemplaza
+  al tooltip).
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

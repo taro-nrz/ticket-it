@@ -62,6 +62,13 @@ export default function ComprasDeEvento() {
           style={{ marginBottom: espacio.l }}
         />
       )}
+      <Boton
+        titulo="Ver estadísticas"
+        icono="stats-chart-outline"
+        variante="secundario"
+        onPress={() => router.push(`/evento/${id}/estadisticas`)}
+        style={{ marginBottom: espacio.l }}
+      />
       <View style={styles.disponibilidad}>
         <Titulo nivel={2} style={texto.seccion}>
           Disponibilidad por tipo
