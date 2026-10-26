@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { Cargando } from "../src/components/ui.js";
 import { SesionProvider, useSesion } from "../src/store/SesionContext.js";
 import { DialogosProvider } from "../src/store/DialogosContext.js";
+import { NotificacionesProvider } from "../src/store/NotificacionesContext.js";
 import { TemaProvider, useTema } from "../src/store/TemaContext.js";
 import { configurarAccesibilidadWeb } from "../src/utils/accesibilidad.js";
 
@@ -30,15 +31,17 @@ export default function RootLayout() {
     <TemaProvider>
       <SesionProvider>
         <DialogosProvider>
-          <BarraDeEstado />
-          {fuentesListas ? <Navegador /> : <Cargando />}
+          <NotificacionesProvider>
+            <BarraDeEstado />
+            {fuentesListas ? <Navegador /> : <Cargando />}
+          </NotificacionesProvider>
         </DialogosProvider>
       </SesionProvider>
     </TemaProvider>
   );
 }
 
-// Hasta recuperar la sesión guardada no se muestra ninguna pantalla (evita requests sin x-user-id).
+// Hasta recuperar la sesión guardada no se muestra ninguna pantalla (evita requests sin token).
 // Cada pantalla dibuja su propia cabecera (Encabezado / BarraVolver), por eso el Stack no muestra la suya.
 function Navegador() {
   const { colores } = useTema();

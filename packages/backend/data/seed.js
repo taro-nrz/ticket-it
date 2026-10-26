@@ -5,6 +5,11 @@ import { Resenia } from "../models/entities/resenia.js";
 import { RolUsuario } from "../models/entities/rolUsuario.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { Usuario } from "../models/entities/usuario.js";
+import {
+  EstadoNotificacion,
+  Notificacion,
+  TipoNotificacion,
+} from "../models/entities/notificacion.js";
 import { sumarDias, sumarHoras } from "../utils/reloj.js";
 
 // D-29: contraseña de todos los usuarios demo (documentada en el README)
@@ -20,6 +25,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
     eventoRepository,
     compraRepository,
     reseniaRepository,
+    notificacionRepository,
   } = repositorios;
 
   const enDias = (dias, hora = 21) => {
@@ -321,6 +327,47 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   juan.agregarFavorito(indie);
   for (const usuario of [sofia, juan]) {
     await usuarioRepository.save(usuario);
+  }
+
+  // ---------- NOTIFICACIONES (D-32) ----------
+  // Las que habrían generado los services con la actividad de la semilla
+  const notificaciones = [
+    new Notificacion({
+      usuario: lucia,
+      tipo: TipoNotificacion.NUEVA_VENTA,
+      titulo: `Nueva venta para ${indie.nombre}`,
+      mensaje: "Sofía Pérez pagó 2 × General ($ 30.000).",
+      link: `/compra/${sofiaIndie.id}`,
+      fecha: haceDias(5),
+    }),
+    new Notificacion({
+      usuario: lucia,
+      tipo: TipoNotificacion.NUEVO_MENSAJE,
+      titulo: "Mensaje de Sofía Pérez",
+      mensaje: `${indie.nombre}: “Genial, ¡gracias!”`,
+      link: `/compra/${sofiaIndie.id}/chat`,
+      fecha: haceDias(3),
+    }),
+    new Notificacion({
+      usuario: lucia,
+      tipo: TipoNotificacion.NUEVO_MENSAJE,
+      titulo: "Mensaje de Juan Rodríguez",
+      mensaje: `${standup.nombre}: “¿Se puede entrar con comida?”`,
+      link: `/compra/${juanStandup.id}/chat`,
+      fecha: haceDias(2),
+    }),
+    new Notificacion({
+      usuario: juan,
+      tipo: TipoNotificacion.ENTRADA_UTILIZADA,
+      titulo: `¡Que disfrutes ${acustico.nombre}!`,
+      mensaje: "Validaron tu entrada. Después contanos qué te pareció calificando el evento.",
+      link: `/compra/${juanAcustico.id}`,
+      fecha: sumarDias(acustico.fecha, 0),
+    }),
+  ];
+  notificaciones[0].marcarComoLeida();
+  for (const notificacion of notificaciones) {
+    await notificacionRepository.save(notificacion);
   }
 
   return {

@@ -70,3 +70,22 @@ export function fechaParaLector(fechaISO) {
   });
   return `${dia}, ${hora} hs`;
 }
+
+// D-32: "hace 5 minutos", "ayer", "hace 3 días"
+const relativo = new Intl.RelativeTimeFormat("es-AR", { numeric: "auto" });
+export function formatearHace(fecha, ahora = new Date()) {
+  const segundos = Math.round((new Date(fecha) - ahora) / 1000);
+  const unidades = [
+    ["year", 60 * 60 * 24 * 365],
+    ["month", 60 * 60 * 24 * 30],
+    ["week", 60 * 60 * 24 * 7],
+    ["day", 60 * 60 * 24],
+    ["hour", 60 * 60],
+    ["minute", 60],
+  ];
+  for (const [unidad, duracion] of unidades) {
+    if (Math.abs(segundos) >= duracion)
+      return relativo.format(Math.round(segundos / duracion), unidad);
+  }
+  return "recién";
+}

@@ -5,6 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEstilos } from "../hooks/useEstilos.js";
 import { useSesion } from "../store/SesionContext.js";
+import { useNotificaciones } from "../store/NotificacionesContext.js";
 import { PREFERENCIAS, useTema } from "../store/TemaContext.js";
 import { espacio, fuentes } from "../theme.js";
 import { anunciar, etiquetaMobile } from "../utils/accesibilidad.js";
@@ -62,19 +63,25 @@ export function Encabezado({ saludo, titulo, oscuro = false, derecha, children }
     >
       <TituloPagina titulo={titulo} />
       <View style={[estilosPantalla.ancho, { gap: espacio.l }]}>
+        {/* Arriba el saludo con las acciones de la cuenta; abajo el título con la acción de la pantalla */}
         <View style={styles.fila}>
-          <View style={{ flex: 1 }}>
-            {saludo && (
-              <Text style={[texto.secundario, oscuro && { color: colores.sobrePanelSuave }]}>
-                {saludo}
-              </Text>
-            )}
-            <Titulo nivel={1} style={[texto.tituloGrande, oscuro && { color: colores.sobrePanel }]}>
-              {titulo}
-            </Titulo>
-          </View>
-          {derecha}
+          <Text
+            style={[texto.secundario, { flex: 1 }, oscuro && { color: colores.sobrePanelSuave }]}
+            numberOfLines={1}
+          >
+            {saludo}
+          </Text>
+          <BotonNotificaciones claro={oscuro} />
           <BotonCuenta claro={oscuro} />
+        </View>
+        <View style={[styles.fila, { marginTop: -espacio.s }]}>
+          <Titulo
+            nivel={1}
+            style={[texto.tituloGrande, { flex: 1 }, oscuro && { color: colores.sobrePanel }]}
+          >
+            {titulo}
+          </Titulo>
+          {derecha}
         </View>
         {children}
       </View>
@@ -146,6 +153,35 @@ export function ConSesion({ children }) {
   const { usuario } = useSesion();
   if (!usuario) return <Redirect href="/login" />;
   return children;
+}
+
+// D-32: campana con la cantidad de notificaciones sin leer
+export function BotonNotificaciones({ claro = false }) {
+  const { usuario } = useSesion();
+  const { noLeidas } = useNotificaciones();
+  const { colores } = useTema();
+  const styles = useEstilos(crearEstilosCuenta);
+  const router = useRouter();
+
+  if (!usuario) return null;
+  const color = claro ? colores.sobrePanel : colores.texto;
+  return (
+    <Pressable
+      onPress={() => router.push("/notificaciones")}
+      accessibilityRole="button"
+      accessibilityLabel={
+        noLeidas ? `Notificaciones, ${noLeidas} sin leer` : "Notificaciones, ninguna sin leer"
+      }
+      style={[styles.campana, claro && styles.botonClaro]}
+    >
+      <Icono name={noLeidas ? "notifications" : "notifications-outline"} size={22} color={color} />
+      {noLeidas > 0 && (
+        <View style={styles.contadorCampana}>
+          <Text style={styles.contadorCampanaTexto}>{noLeidas > 9 ? "9+" : noLeidas}</Text>
+        </View>
+      )}
+    </Pressable>
+  );
 }
 
 const NOMBRE_ROL = { COMPRADOR: "Cuenta de comprador", ORGANIZADOR: "Cuenta de organizador" };
@@ -245,6 +281,29 @@ const crearEstilosCuenta = ({ colores }) => ({
     backgroundColor: colores.superficie,
   },
   botonClaro: { backgroundColor: "transparent", borderColor: colores.sobrePanelSuave },
+  campana: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colores.bordeControl,
+    backgroundColor: colores.superficie,
+  },
+  contadorCampana: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    backgroundColor: colores.acento,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contadorCampanaTexto: { fontFamily: fuentes.negrita, fontSize: 11, color: colores.sobreAcento },
   botonTexto: { fontFamily: fuentes.semi, fontSize: 14, color: colores.texto },
   usuario: { flexDirection: "row", alignItems: "center", gap: espacio.m },
   separador: { height: 1, backgroundColor: colores.borde },

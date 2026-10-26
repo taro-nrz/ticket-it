@@ -16,6 +16,7 @@ import { enviarMensaje, getCompra, getMensajes, marcarMensajesLeidos } from "../
 import { BarraVolver } from "../../components/Pantalla.js";
 import { Cargando, ErrorVista, EstadoBadge, Vacio } from "../../components/ui.js";
 import { useSesion } from "../../store/SesionContext.js";
+import { useNotificaciones } from "../../store/NotificacionesContext.js";
 import { anunciar, ocultoVisualmente } from "../../utils/accesibilidad.js";
 import { espacio, fuentes } from "../../theme.js";
 import { avisarError } from "../../utils/confirmar.js";
@@ -32,6 +33,7 @@ export default function Chat() {
 
   const { id } = useLocalSearchParams();
   const { usuario, esComprador } = useSesion();
+  const { recargar: recargarNotificaciones } = useNotificaciones();
   const { bottom } = useSafeAreaInsets();
   const [compra, setCompra] = useState(null);
   const [mensajes, setMensajes] = useState(null);
@@ -55,7 +57,10 @@ export default function Chat() {
   };
 
   // D-26: abrir el chat marca la conversación como leída. Si falla, sólo queda el contador desactualizado.
-  const marcarLeidos = () => marcarMensajesLeidos(id).catch(() => {});
+  const marcarLeidos = () =>
+    marcarMensajesLeidos(id)
+      .then(recargarNotificaciones)
+      .catch(() => {});
 
   const agregar = (nuevos) => {
     if (nuevos.length === 0) return;

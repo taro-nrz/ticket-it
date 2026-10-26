@@ -6,3 +6,8 @@ export function normalizarTexto(texto) {
     .toLowerCase()
     .trim();
 }
+
+// Montos en pesos para textos generados por el backend ("$ 30.000")
+export function formatearMonto(valor) {
+  return `$ ${Number(valor).toLocaleString("es-AR")}`;
+}

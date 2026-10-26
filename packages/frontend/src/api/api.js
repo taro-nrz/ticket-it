@@ -53,6 +53,13 @@ export const enviarMensaje = (compraId, mensaje) =>
 export const marcarMensajesLeidos = (compraId) =>
   cliente.post(`/compra/${compraId}/mensajes/leidos`);
 
+// ---------- NOTIFICACIONES (D-32) ----------
+export const getNotificaciones = () =>
+  datos(cliente.get("/notificacion", { params: { limit: 50 } }));
+export const getResumenNotificaciones = () => datos(cliente.get("/notificacion/resumen"));
+export const marcarNotificacionLeida = (id) => datos(cliente.post(`/notificacion/${id}/leer`));
+export const marcarTodasLeidas = () => cliente.post("/notificacion/leer-todas");
+
 // ---------- RESEÑAS ----------
 export const reseniarEvento = (eventoId, puntuacion, detalle) =>
   datos(cliente.post(`/evento/${eventoId}/resenias`, { puntuacion, detalle }));
