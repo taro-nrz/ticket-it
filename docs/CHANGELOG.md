@@ -19,6 +19,18 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
   E2E + axe, build de imágenes), `helmet`, `X-Request-Id`, límite de tamaño del body, configuración validada
   al arrancar, cierre ordenado, pantalla 404, "deslizar para recargar".
 
+### Segunda tanda (M15–M23)
+- **Reserva con vencimiento (M15)** — una compra sin pagar vence a los 15 minutos y libera el cupo (D-36).
+- **Checkout (M16)** — pago con tarjeta y pasarela simulada; sólo se guardan marca y últimos 4 (D-37).
+- **Cupones (M17)** — porcentaje, monto fijo y 2×1 por evento, con polimorfismo (D-38).
+- **Estados de carga y MSW (M18)** — esqueletos, barra de recarga, imágenes progresivas, aviso de demora; MSW con
+  latencia y modo sin backend con datos generados desde la API real (D-39).
+- **Lista de espera (M19)** — aviso y 30 minutos de prioridad cuando se libera cupo (D-40).
+- **Transferir entrada (M20)** — a otra cuenta, con un QR nuevo (D-41).
+- **Fotos (M21)** — subida con validación por firma del archivo y progreso real (D-42).
+- **Compartir y calendario (M22)** — hoja de compartir del sistema y archivo .ics (D-43).
+- **Recuperar contraseña (M23)** — código de 6 números por email simulado (D-44).
+
 ## Cambiado
 - El encabezado de las pantallas principales: saludo + campana + Cuenta arriba, título + acción abajo.
 - `CrearEvento` sirve también para editar. El menú "Cuenta" suma "Mi perfil" y muestra el email.
@@ -32,6 +44,6 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
 ## Verificación
 | | TP original | Versión pro |
 |---|---|---|
-| Tests del backend | 133 | 189 (cobertura 95 %) |
-| Tests E2E + axe | 90 | 162 |
+| Tests del backend | 133 | 245 (cobertura 95 %) |
+| Tests E2E + axe | 90 | 250 |
 | Lint del frontend | no se revisaba | 0 errores, 0 avisos |

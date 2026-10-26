@@ -633,6 +633,49 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
 
+  /auth/recuperar:
+    post:
+      tags: [Autenticación]
+      summary: Pedir un código para restablecer la contraseña (D-44)
+      description: |-
+        Responde siempre igual, exista o no la cuenta (no revela qué emails están registrados). Si existe, se envía un
+        código de 6 números que vence a los 15 minutos. El email es simulado: en desarrollo se ve en la consola y en
+        `GET /dev/emails`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: sofia@ticketit.com }
+      responses:
+        "202": { description: Pedido recibido }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
+  /auth/restablecer:
+    post:
+      tags: [Autenticación]
+      summary: Elegir una contraseña nueva con el código recibido (D-44)
+      description: El código es de un solo uso, sólo vale el último pedido y deja de valer después de 5 intentos fallidos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, codigo, passwordNueva]
+              properties:
+                email: { type: string, format: email, example: sofia@ticketit.com }
+                codigo: { type: string, pattern: "^\\d{6}$", example: "123456" }
+                passwordNueva: { type: string, minLength: 8, example: nueva4567 }
+      responses:
+        "204": { description: Contraseña cambiada }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+
   /auth/cambiar-password:
     post:
       tags: [Autenticación]

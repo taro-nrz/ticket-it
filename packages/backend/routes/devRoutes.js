@@ -8,5 +8,9 @@ export default function devRoutes(getController) {
     getController(DevController).reset(req, res, next);
   });
 
+  router.get("/dev/emails", (req, res, next) => {
+    getController(DevController).emails(req, res, next);
+  });
+
   return router;
 }

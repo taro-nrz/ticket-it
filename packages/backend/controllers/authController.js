@@ -32,6 +32,17 @@ const loginSchema = z.object({
   password: z.string().min(1, "Ingresá tu contraseña"),
 });
 
+const recuperarSchema = z.object({ email: emailSchema });
+
+const restablecerSchema = z.object({
+  email: emailSchema,
+  codigo: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "El código tiene 6 números"),
+  passwordNueva: passwordSchema,
+});
+
 const cambiarPasswordSchema = z.object({
   passwordActual: z.string().min(1, "Ingresá tu contraseña actual"),
   passwordNueva: passwordSchema,
@@ -58,6 +69,28 @@ export class AuthController {
       const credenciales = validar(loginSchema, req.body);
       const sesion = await this.authService.login(credenciales);
       res.json(sesion);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async recuperar(req, res, next) {
+    try {
+      const { email } = validar(recuperarSchema, req.body);
+      await this.authService.pedirRecuperacion(email);
+      res.status(202).json({
+        message:
+          "Si el email tiene una cuenta, te enviamos un código para restablecer la contraseña.",
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async restablecer(req, res, next) {
+    try {
+      await this.authService.restablecerPassword(validar(restablecerSchema, req.body));
+      res.status(204).send();
     } catch (error) {
       next(error);
     }

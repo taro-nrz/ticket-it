@@ -19,6 +19,15 @@ export default function authRoutes(getController, auth) {
     getController(AuthController).cambiarPassword(req, res, next);
   });
 
+  // D-44: con el mismo límite de intentos que el login (evita adivinar códigos o mandar mails en masa)
+  router.post(pathAuth + "/recuperar", limitarLogin, (req, res, next) => {
+    getController(AuthController).recuperar(req, res, next);
+  });
+
+  router.post(pathAuth + "/restablecer", limitarLogin, (req, res, next) => {
+    getController(AuthController).restablecer(req, res, next);
+  });
+
   router.get(pathAuth + "/me", requiereUsuario, (req, res, next) => {
     getController(AuthController).me(req, res, next);
   });

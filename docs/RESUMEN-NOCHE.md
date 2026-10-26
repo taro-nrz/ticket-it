@@ -17,17 +17,31 @@ Copia del TP en `ticket-it-pro/`, con repo git propio y un commit por fase (`git
 | F7 | Calidad e infra | helmet, request-id, config validada, Docker + compose, CI, lint del frontend, cobertura, 404 |
 | F8 | Documentación | README, changelog, guion del video pro, backlog M9–M14 |
 
+## Segunda tanda (a pedido, con las decisiones consultadas)
+
+| Módulo | Qué agrega |
+|---|---|
+| M15 | Reservas sin pagar que vencen a los 15 min (estado VENCIDA) |
+| M16 | Checkout con tarjeta y pasarela simulada |
+| M17 | Cupones por evento: porcentaje, monto fijo y 2×1 (polimorfismo) |
+| M18 | Estados de carga según la ocasión + MSW (latencia y modo sin backend) |
+| M19 | Lista de espera con 30 min de prioridad |
+| M20 | Transferir una entrada con QR nuevo |
+| M21 | Subida de fotos con validación por firma y progreso real |
+| M22 | Compartir el evento y agregarlo al calendario (.ics) |
+| M23 | Recuperar la contraseña con código por email simulado |
+
 ## Cómo verificarlo
 
 ```bash
 cd ticket-it-pro
 npm install
-npm run verificar                                  # lint + formato + 189 tests del backend
-CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e   # 162 E2E + accesibilidad
+npm run verificar                                  # lint + formato + 245 tests del backend
+CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e   # 250 E2E + accesibilidad (incluye el modo sin backend)
 npm run start:web                                  # y entrar con sofia@ticketit.com / ticketit123
 ```
 
-Estado al terminar: **189** tests de backend (cobertura 95 % líneas), **162** E2E en web, celular y modo oscuro
+Estado al terminar: **245** tests de backend (cobertura 95 % líneas), **250** E2E en web, celular, modo oscuro y sin backend
 (axe sin violaciones), ESLint y Prettier sin avisos, `expo-doctor` 20/20 y `docker compose up` probado con un
 navegador sobre la build de producción.
 
@@ -46,13 +60,18 @@ navegador sobre la build de producción.
 9. **No se hizo MongoDB (F9 opcional)**: el enunciado y la decisión D-02 piden persistencia en memoria, y migrar
    el grafo de entidades con referencias compartidas tenía riesgo alto para algo que no suma a la entrega.
 
+Decisiones de la segunda tanda tomadas sin consultar: ver los apartados "Sin consultar" de D-36 a D-44 en
+`docs/DOCUMENTACION.md` (por ejemplo: el chat empieza de cero al transferir, MSW sólo en web, orden estricto en la
+lista de espera, duración de 3 h en el .ics).
+
 ## Qué no se pudo probar
-- **El celular real**: el escaneo con `expo-camera` y el guardado del token con `expo-secure-store` sólo funcionan
-  en un dispositivo. En web todo está probado; en Expo Go conviene revisar el escáner de "Validar entradas".
+- **El celular real**: el escaneo con `expo-camera`, el guardado del token con `expo-secure-store`, el selector de
+  fotos y la hoja de compartir nativa sólo funcionan en un dispositivo. En web todo está probado; en Expo Go
+  conviene revisar el escáner de "Validar entradas".
 - **El CI en GitHub**: el workflow está escrito y su YAML es válido, pero no se ejecutó (el repo no tiene remoto).
   Todo lo que corre ya pasa localmente.
 
 ## Ideas para seguir
-- Revocación de tokens o refresh tokens; recuperar la contraseña por email.
+- Revocación de tokens o refresh tokens; envío real de emails (SMTP o un proveedor) en lugar del simulado.
 - Notificaciones push reales (Expo Notifications) en lugar de sondeo.
 - Persistencia con MongoDB si la cátedra lo permite (los repositorios ya tienen interfaz async).

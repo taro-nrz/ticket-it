@@ -50,8 +50,8 @@ export async function buildTestServer() {
 }
 
 // Variante que expone el reloj para poder "adelantar el tiempo" dentro de un test
-export async function buildTestServerConReloj() {
+export async function buildTestServerConReloj(cambiosConfig = {}) {
   const reloj = new RelojFijo(AHORA);
-  const server = await crearApp({ reloj, config: CONFIG_TEST });
+  const server = await crearApp({ reloj, config: { ...CONFIG_TEST, ...cambiosConfig } });
   return { app: server.app, reloj };
 }

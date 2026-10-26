@@ -58,6 +58,15 @@ El backend se divide en **7 módulos** que se desarrollan en orden de dependenci
 | M12 — Notificaciones (pro) | Avisos in-app con campana y agrupación | HU-N1, HU-N2 | M3–M6, M11 | Implementado |
 | M13 — Entrada con QR (pro) | Código/QR de la entrada y validación en la puerta | HU-Q1, HU-Q2 | M4, M9 | Implementado |
 | M14 — Estadísticas (pro) | Panel de números del evento con gráficos accesibles | HU-E1 | M3, M4, M6 | Implementado |
+| M15 — Vencimiento (pro) | Reservas sin pagar que vencen a los 15 min | HU-V1 | M3, M4 | Implementado |
+| M16 — Checkout (pro) | Pago con tarjeta y pasarela simulada | HU-C1 | M4, M15 | Implementado |
+| M17 — Cupones (pro) | Porcentaje, monto fijo y 2×1 con polimorfismo | HU-D1, HU-D2 | M2, M3 | Implementado |
+| M18 — Estados de carga (pro) | Esqueletos, barras, imágenes progresivas y MSW | HU-L1, HU-L2 | M7 | Implementado |
+| M19 — Lista de espera (pro) | Aviso y 30 min de prioridad al liberarse cupo | HU-W1, HU-W2 | M3, M15 | Implementado |
+| M20 — Transferir (pro) | Pasar la entrada a otra cuenta con QR nuevo | HU-T1 | M13 | Implementado |
+| M21 — Fotos (pro) | Subida de imágenes con validación por firma | HU-F1 | M2, M11 | Implementado |
+| M22 — Compartir (pro) | Compartir el evento y exportarlo a .ics | HU-S1, HU-S2 | M2 | Implementado |
+| M23 — Recuperar contraseña (pro) | Código por email simulado | HU-R1 | M9 | Implementado |
 
 Historias de usuario del enunciado y su módulo:
 
@@ -527,6 +536,16 @@ Formato: **contexto → opciones → decisión → justificación**.
   sin avisos vale la pena).
 - **Sin consultar**: duración asumida de 3 h (el modelo no tiene hora de fin); recordatorio 2 h antes.
 
+### D-44 — Recuperar la contraseña (M23)
+- Decisión: código de **6 números** por email, de un solo uso, 15 minutos, hasta 5 intentos, guardado como hash
+  (igual que una contraseña). La respuesta al pedirlo no revela si el email existe. El límite por IP del login
+  también aplica (capa extra contra la fuerza bruta).
+- El email es **simulado** con la misma forma que un servicio real (`EmailSimulado.enviar()`): en la demo el código
+  se ve en la consola del backend y en `GET /dev/emails`. Usar SMTP o un proveedor sería otra clase.
+- **Sin consultar**: código numérico (más fácil de escribir en el celular y autocompletable desde el mensaje) en
+  lugar de un link con token; restablecer no cierra las sesiones abiertas (mismo límite que el cambio de
+  contraseña de D-30).
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)
@@ -582,8 +601,8 @@ seguridad del backend, Docker, CI y lint del frontend.
 
 | Verificación | Resultado |
 |---|---|
-| Tests del backend (`npm run test:backend`) | **189** pasando (cobertura 95 % líneas / 82 % ramas, umbral 90/80) |
-| E2E + accesibilidad (`npm run test:e2e`) | **162** pasando en web, mobile y mobile en modo oscuro, axe sin violaciones |
+| Tests del backend (`npm run test:backend`) | **245** pasando (umbral de cobertura 90 % líneas / 80 % ramas) |
+| E2E + accesibilidad (`npm run test:e2e`) | **250** pasando en web, mobile, mobile en modo oscuro y sin backend (MSW), axe sin violaciones |
 | `npm run lint` / `npm run format:check` | 0 errores, 0 avisos (backend **y frontend**) |
 | `expo-doctor` | 20/20 |
 | `docker compose up --build` | backend *healthy* + web; login y catálogo probados en un navegador sobre la build |
