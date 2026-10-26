@@ -103,6 +103,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
       pasarelaPago: new PasarelaPagoSimulada(),
       cuponRepository,
       listaEspera: listaEsperaService,
+      usuarioRepository,
     },
   );
   const cuponService = new CuponService(cuponRepository, eventoService, reloj);

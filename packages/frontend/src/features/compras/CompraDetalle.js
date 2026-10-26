@@ -6,6 +6,7 @@ import { cancelarCompra, getCompra, utilizarCompra } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
 import { Icono } from "../../components/Icono.js";
 import { EntradaQR } from "../../components/EntradaQR.js";
+import { TransferirEntrada } from "./TransferirEntrada.js";
 import { Boton, ErrorVista, EstadoBadge, Titulo } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
@@ -43,6 +44,7 @@ export default function CompraDetalle() {
     setDatos,
   } = useCarga(() => getCompra(id), [id], { alEnfocar: true });
   const [accionEnCurso, setAccionEnCurso] = useState(null);
+  const [transfiriendo, setTransfiriendo] = useState(false);
 
   if (cargandoInicial) {
     return (
@@ -154,6 +156,15 @@ export default function CompraDetalle() {
                 </Text>
               </View>
             )}
+            {/* D-41: si la entrada la recibió de otra persona, se dice de quién */}
+            {compra.transferencias?.length > 0 && esComprador && (
+              <View style={styles.recibida} role="note">
+                <Icono name="gift-outline" size={20} color={colores.texto} />
+                <Text style={[texto.cuerpo, { flex: 1 }]}>
+                  Recibiste esta entrada de {nombreCompleto(compra.transferencias.at(-1).de)}.
+                </Text>
+              </View>
+            )}
             {compra.codigo && ["CONFIRMADA", "UTILIZADA"].includes(compra.estado) && (
               <EntradaQR compra={compra} />
             )}
@@ -218,6 +229,15 @@ export default function CompraDetalle() {
                   onPress={() => router.push(`/compra/${compra.id}/chat`)}
                 />
               )}
+              {puede("TRANSFERIR") && (
+                <Boton
+                  titulo="Transferir a otra persona"
+                  icono="paper-plane-outline"
+                  variante="secundario"
+                  accessibilityHint="Le pasa la entrada a otra cuenta de comprador"
+                  onPress={() => setTransfiriendo(true)}
+                />
+              )}
               {puede("CANCELAR") && (
                 <Boton
                   titulo={confirmada ? "Cancelar y pedir reembolso" : "Cancelar compra"}
@@ -255,6 +275,11 @@ export default function CompraDetalle() {
           </View>
         </View>
       </ScrollView>
+      <TransferirEntrada
+        compra={compra}
+        visible={transfiriendo}
+        onCerrar={() => setTransfiriendo(false)}
+      />
     </View>
   );
 }
@@ -360,6 +385,17 @@ function Paso({ color, titulo, detalle, conLinea, pendiente }) {
 }
 
 const crearEstilos = ({ colores, estados }) => ({
+  recibida: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: colores.superficie,
+    borderWidth: 1,
+    borderColor: colores.borde,
+    borderRadius: radio.m,
+    padding: 12,
+    marginBottom: espacio.l,
+  },
   plazo: {
     flexDirection: "row",
     alignItems: "center",

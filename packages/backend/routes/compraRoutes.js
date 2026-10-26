@@ -35,6 +35,10 @@ export default function compraRoutes(getController, auth) {
     getController(CompraController).cancelar(req, res, next);
   });
 
+  router.post(pathCompra + "/:id/transferir", ...soloComprador, (req, res, next) => {
+    getController(CompraController).transferir(req, res, next);
+  });
+
   router.post(pathCompra + "/:id/utilizar", ...soloOrganizador, (req, res, next) => {
     getController(CompraController).utilizar(req, res, next);
   });
