@@ -401,6 +401,17 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: sondeo en lugar de WebSockets/push (más simple y alcanza para la demo; push real requiere
   servicios externos). Los avisos de mensajes de un mismo chat se agrupan para no inundar la lista.
 
+### D-33 — Entrada con QR y validación en la puerta (M13)
+- Contexto: "marcar utilizada" (M4) obligaba al organizador a buscar la compra en una lista; en la puerta de un
+  evento real se escanea la entrada.
+- Decisión: al pagar, la compra recibe un **código** `TK-XXXX-XXXX` (alfabeto sin caracteres confusos, generado
+  con `crypto.randomInt`, verificado único). El comprador lo ve como **QR** (`react-native-qrcode-svg`) y en texto;
+  el organizador lo valida en "Validar entradas" escaneando con `expo-camera` o escribiéndolo
+  (`POST /evento/:id/validar`), que reutiliza `Compra.utilizar()` y su regla "desde el día del evento".
+- **Sin consultar**: un código por compra (vale para todas sus entradas), no uno por entrada; el QR contiene sólo
+  el código (no datos personales); el escaneo con cámara se ofrece sólo en el celular. `app.json` pasó a
+  `userInterfaceStyle: automatic` para que el modo oscuro del sistema también llegue en el celular.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

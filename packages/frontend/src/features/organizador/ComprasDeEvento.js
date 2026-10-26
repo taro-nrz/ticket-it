@@ -4,7 +4,15 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import { getComprasDeEvento } from "../../api/api.js";
 import { CompraFila } from "../../components/CompraCard.js";
 import { BarraVolver, estilosPantalla } from "../../components/Pantalla.js";
-import { Cargando, Chips, ErrorVista, Progreso, Titulo, Vacio } from "../../components/ui.js";
+import {
+  Boton,
+  Cargando,
+  Chips,
+  ErrorVista,
+  Progreso,
+  Titulo,
+  Vacio,
+} from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
 import { useTema } from "../../store/TemaContext.js";
@@ -44,6 +52,16 @@ export default function ComprasDeEvento() {
 
   const encabezado = (
     <View>
+      {/* D-33: control de acceso escaneando o escribiendo el código de la entrada */}
+      {!datos.evento.cancelado && (
+        <Boton
+          titulo="Validar entradas en la puerta"
+          icono="qr-code-outline"
+          variante="acento"
+          onPress={() => router.push(`/evento/${id}/validar`)}
+          style={{ marginBottom: espacio.l }}
+        />
+      )}
       <View style={styles.disponibilidad}>
         <Titulo nivel={2} style={texto.seccion}>
           Disponibilidad por tipo

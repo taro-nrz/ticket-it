@@ -3,6 +3,7 @@ import { diasCalendarioEntre } from "../../utils/reloj.js";
 import { CambioEstadoCompra } from "./cambioEstadoCompra.js";
 import { EstadoCompra, TRANSICIONES_VALIDAS } from "./estadoCompra.js";
 import { Mensaje } from "./mensaje.js";
+import { generarCodigoEntrada } from "../../utils/codigo.js";
 
 export const AccionCompra = Object.freeze({
   PAGAR: "PAGAR",
@@ -16,6 +17,7 @@ export class Compra {
   id;
   mensajes = [];
   historial = [];
+  codigo = null;
   // D-26: hasta cuándo leyó el chat cada participante (id de usuario -> fecha)
   ultimaLectura = new Map();
 
@@ -44,11 +46,21 @@ export class Compra {
     this.historial.push(new CambioEstadoCompra(this, nuevoEstado, quien, ahora));
   }
 
-  pagar(quien, ahora) {
+  // D-33: al pagarse, la compra recibe el código de la entrada (el que se muestra como QR en la puerta)
+  pagar(quien, ahora, codigo = generarCodigoEntrada()) {
+    if (this.evento.cancelado) {
+      throw new BusinessRuleError("No se puede pagar una compra de un evento cancelado");
+    }
     if (this.evento.yaSeRealizo(ahora)) {
       throw new BusinessRuleError("No se puede pagar una compra de un evento que ya se realizó");
     }
     this.actualizarEstado(EstadoCompra.CONFIRMADA, quien, ahora);
+    this.codigo = codigo;
+  }
+
+  // Sólo una entrada pagada y todavía no usada sirve para entrar
+  tieneEntradaVigente() {
+    return this.estado === EstadoCompra.CONFIRMADA;
   }
 
   utilizar(quien, ahora) {

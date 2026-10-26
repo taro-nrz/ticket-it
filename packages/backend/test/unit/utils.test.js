@@ -1,3 +1,4 @@
+import { generarCodigoEntrada, normalizarCodigoEntrada } from "../../utils/codigo.js";
 import { paginar, normalizarPaginacion } from "../../utils/paginacion.js";
 import { normalizarTexto } from "../../utils/texto.js";
 import { diasCalendarioEntre } from "../../utils/reloj.js";
@@ -52,5 +53,22 @@ describe("validación", () => {
     expect(parsearId("7")).toBe(7);
     expect(() => parsearId("abc")).toThrow(ValidationError);
     expect(() => parsearId("0")).toThrow(ValidationError);
+  });
+});
+
+describe("Código de entrada (D-33)", () => {
+  test("genera códigos con el formato y alfabeto sin caracteres confusos", () => {
+    const codigos = new Set(Array.from({ length: 200 }, generarCodigoEntrada));
+    expect(codigos.size).toBe(200);
+    for (const codigo of codigos) {
+      expect(codigo).toMatch(/^TK-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/);
+    }
+  });
+
+  test("normaliza lo que escribe una persona", () => {
+    expect(normalizarCodigoEntrada("tk-juan-h7y5")).toBe("TK-JUAN-H7Y5");
+    expect(normalizarCodigoEntrada("JUANH7Y5")).toBe("TK-JUAN-H7Y5");
+    expect(normalizarCodigoEntrada("TK TKAB 2345")).toBe("TK-TKAB-2345");
+    expect(normalizarCodigoEntrada("corto")).toBeNull();
   });
 });

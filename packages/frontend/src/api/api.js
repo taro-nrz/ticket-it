@@ -44,6 +44,8 @@ export const getComprasDeEvento = (eventoId, estado) =>
 export const pagarCompra = (id) => datos(cliente.post(`/compra/${id}/pagar`));
 export const cancelarCompra = (id) => datos(cliente.post(`/compra/${id}/cancelar`));
 export const utilizarCompra = (id) => datos(cliente.post(`/compra/${id}/utilizar`));
+export const validarEntrada = (eventoId, codigo) =>
+  datos(cliente.post(`/evento/${eventoId}/validar`, { codigo }));
 
 // ---------- MENSAJES ----------
 export const getMensajes = (compraId, desde) =>

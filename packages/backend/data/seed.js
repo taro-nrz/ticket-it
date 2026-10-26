@@ -223,7 +223,8 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
 
   // Sofía: CONFIRMADA con chat, PENDIENTE, CANCELADA, REEMBOLSADA y UTILIZADA (reseñada)
   const sofiaIndie = await comprar(sofia, indie, 1, 2, haceDias(5));
-  sofiaIndie.pagar(sofia, sumarHoras(haceDias(5), 1));
+  // D-33: códigos fijos en las entradas que se usan en la demo (el resto se genera al azar)
+  sofiaIndie.pagar(sofia, sumarHoras(haceDias(5), 1), "TK-SOFA-2N7D");
   sofiaIndie.agregarMensaje(sofia, "Hola! ¿A qué hora abren las puertas?", haceDias(4));
   sofiaIndie.agregarMensaje(lucia, "¡Hola Sofía! Las puertas abren a las 19 hs.", haceDias(4));
   sofiaIndie.agregarMensaje(sofia, "Genial, ¡gracias!", haceDias(3));
@@ -257,7 +258,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   await guardar(juanCarroza);
 
   const juanStandup = await comprar(juan, standup, 1, 2, haceDias(3));
-  juanStandup.pagar(juan, haceDias(3));
+  juanStandup.pagar(juan, haceDias(3), "TK-JUAN-H7Y5");
   juanStandup.agregarMensaje(juan, "¿Se puede entrar con comida?", haceDias(2));
   await guardar(juanStandup);
 

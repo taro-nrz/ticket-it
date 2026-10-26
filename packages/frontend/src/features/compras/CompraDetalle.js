@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cancelarCompra, getCompra, pagarCompra, utilizarCompra } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
 import { Icono } from "../../components/Icono.js";
+import { EntradaQR } from "../../components/EntradaQR.js";
 import { Boton, Cargando, ErrorVista, EstadoBadge, Titulo } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
@@ -136,6 +137,9 @@ export default function CompraDetalle() {
                     : "La compra quedó cancelada y no se cobró nada."}
                 </Text>
               </View>
+            )}
+            {compra.codigo && ["CONFIRMADA", "UTILIZADA"].includes(compra.estado) && (
+              <EntradaQR compra={compra} />
             )}
             <View style={styles.acciones}>
               {puede("PAGAR") && (

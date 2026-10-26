@@ -10,6 +10,7 @@
     "@react-native-async-storage/async-storage": "2.2.0",
     "axios": "^1.20.0",
     "expo": "~58.0.19",
+    "expo-camera": "~58.0.12",
     "expo-constants": "~58.0.13",
     "expo-font": "~58.0.10",
     "expo-linking": "~58.0.14",
@@ -19,8 +20,10 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-native": "0.88.0",
+    "react-native-qrcode-svg": "^6.3.27",
     "react-native-safe-area-context": "~5.10.1",
     "react-native-screens": "~4.30.0",
+    "react-native-svg": "15.16.0",
     "react-native-web": "^0.21.4"
   },
   "scripts": {
