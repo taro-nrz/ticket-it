@@ -6,3 +6,5 @@ packages/frontend/.expo/
 packages/frontend/dist/
 coverage/
 packages/frontend/public/mockServiceWorker.js
+# Generado por scripts/generarMocks.mjs
+packages/frontend/src/mocks/datos.json
