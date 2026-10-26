@@ -455,6 +455,15 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: el plazo se configura con `MINUTOS_RESERVA`; las compras pendientes de la semilla se
   crearon hace pocos minutos para que la demo no las encuentre vencidas.
 
+### D-37 — Checkout con pasarela de pago simulada (M16)
+- Contexto: "Pagar" confirmaba la compra con un toque, sin ningún medio de pago.
+- Decisión: pantalla de checkout con tarjeta y una **`PasarelaPagoSimulada`** inyectada en `CompraService` con
+  un único método `cobrar()` (como una pasarela real): pasar a Mercado Pago o Stripe sería otra clase con la
+  misma interfaz. Tarjetas de prueba al estilo de los *sandbox* reales (aprobada, sin fondos, error).
+- Seguridad: el número completo y el CVV nunca se guardan ni se devuelven (sólo marca y últimos 4).
+- **Sin consultar**: primero se verifican las reglas de la compra (vencida, evento cancelado) y después se
+  cobra, para no cobrar algo que no se puede confirmar.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

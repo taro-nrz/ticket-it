@@ -42,7 +42,9 @@ export const getComprasDeEvento = (eventoId, estado) =>
   datos(cliente.get(`/evento/${eventoId}/compras`, { params: { estado, limit: 100 } }));
 
 // ---------- CICLO DE VIDA ----------
-export const pagarCompra = (id) => datos(cliente.post(`/compra/${id}/pagar`));
+// D-37: con los datos de la tarjeta de prueba (sin tarjeta si la compra es gratis)
+export const pagarCompra = (id, tarjeta) =>
+  datos(cliente.post(`/compra/${id}/pagar`, tarjeta ? { tarjeta } : {}));
 export const cancelarCompra = (id) => datos(cliente.post(`/compra/${id}/cancelar`));
 export const utilizarCompra = (id) => datos(cliente.post(`/compra/${id}/utilizar`));
 export const validarEntrada = (eventoId, codigo) =>

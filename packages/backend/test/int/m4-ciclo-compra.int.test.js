@@ -8,6 +8,7 @@ import {
   ORGANIZADOR_MARTIN,
   ORGANIZADORA_LUCIA,
   auth,
+  TARJETA_PRUEBA,
 } from "./utils/buildTestServer.js";
 
 // Compras semilla usadas:
@@ -20,8 +21,12 @@ describe("M4 - Ciclo de vida de la compra", () => {
     app = await buildTestServer();
   });
 
+  // D-37: pagar requiere los datos de una tarjeta (de prueba)
   const accion = (compraId, nombre, usuario) =>
-    request(app).post(`/compra/${compraId}/${nombre}`).set(auth(usuario));
+    request(app)
+      .post(`/compra/${compraId}/${nombre}`)
+      .set(auth(usuario))
+      .send(nombre === "pagar" ? { tarjeta: TARJETA_PRUEBA } : {});
 
   describe("Pagar (PENDIENTE -> CONFIRMADA)", () => {
     test("el comprador paga una compra pendiente", async () => {

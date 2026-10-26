@@ -1,5 +1,11 @@
 import request from "supertest";
-import { AHORA, auth, buildTestServerConReloj, COMPRADORA_SOFIA } from "./utils/buildTestServer.js";
+import {
+  AHORA,
+  auth,
+  buildTestServerConReloj,
+  COMPRADORA_SOFIA,
+  TARJETA_PRUEBA,
+} from "./utils/buildTestServer.js";
 
 const MINUTO = 60 * 1000;
 
@@ -37,14 +43,20 @@ describe("M15 - Reserva con vencimiento (D-36)", () => {
   test("antes del plazo sigue pendiente y se puede pagar", async () => {
     reloj.fecha = new Date(AHORA.getTime() + 9 * MINUTO);
     expect((await verCompra(2)).body.estado).toBe("PENDIENTE");
-    const pago = await request(app).post("/compra/2/pagar").set(auth(COMPRADORA_SOFIA));
+    const pago = await request(app)
+      .post("/compra/2/pagar")
+      .set(auth(COMPRADORA_SOFIA))
+      .send({ tarjeta: TARJETA_PRUEBA });
     expect(pago.status).toBe(200);
     expect(pago.body.estado).toBe("CONFIRMADA");
   });
 
   test("pagar una reserva vencida responde 422 con un mensaje claro", async () => {
     reloj.fecha = new Date(AHORA.getTime() + 20 * MINUTO);
-    const pago = await request(app).post("/compra/2/pagar").set(auth(COMPRADORA_SOFIA));
+    const pago = await request(app)
+      .post("/compra/2/pagar")
+      .set(auth(COMPRADORA_SOFIA))
+      .send({ tarjeta: TARJETA_PRUEBA });
     expect(pago.status).toBe(422);
     expect(pago.body.message).toMatch(/venció/);
   });

@@ -423,6 +423,12 @@ components:
           type: [string, "null"]
           description: Código de la entrada (QR), sólo para el comprador y desde que se paga (D-33)
           example: TK-JUAN-H7Y5
+        pago:
+          type: [object, "null"]
+          description: Sólo para el comprador (D-37)
+          properties:
+            marca: { type: string, example: Visa }
+            ultimos4: { type: string, example: "4242" }
         venceEn:
           type: [string, "null"]
           format: date-time
@@ -1148,18 +1154,37 @@ paths:
   /compra/{id}/pagar:
     post:
       tags: [Ciclo de vida de la compra]
-      summary: Pagar una compra (simulado)
-      description: Sólo el comprador. PENDIENTE → CONFIRMADA.
+      summary: Pagar una compra con tarjeta (pasarela simulada, D-37)
+      description: |-
+        Sólo el comprador. PENDIENTE → CONFIRMADA. Si la compra es gratis no hace falta tarjeta.
+        Tarjetas de prueba: `4242 4242 4242 4242` aprobada · `4000 0000 0000 0002` rechazada por fondos
+        insuficientes · `4000 0000 0000 0119` error de procesamiento. Vencimiento futuro (MM/AA), CVV de 3–4 números.
+        Sólo se guardan la marca y los últimos 4 dígitos.
       security: [{ usuario: [] }]
       parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tarjeta:
+                  type: object
+                  required: [numero, titular, vencimiento, cvv]
+                  properties:
+                    numero: { type: string, example: "4242 4242 4242 4242" }
+                    titular: { type: string, example: SOFIA PEREZ }
+                    vencimiento: { type: string, example: "12/30" }
+                    cvv: { type: string, example: "123" }
       responses:
         "200":
-          description: Compra confirmada
+          description: Pago aprobado y compra confirmada
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CompraDetalle" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/BusinessRule" }
 

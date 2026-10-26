@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { cancelarCompra, getCompra, pagarCompra, utilizarCompra } from "../../api/api.js";
+import { cancelarCompra, getCompra, utilizarCompra } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
 import { Icono } from "../../components/Icono.js";
 import { EntradaQR } from "../../components/EntradaQR.js";
@@ -161,10 +161,7 @@ export default function CompraDetalle() {
                   titulo={`Pagar ${formatearPrecio(compra.total)}`}
                   icono="card-outline"
                   variante="acento"
-                  cargando={accionEnCurso === "PAGAR"}
-                  onPress={() =>
-                    ejecutar("PAGAR", pagarCompra, "¡Pago confirmado! Tu entrada ya está lista.")
-                  }
+                  onPress={() => router.push(`/compra/${compra.id}/pagar`)}
                 />
               )}
               {puede("UTILIZAR") && (

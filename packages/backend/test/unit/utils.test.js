@@ -1,3 +1,4 @@
+import { marcaDeTarjeta, numeroDeTarjetaValido } from "../../services/pasarelaPago.js";
 import { obtenerConfig } from "../../config/config.js";
 import { generarCodigoEntrada, normalizarCodigoEntrada } from "../../utils/codigo.js";
 import { paginar, normalizarPaginacion } from "../../utils/paginacion.js";
@@ -92,5 +93,20 @@ describe("Configuración (D-35)", () => {
   test("rechaza valores con formato inválido diciendo cuál", () => {
     expect(() => obtenerConfig({ PORT: "abc" })).toThrow(/PORT/);
     expect(() => obtenerConfig({ NODE_ENV: "staging" })).toThrow(/NODE_ENV/);
+  });
+});
+
+describe("Pasarela de pago simulada (D-37)", () => {
+  test("valida el número con el algoritmo de Luhn", () => {
+    expect(numeroDeTarjetaValido("4242424242424242")).toBe(true);
+    expect(numeroDeTarjetaValido("5555555555554444")).toBe(true);
+    expect(numeroDeTarjetaValido("4242424242424241")).toBe(false);
+    expect(numeroDeTarjetaValido("4242")).toBe(false);
+  });
+
+  test("reconoce la marca por los primeros dígitos", () => {
+    expect(marcaDeTarjeta("4242424242424242")).toBe("Visa");
+    expect(marcaDeTarjeta("5555555555554444")).toBe("Mastercard");
+    expect(marcaDeTarjeta("378282246310005")).toBe("American Express");
   });
 });

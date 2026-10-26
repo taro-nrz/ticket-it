@@ -12,6 +12,7 @@ import { ordenarProximosPrimero } from "../utils/orden.js";
 import { paginar } from "../utils/paginacion.js";
 import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 import { generarCodigoEntrada, normalizarCodigoEntrada } from "../utils/codigo.js";
+import { PasarelaPagoSimulada } from "./pasarelaPago.js";
 
 export class CompraService {
   constructor(
@@ -21,6 +22,7 @@ export class CompraService {
     reloj,
     config,
     notificaciones = SIN_NOTIFICACIONES,
+    pasarelaPago = new PasarelaPagoSimulada(),
   ) {
     this.compraRepository = compraRepository;
     this.eventoRepository = eventoRepository;
@@ -29,6 +31,7 @@ export class CompraService {
     this.maxEntradasPorCompra = config.maxEntradasPorCompra;
     this.minutosReserva = config.minutosReserva ?? MINUTOS_RESERVA;
     this.notificaciones = notificaciones;
+    this.pasarelaPago = pasarelaPago;
   }
 
   // HU-04: comprar un tipo de entrada sin superar el cupo
@@ -130,12 +133,36 @@ export class CompraService {
   }
 
   // R-07: pago simulado (PENDIENTE -> CONFIRMADA)
-  async pagar(id, usuario) {
+  // D-37: se cobra con la pasarela (simulada) antes de confirmar; una compra gratis no pide tarjeta
+  async pagar(id, usuario, { tarjeta } = {}) {
+    const ahora = this.reloj.ahora();
     const compra = await this.obtenerParaParticipante(id, usuario);
     if (!compra.esDelComprador(usuario)) {
       throw new ForbiddenError("Sólo el comprador puede pagar la compra");
     }
-    compra.pagar(usuario, this.reloj.ahora(), await this.codigoUnico());
+    // Primero las reglas de la compra (vencida, evento cancelado...), así no se cobra algo que no se puede confirmar
+    if (compra.estado !== EstadoCompra.PENDIENTE || compra.reservaVencida(ahora)) {
+      compra.pagar(usuario, ahora); // lanza el error de negocio que corresponda
+    }
+    let pago = null;
+    if (compra.total > 0) {
+      if (!tarjeta) {
+        throw new ValidationError("Datos de validación inválidos", [
+          { campo: "tarjeta", mensaje: "Ingresá los datos de la tarjeta para pagar" },
+        ]);
+      }
+      const resultado = await this.pasarelaPago.cobrar({ tarjeta, monto: compra.total });
+      if (!resultado.aprobado) {
+        throw new BusinessRuleError(`Pago rechazado: ${resultado.motivo}`);
+      }
+      pago = {
+        marca: resultado.marca,
+        ultimos4: resultado.ultimos4,
+        autorizacion: resultado.autorizacion,
+        fecha: ahora,
+      };
+    }
+    compra.pagar(usuario, ahora, { codigo: await this.codigoUnico(), pago });
     await this.compraRepository.save(compra);
     await this.notificaciones.compraPagada(compra);
     return this.aDTO(compra, usuario, { conDetalle: true });
