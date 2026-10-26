@@ -4,6 +4,7 @@ import {
   COMPRADORA_SOFIA,
   ORGANIZADOR_MARTIN,
   ORGANIZADORA_LUCIA,
+  auth,
 } from "./utils/buildTestServer.js";
 
 describe("M8 - Mensajes sin leer y reseñas por evento", () => {
@@ -13,9 +14,9 @@ describe("M8 - Mensajes sin leer y reseñas por evento", () => {
   });
 
   const verCompra = (compraId, usuario) =>
-    request(app).get(`/compra/${compraId}`).set("x-user-id", usuario);
+    request(app).get(`/compra/${compraId}`).set(auth(usuario));
   const marcarLeidos = (compraId, usuario) =>
-    request(app).post(`/compra/${compraId}/mensajes/leidos`).set("x-user-id", usuario);
+    request(app).post(`/compra/${compraId}/mensajes/leidos`).set(auth(usuario));
 
   describe("D-26: mensajes sin leer", () => {
     test("cada participante ve sólo los mensajes de la otra parte que no leyó", async () => {
@@ -27,7 +28,7 @@ describe("M8 - Mensajes sin leer y reseñas por evento", () => {
     test("un mensaje nuevo suma para el otro participante y no para quien lo envía", async () => {
       await request(app)
         .post("/compra/1/mensajes")
-        .set("x-user-id", COMPRADORA_SOFIA)
+        .set(auth(COMPRADORA_SOFIA))
         .send({ mensaje: "¿Se puede llevar cámara?" });
 
       expect((await verCompra(1, ORGANIZADORA_LUCIA)).body.mensajesSinLeer).toBe(2);
@@ -41,7 +42,7 @@ describe("M8 - Mensajes sin leer y reseñas por evento", () => {
     });
 
     test("leer el chat con GET no lo marca como leído (lo usa el sondeo)", async () => {
-      await request(app).get("/compra/1/mensajes").set("x-user-id", ORGANIZADORA_LUCIA);
+      await request(app).get("/compra/1/mensajes").set(auth(ORGANIZADORA_LUCIA));
       expect((await verCompra(1, ORGANIZADORA_LUCIA)).body.mensajesSinLeer).toBe(1);
     });
 
@@ -52,20 +53,20 @@ describe("M8 - Mensajes sin leer y reseñas por evento", () => {
     });
 
     test("Mis eventos suma los mensajes sin leer de las compras de cada evento", async () => {
-      const antes = await request(app).get("/evento/mios").set("x-user-id", ORGANIZADORA_LUCIA);
+      const antes = await request(app).get("/evento/mios").set(auth(ORGANIZADORA_LUCIA));
       const total = (res) =>
         res.body.data.reduce((suma, evento) => suma + evento.ventas.mensajesSinLeer, 0);
       expect(total(antes)).toBeGreaterThanOrEqual(1);
 
       await marcarLeidos(1, ORGANIZADORA_LUCIA);
-      const despues = await request(app).get("/evento/mios").set("x-user-id", ORGANIZADORA_LUCIA);
+      const despues = await request(app).get("/evento/mios").set(auth(ORGANIZADORA_LUCIA));
       expect(total(despues)).toBe(total(antes) - 1);
     });
   });
 
   describe("D-28: reseñas de un evento", () => {
     test("las reseñas de un evento traen el evento y su promedio", async () => {
-      const mios = await request(app).get("/evento/mios").set("x-user-id", ORGANIZADORA_LUCIA);
+      const mios = await request(app).get("/evento/mios").set(auth(ORGANIZADORA_LUCIA));
       const conResenias = mios.body.data.find((evento) => evento.resenias.cantidadResenias > 0);
       expect(conResenias).toBeDefined();
 

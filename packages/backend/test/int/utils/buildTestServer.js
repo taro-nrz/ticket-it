@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { crearApp } from "../../../app.js";
 import { RelojFijo } from "../../../utils/reloj.js";
 
@@ -10,7 +11,18 @@ export const CONFIG_TEST = {
   allowedOrigins: "*",
   nodeEnv: "test",
   maxEntradasPorCompra: 10,
+  jwtSecret: "secreto-de-test",
+  jwtExpiracion: "1h",
+  bcryptRondas: 4, // rápido para los tests; en producción 10+
+  loginMaxIntentos: 5,
+  loginVentanaMs: 60 * 1000,
 };
+
+// Header de autenticación de un usuario de la semilla (D-29): firma un JWT como lo haría el login
+export function auth(usuarioId, opciones = { expiresIn: "1h" }) {
+  const token = jwt.sign({ sub: String(usuarioId) }, CONFIG_TEST.jwtSecret, opciones);
+  return { Authorization: `Bearer ${token}` };
+}
 
 // Usuarios de los datos semilla
 export const ORGANIZADORA_LUCIA = "1";

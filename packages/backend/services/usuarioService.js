@@ -1,4 +1,4 @@
-import { usuarioDTO } from "../dtos/usuarioDTO.js";
+import { usuarioDTO, usuarioPropioDTO } from "../dtos/usuarioDTO.js";
 import { NotFoundError } from "../error/appError.js";
 import { paginar } from "../utils/paginacion.js";
 
@@ -21,6 +21,14 @@ export class UsuarioService {
       throw new NotFoundError(`No existe el usuario con id ${id}`);
     }
     return usuarioDTO(usuario);
+  }
+
+  async perfil(id) {
+    const usuario = await this.usuarioRepository.findById(id);
+    if (!usuario) {
+      throw new NotFoundError(`No existe el usuario con id ${id}`);
+    }
+    return usuarioPropioDTO(usuario);
   }
 
   // R-01: favoritos del comprador

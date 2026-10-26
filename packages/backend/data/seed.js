@@ -7,10 +7,13 @@ import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { Usuario } from "../models/entities/usuario.js";
 import { sumarDias, sumarHoras } from "../utils/reloj.js";
 
+// D-29: contraseña de todos los usuarios demo (documentada en el README)
+export const PASSWORD_DEMO = "ticketit123";
+
 // Datos de prueba en memoria. Las fechas son relativas a "ahora" para que la demo funcione cualquier día:
 // hay eventos futuros, uno de hoy (para marcar entradas utilizadas) y pasados (con reseñas),
 // y compras en los 5 estados.
-export async function cargarDatosSemilla(repositorios, ahora) {
+export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   const {
     usuarioRepository,
     categoriaRepository,
@@ -31,13 +34,20 @@ export async function cargarDatosSemilla(repositorios, ahora) {
   };
 
   // ---------- USUARIOS ----------
-  const lucia = new Usuario("Lucía", "Fernández", RolUsuario.ORGANIZADOR); // id 1
-  const martin = new Usuario("Martín", "Gómez", RolUsuario.ORGANIZADOR); // id 2
-  const sofia = new Usuario("Sofía", "Pérez", RolUsuario.COMPRADOR); // id 3
-  const juan = new Usuario("Juan", "Rodríguez", RolUsuario.COMPRADOR); // id 4
-  const valentina = new Usuario("Valentina", "López", RolUsuario.COMPRADOR); // id 5
-  for (const usuario of [lucia, martin, sofia, juan, valentina]) {
-    await usuarioRepository.save(usuario);
+  const usuarioDemo = (nombre, apellido, rol, email) =>
+    new Usuario(nombre, apellido, rol, email, hashDemo);
+  const lucia = usuarioDemo("Lucía", "Fernández", RolUsuario.ORGANIZADOR, "lucia@ticketit.com"); // id 1
+  const martin = usuarioDemo("Martín", "Gómez", RolUsuario.ORGANIZADOR, "martin@ticketit.com"); // id 2
+  const sofia = usuarioDemo("Sofía", "Pérez", RolUsuario.COMPRADOR, "sofia@ticketit.com"); // id 3
+  const juan = usuarioDemo("Juan", "Rodríguez", RolUsuario.COMPRADOR, "juan@ticketit.com"); // id 4
+  const valentina = usuarioDemo(
+    "Valentina",
+    "López",
+    RolUsuario.COMPRADOR,
+    "valentina@ticketit.com",
+  ); // id 5
+  for (const demo of [lucia, martin, sofia, juan, valentina]) {
+    await usuarioRepository.save(demo);
   }
 
   // ---------- CATEGORÍAS ----------

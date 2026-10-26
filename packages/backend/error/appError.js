@@ -23,6 +23,12 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message = "Demasiados intentos. Probá de nuevo en unos minutos") {
+    super(message, 429);
+  }
+}
+
 export class ForbiddenError extends AppError {
   constructor(message = "No tenés permisos para realizar esta acción") {
     super(message, 403);

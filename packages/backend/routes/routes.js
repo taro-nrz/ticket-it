@@ -1,5 +1,6 @@
 import healthRoutes from "./healthRoutes.js";
 import swaggerRoutes from "./swaggerRoutes.js";
+import authRoutes from "./authRoutes.js";
 import usuarioRoutes from "./usuarioRoutes.js";
 import categoriaRoutes from "./categoriaRoutes.js";
 import eventoRoutes from "./eventoRoutes.js";
@@ -11,6 +12,7 @@ import devRoutes from "./devRoutes.js";
 const routes = [
   healthRoutes,
   swaggerRoutes,
+  authRoutes,
   usuarioRoutes,
   categoriaRoutes,
   eventoRoutes,

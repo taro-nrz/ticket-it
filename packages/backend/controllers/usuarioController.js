@@ -23,7 +23,7 @@ export class UsuarioController {
 
   async me(req, res, next) {
     try {
-      const usuario = await this.usuarioService.findById(req.usuario.id);
+      const usuario = await this.usuarioService.perfil(req.usuario.id);
       res.json(usuario);
     } catch (error) {
       next(error);

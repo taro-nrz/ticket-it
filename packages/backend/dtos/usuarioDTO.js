@@ -15,6 +15,11 @@ export function usuarioDTO(usuario) {
   };
 }
 
+// Datos del propio usuario (el email sólo lo ve él: no se expone en listados ni en otras respuestas)
+export function usuarioPropioDTO(usuario) {
+  return { ...usuarioDTO(usuario), email: usuario.email };
+}
+
 export function categoriaDTO(categoria) {
   return {
     id: categoria.id,

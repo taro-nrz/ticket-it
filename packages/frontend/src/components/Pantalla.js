@@ -165,7 +165,7 @@ export function BotonCuenta({ claro = false }) {
     setAbierto(false);
     const confirmado = await confirmar({
       titulo: "¿Cerrar sesión?",
-      mensaje: `Vas a salir de la cuenta de ${nombre}. Para volver, elegí tu usuario en la pantalla de inicio.`,
+      mensaje: `Vas a salir de la cuenta de ${nombre}. Para volver, ingresá con tu email y contraseña.`,
       textoConfirmar: "Sí, cerrar sesión",
       textoCancelar: "Seguir en mi cuenta",
       peligro: true,

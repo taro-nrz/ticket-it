@@ -1,5 +1,5 @@
 import request from "supertest";
-import { buildTestServer } from "./utils/buildTestServer.js";
+import { buildTestServer, auth } from "./utils/buildTestServer.js";
 
 describe("M0 - Núcleo", () => {
   let app;
@@ -29,7 +29,7 @@ describe("M0 - Núcleo", () => {
   test("CA-5: un body inválido responde 400 con errores por campo", async () => {
     const res = await request(app)
       .post("/compra")
-      .set("x-user-id", "3")
+      .set(auth("3"))
       .send({ eventoId: "uno", cantidad: 0 });
     expect(res.status).toBe(400);
     const campos = res.body.errores.map((error) => error.campo);
@@ -39,7 +39,7 @@ describe("M0 - Núcleo", () => {
   test("un JSON mal formado responde 400", async () => {
     const res = await request(app)
       .post("/compra")
-      .set("x-user-id", "3")
+      .set(auth("3"))
       .set("Content-Type", "application/json")
       .send("{ no es json");
     expect(res.status).toBe(400);

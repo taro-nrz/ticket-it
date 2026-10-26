@@ -7,6 +7,7 @@ import {
   COMPRADORA_SOFIA,
   ORGANIZADOR_MARTIN,
   ORGANIZADORA_LUCIA,
+  auth,
 } from "./utils/buildTestServer.js";
 
 // Compras semilla usadas:
@@ -20,7 +21,7 @@ describe("M4 - Ciclo de vida de la compra", () => {
   });
 
   const accion = (compraId, nombre, usuario) =>
-    request(app).post(`/compra/${compraId}/${nombre}`).set("x-user-id", usuario);
+    request(app).post(`/compra/${compraId}/${nombre}`).set(auth(usuario));
 
   describe("Pagar (PENDIENTE -> CONFIRMADA)", () => {
     test("el comprador paga una compra pendiente", async () => {
@@ -44,7 +45,7 @@ describe("M4 - Ciclo de vida de la compra", () => {
 
   describe("Utilizar (CONFIRMADA -> UTILIZADA)", () => {
     test("el organizador marca utilizada una entrada el día del evento", async () => {
-      const antes = await request(app).get("/compra/8").set("x-user-id", ORGANIZADORA_LUCIA);
+      const antes = await request(app).get("/compra/8").set(auth(ORGANIZADORA_LUCIA));
       expect(antes.body.accionesDisponibles).toContain("UTILIZAR");
 
       const res = await accion(8, "utilizar", ORGANIZADORA_LUCIA);
@@ -101,9 +102,7 @@ describe("M4 - Ciclo de vida de la compra", () => {
       const { app: appConReloj, reloj } = await buildTestServerConReloj();
       reloj.fecha = new Date(AHORA.getTime() + 9 * 60 * 60 * 1000);
 
-      const res = await request(appConReloj)
-        .post("/compra/8/cancelar")
-        .set("x-user-id", COMPRADOR_JUAN);
+      const res = await request(appConReloj).post("/compra/8/cancelar").set(auth(COMPRADOR_JUAN));
       expect(res.status).toBe(422);
       expect(res.body.message).toMatch(/ya se realizó/);
     });
@@ -122,7 +121,7 @@ describe("M4 - Ciclo de vida de la compra", () => {
   });
 
   test("el historial muestra los cambios de estado con quién y cuándo", async () => {
-    const res = await request(app).get("/compra/5/historial").set("x-user-id", COMPRADORA_SOFIA);
+    const res = await request(app).get("/compra/5/historial").set(auth(COMPRADORA_SOFIA));
     expect(res.status).toBe(200);
     expect(res.body.map((cambio) => [cambio.estado, cambio.quien.nombre])).toEqual([
       ["PENDIENTE", "Sofía"],

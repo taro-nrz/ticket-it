@@ -12,14 +12,18 @@ test.beforeEach(async ({ request, page }) => {
 test("se ingresa sólo con el teclado", async ({ page }) => {
   // PREPARAR
   await page.goto("/login");
-  const sofia = page.getByRole("button", { name: /Sofía Pérez/ });
-  await expect(sofia).toBeVisible();
+  const email = page.getByLabel("Email");
+  await expect(email).toBeVisible();
 
-  // ACTUAR: Tab hasta el botón de Sofía y Enter
-  for (let i = 0; i < 10 && !(await sofia.evaluate((el) => el === document.activeElement)); i++) {
+  // ACTUAR: Tab hasta el email, escribir, Tab a la contraseña y Enter para enviar
+  for (let i = 0; i < 10 && !(await email.evaluate((el) => el === document.activeElement)); i++) {
     await page.keyboard.press("Tab");
   }
-  await expect(sofia).toBeFocused();
+  await expect(email).toBeFocused();
+  await page.keyboard.type("sofia@ticketit.com");
+  await page.keyboard.press("Tab");
+  await expect(page.getByLabel("Contraseña", { exact: true })).toBeFocused();
+  await page.keyboard.type("ticketit123");
   await page.keyboard.press("Enter");
 
   // VERIFICAR

@@ -1,130 +1,200 @@
-import { etiquetaMobile } from "../../utils/accesibilidad.js";
+import { Link, useRouter } from "expo-router";
+import { useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import { Icono } from "../../components/Icono.js";
-import { useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getUsuarios } from "../../api/api.js";
-import { BotonTema, TituloPagina } from "../../components/Pantalla.js";
-import { Avatar, Cargando, ErrorVista, Titulo } from "../../components/ui.js";
-import { useCarga } from "../../hooks/useCarga.js";
-import { useSesion } from "../../store/SesionContext.js";
-import { espacio, fuentes } from "../../theme.js";
-import { nombreCompleto } from "../../utils/formato.js";
-import { useTema } from "../../store/TemaContext.js";
+import {
+  Avatar,
+  Boton,
+  Campo,
+  CampoPassword,
+  ResumenErrores,
+  Titulo,
+} from "../../components/ui.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useSesion } from "../../store/SesionContext.js";
+import { useTema } from "../../store/TemaContext.js";
+import { espacio, fuentes } from "../../theme.js";
+import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
+import { MarcoAcceso } from "./MarcoAcceso.js";
 
-// D-03: no hay login real; se elige con qué usuario de prueba operar
+// Cuentas de la semilla del backend (todas con la misma contraseña) para la demo y la exposición
+const PASSWORD_DEMO = "ticketit123";
+const CUENTAS_DEMO = [
+  { nombre: "Sofía", apellido: "Pérez", email: "sofia@ticketit.com", rol: "Compradora" },
+  { nombre: "Juan", apellido: "Rodríguez", email: "juan@ticketit.com", rol: "Comprador" },
+  { nombre: "Lucía", apellido: "Fernández", email: "lucia@ticketit.com", rol: "Organizadora" },
+  { nombre: "Martín", apellido: "Gómez", email: "martin@ticketit.com", rol: "Organizador" },
+];
+
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validar({ email, password }) {
+  const errores = {};
+  if (!email.trim()) errores.email = "Ingresá tu email";
+  else if (!EMAIL_VALIDO.test(email.trim())) errores.email = "El email no tiene un formato válido";
+  if (!password) errores.password = "Ingresá tu contraseña";
+  return errores;
+}
+
+// D-29: inicio de sesión con email y contraseña
 export default function Login() {
   const { colores, texto } = useTema();
   const styles = useEstilos(crearEstilos);
-
-  const { iniciarSesion } = useSesion();
+  const { ingresar } = useSesion();
   const router = useRouter();
-  const { top } = useSafeAreaInsets();
-  const { datos: usuarios, cargando, error, recargar } = useCarga(getUsuarios);
 
-  const elegir = async (usuario) => {
-    await iniciarSesion(usuario);
-    router.replace("/");
+  const [valores, setValores] = useState({ email: "", password: "" });
+  const [intentoEnviar, setIntentoEnviar] = useState(false);
+  const [errorServidor, setErrorServidor] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const campos = useRef({});
+
+  const errores = validar(valores);
+  const error = (campo) => (intentoEnviar ? errores[campo] : undefined);
+  const cambiar = (campo) => (valor) => {
+    setValores((actuales) => ({ ...actuales, [campo]: valor }));
+    setErrorServidor(null);
   };
 
-  const grupo = (rol, titulo) => (
-    <View style={styles.grupo}>
-      <Titulo nivel={2} style={texto.etiqueta}>
-        {titulo}
-      </Titulo>
-      {usuarios
-        .filter((usuario) => usuario.rol === rol)
-        .map((usuario) => (
-          <Pressable
-            key={usuario.id}
-            onPress={() => elegir(usuario)}
-            accessibilityRole="button"
-            {...etiquetaMobile(
-              `Ingresar como ${nombreCompleto(usuario)}, ${rol === "COMPRADOR" ? "comprador" : "organizador"}`,
-            )}
-            style={({ pressed }) => [styles.usuario, pressed && { opacity: 0.85 }]}
-          >
-            <Avatar usuario={usuario} />
-            <Text style={styles.nombre}>{nombreCompleto(usuario)}</Text>
-            <Icono name="chevron-forward" size={18} color={colores.textoSecundario} />
-          </Pressable>
-        ))}
-    </View>
-  );
+  const enviar = async () => {
+    setIntentoEnviar(true);
+    const conError = Object.keys(errores);
+    if (conError.length > 0) {
+      campos.current[conError[0]]?.focus();
+      return;
+    }
+    setEnviando(true);
+    try {
+      const usuario = await ingresar(valores.email.trim(), valores.password);
+      anunciar(`Hola, ${usuario.nombre}`);
+      router.replace("/");
+    } catch (e) {
+      setErrorServidor(e.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const usarCuentaDemo = (cuenta) => {
+    setValores({ email: cuenta.email, password: PASSWORD_DEMO });
+    setErrorServidor(null);
+    anunciar(`Se cargaron los datos de ${cuenta.nombre}. Tocá Ingresar.`);
+  };
+
+  const mensajeResumen =
+    errorServidor ??
+    (intentoEnviar && Object.keys(errores).length > 0
+      ? "Revisá los datos marcados para poder ingresar."
+      : null);
 
   return (
-    <View style={styles.fondo}>
-      <TituloPagina titulo="Ingresar" />
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={[styles.marca, { paddingTop: top + 48 }]}>
-          <View style={styles.filaMarca}>
-            <View style={styles.logo}>
-              <Icono name="ticket" size={30} color={colores.sobreAcento} />
-            </View>
-            <BotonTema sobrePanel />
-          </View>
-          <Titulo nivel={1} style={styles.titulo}>
-            Tu próxima noche empieza acá.
-          </Titulo>
-          <Text style={styles.subtitulo}>Elegí con qué cuenta querés entrar a AI Ticket It.</Text>
+    <MarcoAcceso
+      tituloPagina="Ingresar"
+      titulo="Tu próxima noche empieza acá."
+      subtitulo="Ingresá con tu cuenta para comprar entradas o gestionar tus eventos."
+    >
+      <ResumenErrores mensaje={mensajeResumen} />
+      <Campo
+        ref={(el) => (campos.current.email = el)}
+        etiqueta="Email"
+        value={valores.email}
+        onChangeText={cambiar("email")}
+        error={error("email")}
+        placeholder="tu@email.com"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="next"
+        onSubmitEditing={() => campos.current.password?.focus()}
+      />
+      <CampoPassword
+        ref={(el) => (campos.current.password = el)}
+        etiqueta="Contraseña"
+        value={valores.password}
+        onChangeText={cambiar("password")}
+        error={error("password")}
+        autoComplete="current-password"
+        textContentType="password"
+        returnKeyType="go"
+        onSubmitEditing={enviar}
+      />
+      <Boton titulo="Ingresar" variante="acento" onPress={enviar} cargando={enviando} />
+
+      <View style={styles.registro}>
+        <Text style={texto.secundario}>¿No tenés cuenta?</Text>
+        <Link href="/registro" replace style={styles.enlace} accessibilityRole="link">
+          Creá una gratis
+        </Link>
+      </View>
+
+      <View style={styles.demo}>
+        <Titulo nivel={2} style={texto.etiqueta}>
+          Cuentas de prueba
+        </Titulo>
+        <Text style={texto.chico}>
+          Tocá una para completar el formulario (contraseña {PASSWORD_DEMO}).
+        </Text>
+        <View style={styles.cuentas}>
+          {CUENTAS_DEMO.map((cuenta) => (
+            <Pressable
+              key={cuenta.email}
+              onPress={() => usarCuentaDemo(cuenta)}
+              accessibilityRole="button"
+              {...etiquetaMobile(`Usar la cuenta de ${cuenta.nombre}, ${cuenta.rol.toLowerCase()}`)}
+              style={({ pressed }) => [styles.cuenta, pressed && { opacity: 0.85 }]}
+            >
+              <Avatar usuario={cuenta} tamanio={34} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cuentaNombre}>{cuenta.nombre}</Text>
+                <Text style={texto.chico}>{cuenta.rol}</Text>
+              </View>
+              <Icono name="arrow-up-outline" size={16} color={colores.textoSecundario} />
+            </Pressable>
+          ))}
         </View>
-        <View style={styles.panel}>
-          {cargando && <Cargando />}
-          {error && <ErrorVista error={error} onReintentar={recargar} />}
-          {usuarios && (
-            <>
-              {grupo("COMPRADOR", "Compradores")}
-              {grupo("ORGANIZADOR", "Organizadores")}
-            </>
-          )}
-        </View>
-      </ScrollView>
-    </View>
+      </View>
+    </MarcoAcceso>
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
-  fondo: { flex: 1, backgroundColor: colores.panel },
-  scroll: { flexGrow: 1, width: "100%", maxWidth: 520, alignSelf: "center" },
-  marca: { paddingHorizontal: espacio.xxl, paddingBottom: 36, gap: 18 },
-  filaMarca: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  logo: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: colores.acento,
-    alignItems: "center",
+const crearEstilos = ({ colores }) => ({
+  registro: {
+    flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: espacio.l,
   },
-  titulo: {
-    fontFamily: fuentes.titulo,
-    fontSize: 44,
-    lineHeight: 46,
-    letterSpacing: -1.5,
-    color: colores.sobrePanel,
+  enlace: {
+    fontFamily: fuentes.negrita,
+    fontSize: 15,
+    color: colores.texto,
+    textDecorationLine: "underline",
+    paddingVertical: 12,
   },
-  subtitulo: { fontFamily: fuentes.texto, fontSize: 16, color: colores.sobrePanelSuave },
-  panel: {
+  demo: {
+    marginTop: espacio.xl,
+    paddingTop: espacio.xl,
+    borderTopWidth: 1,
+    borderTopColor: colores.borde,
+    gap: 6,
+  },
+  cuentas: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: espacio.s },
+  cuenta: {
     flexGrow: 1,
-    backgroundColor: colores.fondo,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    padding: espacio.xl,
-    paddingTop: espacio.xxl,
-    minHeight: 300,
-  },
-  grupo: { gap: 10, marginBottom: espacio.xl },
-  usuario: {
+    flexBasis: 200,
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 10,
     backgroundColor: colores.superficie,
     borderWidth: 1,
     borderColor: colores.borde,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    minHeight: 44,
   },
-  nombre: { flex: 1, fontFamily: fuentes.semi, fontSize: 16, color: colores.texto },
+  cuentaNombre: { fontFamily: fuentes.semi, fontSize: 15, color: colores.texto },
 });

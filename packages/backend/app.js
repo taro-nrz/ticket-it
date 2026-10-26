@@ -4,8 +4,8 @@ import routes from "./routes/routes.js";
 import { Server } from "./server.js";
 import { obtenerConfig } from "./config/config.js";
 import { RelojSistema } from "./utils/reloj.js";
-import { crearMiddlewaresDeUsuario } from "./middlewares/usuarioMiddleware.js";
-import { cargarDatosSemilla } from "./data/seed.js";
+import { crearLimiteDeLogin, crearMiddlewaresDeUsuario } from "./middlewares/usuarioMiddleware.js";
+import { cargarDatosSemilla, PASSWORD_DEMO } from "./data/seed.js";
 
 import { UsuarioRepository } from "./models/repositories/usuarioRepository.js";
 import { CategoriaRepository } from "./models/repositories/categoriaRepository.js";
@@ -13,6 +13,7 @@ import { EventoRepository } from "./models/repositories/eventoRepository.js";
 import { CompraRepository } from "./models/repositories/compraRepository.js";
 import { ReseniaRepository } from "./models/repositories/reseniaRepository.js";
 
+import { AuthService } from "./services/authService.js";
 import { UsuarioService } from "./services/usuarioService.js";
 import { CategoriaService } from "./services/categoriaService.js";
 import { EventoService } from "./services/eventoService.js";
@@ -20,6 +21,7 @@ import { CompraService } from "./services/compraService.js";
 import { MensajeService } from "./services/mensajeService.js";
 import { ReseniaService } from "./services/reseniaService.js";
 
+import { AuthController } from "./controllers/authController.js";
 import { UsuarioController } from "./controllers/usuarioController.js";
 import { CategoriaController } from "./controllers/categoriaController.js";
 import { EventoController } from "./controllers/eventoController.js";
@@ -60,6 +62,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     reseniaRepository,
     reloj,
   );
+  const authService = new AuthService(usuarioRepository, config);
   const usuarioService = new UsuarioService(usuarioRepository, eventoService);
   const categoriaService = new CategoriaService(categoriaRepository);
   const compraService = new CompraService(
@@ -79,15 +82,18 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   );
 
   // ---------- DATOS SEMILLA ----------
+  // Todos los usuarios demo comparten contraseña: se hashea una sola vez (bcrypt es lento a propósito)
+  const hashDemo = await authService.hashear(PASSWORD_DEMO);
   const recargarDatos = async () => {
     for (const repositorio of Object.values(repositorios)) {
       await repositorio.clear();
     }
-    return cargarDatosSemilla(repositorios, reloj.ahora());
+    return cargarDatosSemilla(repositorios, reloj.ahora(), { hashDemo });
   };
   await recargarDatos();
 
   // ---------- CONTROLLERS ----------
+  server.setController(AuthController, new AuthController(authService, usuarioService));
   server.setController(UsuarioController, new UsuarioController(usuarioService));
   server.setController(CategoriaController, new CategoriaController(categoriaService));
   server.setController(EventoController, new EventoController(eventoService));
@@ -97,7 +103,10 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   server.setController(DevController, new DevController(recargarDatos));
 
   // ---------- RUTAS ----------
-  server.setAuth(crearMiddlewaresDeUsuario(usuarioRepository));
+  server.setAuth({
+    ...crearMiddlewaresDeUsuario(authService),
+    limitarLogin: crearLimiteDeLogin(config),
+  });
   routes.forEach((route) => server.addRoute(route));
   server.configureRoutes();
 

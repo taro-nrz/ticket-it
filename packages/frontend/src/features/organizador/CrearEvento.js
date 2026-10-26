@@ -5,7 +5,7 @@ import { crearEvento, getCategorias } from "../../api/api.js";
 import { Icono } from "../../components/Icono.js";
 import { CampoFecha } from "../../components/CampoFecha.js";
 import { Encabezado, Pantalla } from "../../components/Pantalla.js";
-import { Boton, Campo, Chips, Seccion, Tarjeta, Titulo } from "../../components/ui.js";
+import { Boton, Campo, Chips, ResumenErrores, Seccion, Tarjeta, Titulo } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar } from "../../utils/accesibilidad.js";
@@ -344,21 +344,15 @@ export default function CrearEvento() {
         </Seccion>
 
         {/* Pauta 9: resumen de errores anunciado de inmediato (role="alert") */}
-        {intentoEnviar && camposConError.length > 0 && (
-          <View
-            style={styles.resumenErrores}
-            role="alert"
-            accessibilityRole="alert"
-            accessibilityLiveRegion="assertive"
-          >
-            <Icono name="alert-circle" size={20} color={colores.error} />
-            <Text style={styles.resumenErroresTexto}>
-              {camposConError.length === 1
+        <ResumenErrores
+          mensaje={
+            intentoEnviar && camposConError.length > 0
+              ? camposConError.length === 1
                 ? `Revisá 1 campo: ${nombreDelCampo(camposConError[0])}.`
-                : `Revisá ${camposConError.length} campos: ${camposConError.map(nombreDelCampo).join(", ")}.`}
-            </Text>
-          </View>
-        )}
+                : `Revisá ${camposConError.length} campos: ${camposConError.map(nombreDelCampo).join(", ")}.`
+              : null
+          }
+        />
 
         <Boton
           titulo="Publicar evento"
@@ -392,16 +386,4 @@ const crearEstilos = ({ colores, texto, estados }) => ({
   },
   tipoTitulo: { fontFamily: fuentes.subtitulo, fontSize: 17, color: colores.texto },
   quitar: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  resumenErrores: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    backgroundColor: "#FBE9E5",
-    borderWidth: 1,
-    borderColor: colores.error,
-    borderRadius: radio.m,
-    padding: 14,
-    marginBottom: espacio.l,
-  },
-  resumenErroresTexto: { flex: 1, fontFamily: fuentes.semi, fontSize: 14, color: colores.error },
 });
