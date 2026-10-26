@@ -26,6 +26,8 @@ const claro = {
   acentoSuave: "#FFE3DB",
   acentoTexto: "#9C2A12",
   acentoOscuro: "#B8361A",
+  // D-34: color de las marcas de los gráficos (validado con la guía de dataviz contra la superficie)
+  dato: "#FF5A36",
   error: "#A82E14",
   errorFondo: "#FBE9E5",
   exito: "#1D6B3A",
@@ -55,6 +57,7 @@ const oscuro = {
   acentoSuave: "#4A2418",
   acentoTexto: "#FFB49F",
   acentoOscuro: "#FF8A6B",
+  dato: "#F0532F",
   error: "#FF8A73",
   errorFondo: "#3A1A14",
   exito: "#6FD39A",

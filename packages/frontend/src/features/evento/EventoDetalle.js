@@ -160,6 +160,12 @@ export default function EventoDetalle() {
                   icono="receipt-outline"
                   onPress={() => router.push(`/evento/${evento.id}/compras`)}
                 />
+                <Boton
+                  titulo="Estadísticas"
+                  icono="stats-chart-outline"
+                  variante="secundario"
+                  onPress={() => router.push(`/evento/${evento.id}/estadisticas`)}
+                />
                 {evento.puedeEditarse && (
                   <View style={styles.filaAcciones}>
                     <Boton

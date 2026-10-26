@@ -45,6 +45,12 @@ const PANTALLAS = [
   },
   { nombre: "Publicar evento", ruta: "/crear-evento", usuario: LUCIA, titulo: "Publicar evento" },
   { nombre: "Editar evento", ruta: "/evento/1/editar", usuario: LUCIA, titulo: "Editar evento" },
+  {
+    nombre: "Estadísticas",
+    ruta: "/evento/7/estadisticas",
+    usuario: LUCIA,
+    titulo: "Estadísticas",
+  },
 ];
 
 test.beforeEach(async ({ request }) => {
