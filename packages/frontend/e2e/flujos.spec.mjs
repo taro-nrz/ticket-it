@@ -157,3 +157,25 @@ test("D-34: el organizador ve las estadísticas del evento y su tabla", async ({
   await expect(page.getByRole("table", { name: "Entradas pagadas por día" })).toBeVisible();
   await expect(page.getByRole("row")).toHaveCount(15);
 });
+
+test("D-36: una compra pendiente muestra hasta cuándo se puede pagar", async ({ page }) => {
+  await entrarComo(page, SOFIA);
+  await page.goto("/compra/2");
+  await expect(page.getByText(/Tenés hasta las \d{2}:\d{2} para pagar/)).toBeVisible();
+});
+
+test("D-36: una reserva vencida explica qué pasó", async ({ page }) => {
+  // PREPARAR: una compra con un plazo de reserva ya cumplido no se puede crear desde la API,
+  // así que se simula la respuesta del backend
+  await entrarComo(page, SOFIA);
+  await page.route(`${API_URL}/compra/2`, async (ruta) => {
+    const respuesta = await ruta.fetch();
+    const compra = await respuesta.json();
+    await ruta.fulfill({
+      json: { ...compra, estado: "VENCIDA", venceEn: null, accionesDisponibles: ["CHATEAR"] },
+    });
+  });
+  await page.goto("/compra/2");
+  await expect(page.getByText(/La reserva venció porque no se pagó a tiempo/)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Pagar/ })).toHaveCount(0);
+});

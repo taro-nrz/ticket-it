@@ -5,6 +5,8 @@ import { EstadoCompra, TRANSICIONES_VALIDAS } from "./estadoCompra.js";
 import { Mensaje } from "./mensaje.js";
 import { generarCodigoEntrada } from "../../utils/codigo.js";
 
+export const MINUTOS_RESERVA = 15;
+
 export const AccionCompra = Object.freeze({
   PAGAR: "PAGAR",
   CANCELAR: "CANCELAR",
@@ -21,14 +23,23 @@ export class Compra {
   // D-26: hasta cuándo leyó el chat cada participante (id de usuario -> fecha)
   ultimaLectura = new Map();
 
-  // La reserva del cupo la hace el service antes de crear la compra
-  constructor(comprador, evento, tipoEntrada, cantidad, fechaCompra) {
+  // La reserva del cupo la hace el service antes de crear la compra.
+  // D-36: la compra nace PENDIENTE y hay que pagarla dentro del plazo de reserva (15 minutos por defecto).
+  constructor(
+    comprador,
+    evento,
+    tipoEntrada,
+    cantidad,
+    fechaCompra,
+    { minutosReserva = MINUTOS_RESERVA } = {},
+  ) {
     this.comprador = comprador;
     this.evento = evento;
     this.tipoEntrada = tipoEntrada;
     this.cantidad = cantidad;
     this.total = tipoEntrada.precio * cantidad;
     this.fechaCompra = new Date(fechaCompra);
+    this.venceEn = new Date(this.fechaCompra.getTime() + minutosReserva * 60 * 1000);
     this.estado = EstadoCompra.PENDIENTE;
     this.historial.push(
       new CambioEstadoCompra(this, EstadoCompra.PENDIENTE, comprador, this.fechaCompra),
@@ -48,6 +59,11 @@ export class Compra {
 
   // D-33: al pagarse, la compra recibe el código de la entrada (el que se muestra como QR en la puerta)
   pagar(quien, ahora, codigo = generarCodigoEntrada()) {
+    if (this.estado === EstadoCompra.VENCIDA || this.reservaVencida(ahora)) {
+      throw new BusinessRuleError(
+        "La reserva venció porque no se pagó a tiempo. Volvé a comprar las entradas.",
+      );
+    }
     if (this.evento.cancelado) {
       throw new BusinessRuleError("No se puede pagar una compra de un evento cancelado");
     }
@@ -56,6 +72,17 @@ export class Compra {
     }
     this.actualizarEstado(EstadoCompra.CONFIRMADA, quien, ahora);
     this.codigo = codigo;
+  }
+
+  // D-36: una reserva pendiente vence al cumplirse el plazo sin pagar
+  reservaVencida(ahora) {
+    return this.estado === EstadoCompra.PENDIENTE && ahora >= this.venceEn;
+  }
+
+  // Lo hace el sistema (quien = null): libera el cupo para que otros puedan comprar
+  vencer(ahora) {
+    this.actualizarEstado(EstadoCompra.VENCIDA, null, ahora);
+    this.tipoEntrada.liberar(this.cantidad);
   }
 
   // Sólo una entrada pagada y todavía no usada sirve para entrar
@@ -143,7 +170,11 @@ export class Compra {
     if (!this.esParticipante(usuario)) return acciones;
 
     if (this.esDelComprador(usuario)) {
-      if (this.estado === EstadoCompra.PENDIENTE && !this.evento.yaSeRealizo(ahora)) {
+      if (
+        this.estado === EstadoCompra.PENDIENTE &&
+        !this.reservaVencida(ahora) &&
+        !this.evento.yaSeRealizo(ahora)
+      ) {
         acciones.push(AccionCompra.PAGAR);
       }
       if (this.puedeCancelarse(ahora)) {

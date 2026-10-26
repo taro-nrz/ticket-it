@@ -6,7 +6,7 @@ import {
   NotFoundError,
   ValidationError,
 } from "../error/appError.js";
-import { Compra } from "../models/entities/compra.js";
+import { Compra, MINUTOS_RESERVA } from "../models/entities/compra.js";
 import { EstadoCompra } from "../models/entities/estadoCompra.js";
 import { ordenarProximosPrimero } from "../utils/orden.js";
 import { paginar } from "../utils/paginacion.js";
@@ -27,6 +27,7 @@ export class CompraService {
     this.reseniaRepository = reseniaRepository;
     this.reloj = reloj;
     this.maxEntradasPorCompra = config.maxEntradasPorCompra;
+    this.minutosReserva = config.minutosReserva ?? MINUTOS_RESERVA;
     this.notificaciones = notificaciones;
   }
 
@@ -59,10 +60,28 @@ export class CompraService {
     }
 
     tipoEntrada.reservar(cantidad);
-    const compra = new Compra(comprador, evento, tipoEntrada, cantidad, ahora);
+    const compra = new Compra(comprador, evento, tipoEntrada, cantidad, ahora, {
+      minutosReserva: this.minutosReserva,
+    });
     await this.eventoRepository.save(evento);
     const guardada = await this.compraRepository.save(compra);
     return this.aDTO(guardada, comprador, { conDetalle: true });
+  }
+
+  // D-36: vence las reservas que no se pagaron a tiempo y devuelve cuántas venció.
+  // Se ejecuta antes de cada request (middleware de mantenimiento): así el cupo y los estados que ve
+  // cualquier pantalla ya están al día, sin depender de un proceso aparte.
+  async vencerReservas() {
+    const ahora = this.reloj.ahora();
+    const pendientes = await this.compraRepository.findByEstado(EstadoCompra.PENDIENTE);
+    const vencidas = pendientes.filter((compra) => compra.reservaVencida(ahora));
+    for (const compra of vencidas) {
+      compra.vencer(ahora);
+      await this.eventoRepository.save(compra.evento);
+      await this.compraRepository.save(compra);
+      await this.notificaciones.reservaVencida(compra);
+    }
+    return vencidas;
   }
 
   // HU-05: compras del comprador con estado, días restantes y acciones

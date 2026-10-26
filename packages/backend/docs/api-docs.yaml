@@ -159,7 +159,7 @@ components:
 
     EstadoCompra:
       type: string
-      enum: [PENDIENTE, CONFIRMADA, UTILIZADA, CANCELADA, REEMBOLSADA]
+      enum: [PENDIENTE, CONFIRMADA, UTILIZADA, CANCELADA, REEMBOLSADA, VENCIDA]
 
     AccionCompra:
       type: string
@@ -232,6 +232,7 @@ components:
               ENTRADA_UTILIZADA,
               EVENTO_CANCELADO,
               NUEVA_RESENIA,
+              RESERVA_VENCIDA,
             ]
         titulo: { type: string, example: Mensaje de Sofía Pérez }
         mensaje: { type: string, example: "Noche Indie en Obras: “Genial, ¡gracias!”" }
@@ -422,6 +423,10 @@ components:
           type: [string, "null"]
           description: Código de la entrada (QR), sólo para el comprador y desde que se paga (D-33)
           example: TK-JUAN-H7Y5
+        venceEn:
+          type: [string, "null"]
+          format: date-time
+          description: Mientras está PENDIENTE, hasta cuándo se puede pagar (15 min); después pasa a VENCIDA (D-36)
         accionesDisponibles:
           type: array
           description: Acciones que el usuario que consulta puede realizar ahora sobre la compra

@@ -5,7 +5,8 @@ import { usuarioResumenDTO } from "./usuarioDTO.js";
 export function cambioEstadoDTO(cambio) {
   return {
     estado: cambio.estado,
-    quien: usuarioResumenDTO(cambio.quien),
+    // null cuando el cambio lo hizo el sistema (ej. una reserva que venció)
+    quien: cambio.quien ? usuarioResumenDTO(cambio.quien) : null,
     fechaHora: cambio.fechaHora,
   };
 }
@@ -34,6 +35,8 @@ export function compraDTO(compra, { usuario, ahora, yaResenio = false, conDetall
     total: compra.total,
     estado: compra.estado,
     fechaCompra: compra.fechaCompra,
+    // D-36: hasta cuándo se puede pagar (sólo mientras está pendiente)
+    venceEn: compra.estado === EstadoCompra.PENDIENTE ? compra.venceEn : null,
     // HU-05: días que faltan sólo si está confirmada
     diasRestantes:
       compra.estado === EstadoCompra.CONFIRMADA ? compra.diasParaElEvento(ahora) : null,

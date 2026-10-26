@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cancelarCompra, getCompra, pagarCompra, utilizarCompra } from "../../api/api.js";
@@ -14,6 +14,7 @@ import { avisarError, avisarExito, confirmar } from "../../utils/confirmar.js";
 import {
   formatearDiasRestantes,
   formatearFecha,
+  formatearHora,
   formatearPrecio,
   nombreCompleto,
   plural,
@@ -141,6 +142,19 @@ export default function CompraDetalle() {
             {compra.codigo && ["CONFIRMADA", "UTILIZADA"].includes(compra.estado) && (
               <EntradaQR compra={compra} />
             )}
+            {/* D-36: plazo para pagar antes de que la reserva venza */}
+            {compra.estado === "PENDIENTE" && compra.venceEn && (
+              <PlazoReserva venceEn={compra.venceEn} onVencer={recargar} />
+            )}
+            {compra.estado === "VENCIDA" && (
+              <View style={styles.cancelado} role="note">
+                <Icono name="time-outline" size={22} color={colores.error} />
+                <Text style={[texto.cuerpo, { flex: 1 }]}>
+                  La reserva venció porque no se pagó a tiempo y las entradas se liberaron. Si
+                  todavía querés ir, volvé a comprarlas desde el evento.
+                </Text>
+              </View>
+            )}
             <View style={styles.acciones}>
               {puede("PAGAR") && (
                 <Boton
@@ -212,7 +226,7 @@ export default function CompraDetalle() {
                   key={indice}
                   color={estados[cambio.estado].color}
                   titulo={estadosCompra[cambio.estado].etiqueta}
-                  detalle={`${formatearFecha(cambio.fechaHora)} · ${cambio.quien.nombre}`}
+                  detalle={`${formatearFecha(cambio.fechaHora)} · ${cambio.quien?.nombre ?? "Automático"}`}
                   conLinea={indice < compra.historial.length - 1 || pasosPendientes.length > 0}
                 />
               ))}
@@ -229,6 +243,45 @@ export default function CompraDetalle() {
           </View>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+// D-36: cuenta regresiva para pagar. El reloj es decorativo (no se anuncia cada segundo):
+// el lector de pantalla lee la hora límite, que no cambia.
+function PlazoReserva({ venceEn, onVencer }) {
+  const { colores, texto } = useTema();
+  const styles = useEstilos(crearEstilos);
+  const [ahora, setAhora] = useState(() => Date.now());
+  const restanteMs = new Date(venceEn).getTime() - ahora;
+
+  useEffect(() => {
+    if (restanteMs <= 0) {
+      onVencer();
+      return;
+    }
+    const temporizador = setTimeout(() => setAhora(Date.now()), 1000);
+    return () => clearTimeout(temporizador);
+  }, [restanteMs, onVencer]);
+
+  const segundos = Math.max(0, Math.ceil(restanteMs / 1000));
+  const reloj = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, "0")}`;
+  const urgente = segundos <= 120;
+  return (
+    <View style={[styles.plazo, urgente && { borderColor: colores.error }]}>
+      <Icono name="time-outline" size={22} color={urgente ? colores.error : colores.texto} />
+      <View style={{ flex: 1 }}>
+        <Text style={texto.cuerpoFuerte}>Tenés hasta las {formatearHora(venceEn)} para pagar</Text>
+        <Text style={texto.chico}>Si no, la reserva vence y las entradas se liberan.</Text>
+      </View>
+      <Text
+        style={[styles.plazoReloj, urgente && { color: colores.error }]}
+        aria-hidden
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {reloj}
+      </Text>
     </View>
   );
 }
@@ -295,6 +348,18 @@ function Paso({ color, titulo, detalle, conLinea, pendiente }) {
 }
 
 const crearEstilos = ({ colores, estados }) => ({
+  plazo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: colores.superficie,
+    borderWidth: 1.5,
+    borderColor: colores.bordeControl,
+    borderRadius: radio.m,
+    padding: 14,
+    marginBottom: espacio.l,
+  },
+  plazoReloj: { fontFamily: fuentes.titulo, fontSize: 26, color: colores.texto },
   cancelado: {
     flexDirection: "row",
     gap: 10,

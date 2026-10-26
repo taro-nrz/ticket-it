@@ -216,17 +216,19 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   const compras = [];
   const guardar = async (compra) => compras.push(await compraRepository.save(compra));
   const haceDias = (dias) => sumarDias(ahora, -dias);
+  const haceMinutos = (minutos) => new Date(ahora.getTime() - minutos * 60 * 1000);
 
   // Sofía: CONFIRMADA con chat, PENDIENTE, CANCELADA, REEMBOLSADA y UTILIZADA (reseñada)
   const sofiaIndie = await comprar(sofia, indie, 1, 2, haceDias(5));
   // D-33: códigos fijos en las entradas que se usan en la demo (el resto se genera al azar)
-  sofiaIndie.pagar(sofia, sumarHoras(haceDias(5), 1), "TK-SOFA-2N7D");
+  sofiaIndie.pagar(sofia, new Date(haceDias(5).getTime() + 10 * 60 * 1000), "TK-SOFA-2N7D");
   sofiaIndie.agregarMensaje(sofia, "Hola! ¿A qué hora abren las puertas?", haceDias(4));
   sofiaIndie.agregarMensaje(lucia, "¡Hola Sofía! Las puertas abren a las 19 hs.", haceDias(4));
   sofiaIndie.agregarMensaje(sofia, "Genial, ¡gracias!", haceDias(3));
   await guardar(sofiaIndie);
 
-  await guardar(await comprar(sofia, hamlet, 1, 1, haceDias(1)));
+  // D-36: las PENDIENTES son recientes (vencen a los 15 minutos de la compra)
+  await guardar(await comprar(sofia, hamlet, 1, 1, haceMinutos(5)));
 
   const sofiaSuperclasico = await comprar(sofia, superclasico, 1, 3, haceDias(8));
   sofiaSuperclasico.cancelar(sofia, haceDias(7));
@@ -273,7 +275,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   valentinaCarroza.utilizar(martin, carroza.fecha);
   await guardar(valentinaCarroza);
 
-  await guardar(await comprar(valentina, indie, 3, 1, haceDias(1)));
+  await guardar(await comprar(valentina, indie, 3, 1, haceMinutos(8)));
 
   const valentinaSuperclasico = await comprar(valentina, superclasico, 2, 1, haceDias(4));
   valentinaSuperclasico.pagar(valentina, haceDias(4));

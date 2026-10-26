@@ -74,6 +74,7 @@ const ETIQUETAS_ESTADO = {
   UTILIZADA: { etiqueta: "Utilizada", corta: "Utilizadas" },
   CANCELADA: { etiqueta: "Cancelada", corta: "Canceladas" },
   REEMBOLSADA: { etiqueta: "Reembolsada", corta: "Reembolsadas" },
+  VENCIDA: { etiqueta: "Vencida", corta: "Vencidas" },
 };
 
 const COLORES_ESTADO = {
@@ -83,6 +84,7 @@ const COLORES_ESTADO = {
     UTILIZADA: { color: "#1D6B3A", fondo: "#DDF3E4" },
     CANCELADA: { color: "#5D5866", fondo: "#ECEAE6" },
     REEMBOLSADA: { color: "#6E2DA0", fondo: "#F0E4FA" },
+    VENCIDA: { color: "#8C3B12", fondo: "#FBE6DA" },
   },
   oscuro: {
     PENDIENTE: { color: "#F5C76A", fondo: "#3A2C0E" },
@@ -90,6 +92,7 @@ const COLORES_ESTADO = {
     UTILIZADA: { color: "#7FD6A2", fondo: "#143323" },
     CANCELADA: { color: "#B5AFC2", fondo: "#2A2536" },
     REEMBOLSADA: { color: "#D3A6F5", fondo: "#2E1A40" },
+    VENCIDA: { color: "#F2A27A", fondo: "#3A1E12" },
   },
 };
 

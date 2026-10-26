@@ -83,6 +83,16 @@ export class NotificacionService {
     });
   }
 
+  async reservaVencida(compra) {
+    await this.notificar({
+      usuario: compra.comprador,
+      tipo: TipoNotificacion.RESERVA_VENCIDA,
+      titulo: `Venció tu reserva para ${compra.evento.nombre}`,
+      mensaje: `No se pagó a tiempo: liberamos las ${compra.cantidad} entradas. Si todavía querés ir, volvé a comprarlas.`,
+      link: `/evento/${compra.evento.id}`,
+    });
+  }
+
   async entradaUtilizada(compra) {
     await this.notificar({
       usuario: compra.comprador,
