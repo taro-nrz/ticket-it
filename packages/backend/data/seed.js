@@ -5,6 +5,7 @@ import { Resenia } from "../models/entities/resenia.js";
 import { RolUsuario } from "../models/entities/rolUsuario.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { Usuario } from "../models/entities/usuario.js";
+import { crearCupon, TipoCupon } from "../models/entities/cupon.js";
 import { Notificacion, TipoNotificacion } from "../models/entities/notificacion.js";
 import { sumarDias, sumarHoras } from "../utils/reloj.js";
 
@@ -22,6 +23,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
     compraRepository,
     reseniaRepository,
     notificacionRepository,
+    cuponRepository,
   } = repositorios;
 
   const enDias = (dias, hora = 21) => {
@@ -338,6 +340,16 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   juan.agregarFavorito(indie);
   for (const usuario of [sofia, juan]) {
     await usuarioRepository.save(usuario);
+  }
+
+  // ---------- CUPONES (D-38) ----------
+  const cupones = [
+    crearCupon({ tipo: TipoCupon.PORCENTAJE, codigo: "INDIE20", porcentaje: 20, evento: indie }),
+    crearCupon({ tipo: TipoCupon.DOS_POR_UNO, codigo: "INDIE2X1", evento: indie, usosMaximos: 5 }),
+    crearCupon({ tipo: TipoCupon.MONTO_FIJO, codigo: "RISAS", monto: 2000, evento: standup }),
+  ];
+  for (const cupon of cupones) {
+    await cuponRepository.save(cupon);
   }
 
   // ---------- NOTIFICACIONES (D-32) ----------

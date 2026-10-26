@@ -13,6 +13,7 @@ import {
 import { ImagenEvento } from "../../components/EventoCard.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
 import { CancelarEvento } from "../organizador/CancelarEvento.js";
+import { CampoCupon } from "./CampoCupon.js";
 import { TituloPagina } from "../../components/Pantalla.js";
 import {
   Avatar,
@@ -55,6 +56,7 @@ export default function EventoDetalle() {
   const [cantidad, setCantidad] = useState(1);
   const [comprando, setComprando] = useState(false);
   const [cancelando, setCancelando] = useState(false);
+  const [cupon, setCupon] = useState(null);
 
   if (cargando && !evento) return <Cargando />;
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
@@ -65,6 +67,8 @@ export default function EventoDetalle() {
   const puedeComprar = esComprador && !evento.yaSeRealizo && !evento.cancelado;
   // Si el evento ya pasó, sus reseñas tienen su propia sección: acá van las de los otros eventos
   const otrasResenias = evento.ultimasResenias.filter((r) => r.evento.id !== evento.id);
+
+  const total = tipo ? (cupon?.total ?? tipo.precio * cantidad) : 0;
 
   const volver = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -84,9 +88,10 @@ export default function EventoDetalle() {
   const confirmarCompra = async () => {
     setComprando(true);
     try {
-      const compra = await comprar(evento.id, tipo.id, cantidad);
+      const compra = await comprar(evento.id, tipo.id, cantidad, cupon?.cupon.codigo);
       setTipoElegido(null);
       setCantidad(1);
+      setCupon(null);
       router.push(`/compra/${compra.id}`);
     } catch (e) {
       avisarError("No se pudo realizar la compra", e.message);
@@ -165,6 +170,12 @@ export default function EventoDetalle() {
                   icono="stats-chart-outline"
                   variante="secundario"
                   onPress={() => router.push(`/evento/${evento.id}/estadisticas`)}
+                />
+                <Boton
+                  titulo="Cupones de descuento"
+                  icono="pricetags-outline"
+                  variante="secundario"
+                  onPress={() => router.push(`/evento/${evento.id}/cupones`)}
                 />
                 {evento.puedeEditarse && (
                   <View style={styles.filaAcciones}>
@@ -264,6 +275,16 @@ export default function EventoDetalle() {
               );
             })}
 
+            {tipo && puedeComprar && (
+              <CampoCupon
+                eventoId={evento.id}
+                tipo={tipo}
+                cantidad={cantidad}
+                aplicado={cupon}
+                onCambiar={setCupon}
+              />
+            )}
+
             {evento.yaSeRealizo && <Text style={styles.aviso}>Este evento ya se realizó.</Text>}
             {evento.yaSeRealizo && (
               <ReseniasDeEsteEvento
@@ -321,12 +342,23 @@ export default function EventoDetalle() {
             <View aria-live="polite" accessibilityLiveRegion="polite">
               <Text style={styles.barraDetalle}>
                 {cantidad} × {tipo.nombre}
+                {cupon ? ` · ${cupon.cupon.codigo}` : ""}
               </Text>
-              <Text style={styles.barraTotal}>{formatearPrecio(tipo.precio * cantidad)}</Text>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+                <Text style={styles.barraTotal}>{formatearPrecio(total)}</Text>
+                {cupon && (
+                  <Text
+                    style={styles.barraSubtotal}
+                    accessibilityLabel={`antes ${formatearPrecio(cupon.subtotal)}`}
+                  >
+                    {formatearPrecio(cupon.subtotal)}
+                  </Text>
+                )}
+              </View>
             </View>
             <Boton
               titulo="Comprar"
-              accessibilityHint={`Compra ${cantidad} ${tipo.nombre} por ${formatearPrecio(tipo.precio * cantidad)}`}
+              accessibilityHint={`Compra ${cantidad} ${tipo.nombre} por ${formatearPrecio(total)}`}
               variante="acento"
               onPress={confirmarCompra}
               cargando={comprando}
@@ -525,4 +557,10 @@ const crearEstilos = ({ colores, texto }) => ({
   },
   barraDetalle: { fontFamily: fuentes.texto, fontSize: 13, color: colores.sobrePanelSuave },
   barraTotal: { fontFamily: fuentes.titulo, fontSize: 26, color: colores.sobrePanel },
+  barraSubtotal: {
+    fontFamily: fuentes.texto,
+    fontSize: 15,
+    color: colores.sobrePanelSuave,
+    textDecorationLine: "line-through",
+  },
 });

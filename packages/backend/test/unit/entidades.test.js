@@ -1,3 +1,4 @@
+import { crearCupon, TipoCupon } from "../../models/entities/cupon.js";
 import { BusinessRuleError } from "../../error/appError.js";
 import { Categoria } from "../../models/entities/categoria.js";
 import { AccionCompra, Compra } from "../../models/entities/compra.js";
@@ -208,5 +209,51 @@ describe("Usuario", () => {
     expect(usuario.favoritos).toHaveLength(1);
     usuario.quitarFavorito(evento);
     expect(usuario.tieneFavorito(evento)).toBe(false);
+  });
+});
+
+describe("Cupones (D-38): cada tipo calcula su descuento", () => {
+  const evento = crearEvento();
+  const cupon = (datos) => crearCupon({ codigo: "PRUEBA", evento, ...datos });
+
+  test("porcentaje, monto fijo y 2×1 sobre 3 entradas de $1000", () => {
+    expect(cupon({ tipo: TipoCupon.PORCENTAJE, porcentaje: 20 }).aplicar(1000, 3, AHORA)).toEqual({
+      subtotal: 3000,
+      descuento: 600,
+      total: 2400,
+    });
+    expect(cupon({ tipo: TipoCupon.MONTO_FIJO, monto: 500 }).aplicar(1000, 3, AHORA).total).toBe(
+      2500,
+    );
+    expect(cupon({ tipo: TipoCupon.DOS_POR_UNO }).aplicar(1000, 3, AHORA).total).toBe(2000);
+  });
+
+  test("el descuento nunca supera el subtotal", () => {
+    expect(cupon({ tipo: TipoCupon.MONTO_FIJO, monto: 5000 }).aplicar(1000, 2, AHORA)).toEqual({
+      subtotal: 2000,
+      descuento: 2000,
+      total: 0,
+    });
+  });
+
+  test("el 2×1 con una sola entrada no aplica", () => {
+    expect(() => cupon({ tipo: TipoCupon.DOS_POR_UNO }).aplicar(1000, 1, AHORA)).toThrow(
+      /al menos 2 entradas/,
+    );
+  });
+
+  test("respeta los usos máximos, el vencimiento y la desactivación", () => {
+    const conLimite = cupon({ tipo: TipoCupon.PORCENTAJE, porcentaje: 10, usosMaximos: 1 });
+    conLimite.usar();
+    expect(() => conLimite.aplicar(1000, 1, AHORA)).toThrow(/límite de usos/);
+    conLimite.liberarUso();
+    expect(conLimite.aplicar(1000, 1, AHORA).descuento).toBe(100);
+
+    const vencido = cupon({ tipo: TipoCupon.PORCENTAJE, porcentaje: 10, vence: dias(-1) });
+    expect(() => vencido.aplicar(1000, 1, AHORA)).toThrow(/vencido/);
+
+    const inactivo = cupon({ tipo: TipoCupon.PORCENTAJE, porcentaje: 10 });
+    inactivo.desactivar();
+    expect(() => inactivo.aplicar(1000, 1, AHORA)).toThrow(/activo/);
   });
 });

@@ -7,6 +7,7 @@ const comprarSchema = z.object({
   eventoId: z.number().int().positive(),
   tipoEntradaId: z.number().int().positive(),
   cantidad: z.number().int().positive(),
+  codigoCupon: z.string().trim().min(1).max(20).optional(),
 });
 
 const listarComprasSchema = z.object({
