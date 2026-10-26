@@ -13,6 +13,7 @@ export const AccionCompra = Object.freeze({
   UTILIZAR: "UTILIZAR",
   RESENIAR: "RESENIAR",
   CHATEAR: "CHATEAR",
+  TRANSFERIR: "TRANSFERIR",
 });
 
 export class Compra {
@@ -22,6 +23,8 @@ export class Compra {
   codigo = null;
   // D-37: datos no sensibles del pago (marca, últimos 4 dígitos, autorización)
   pago = null;
+  // D-41: transferencias de la entrada a otras personas ({ de, a, fecha })
+  transferencias = [];
   // D-26: hasta cuándo leyó el chat cada participante (id de usuario -> fecha)
   ultimaLectura = new Map();
 
@@ -95,6 +98,36 @@ export class Compra {
     this.actualizarEstado(EstadoCompra.VENCIDA, null, ahora);
     this.tipoEntrada.liberar(this.cantidad);
     this.cupon?.liberarUso();
+  }
+
+  // D-41: se puede transferir una entrada pagada, sin usar, de un evento que todavía no pasó
+  puedeTransferirse(ahora) {
+    return (
+      this.estado === EstadoCompra.CONFIRMADA &&
+      !this.evento.cancelado &&
+      !this.evento.yaSeRealizo(ahora)
+    );
+  }
+
+  // La entrada pasa a otra persona con un código nuevo (el anterior deja de servir en la puerta).
+  // El chat empieza de cero: lo que hablaron el titular anterior y el organizador queda entre ellos.
+  transferir(destinatario, ahora, codigoNuevo = generarCodigoEntrada()) {
+    if (!this.puedeTransferirse(ahora)) {
+      throw new BusinessRuleError(
+        "Sólo se puede transferir una entrada pagada, sin usar, de un evento que todavía no pasó",
+      );
+    }
+    if (destinatario.id === this.comprador.id) {
+      throw new BusinessRuleError("No podés transferirte la entrada a vos mismo");
+    }
+    if (!destinatario.esComprador()) {
+      throw new BusinessRuleError("Sólo se puede transferir a una cuenta de comprador");
+    }
+    this.transferencias.push({ de: this.comprador, a: destinatario, fecha: new Date(ahora) });
+    this.comprador = destinatario;
+    this.codigo = codigoNuevo;
+    this.mensajes = [];
+    this.ultimaLectura = new Map();
   }
 
   // Sólo una entrada pagada y todavía no usada sirve para entrar
@@ -195,6 +228,9 @@ export class Compra {
       }
       if (this.estado === EstadoCompra.UTILIZADA && !yaResenio) {
         acciones.push(AccionCompra.RESENIAR);
+      }
+      if (this.puedeTransferirse(ahora)) {
+        acciones.push(AccionCompra.TRANSFERIR);
       }
     }
 

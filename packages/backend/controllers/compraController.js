@@ -38,6 +38,14 @@ function tarjetaNoVencida(vencimiento) {
   return new Date(2000 + anio, mes, 1) > new Date();
 }
 
+const transferirSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("Ingresá el email de la cuenta que va a recibir la entrada")),
+});
+
 const validarEntradaSchema = z.object({
   codigo: z.string().trim().min(1, "Ingresá el código de la entrada").max(30),
 });
@@ -118,6 +126,20 @@ export class CompraController {
         req.usuario,
       );
       res.json(compra);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async transferir(req, res, next) {
+    try {
+      const { email } = validar(transferirSchema, req.body);
+      const resultado = await this.compraService.transferir(
+        parsearId(req.params.id),
+        req.usuario,
+        email,
+      );
+      res.json(resultado);
     } catch (error) {
       next(error);
     }

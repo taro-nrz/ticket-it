@@ -14,6 +14,7 @@ export const TipoNotificacion = Object.freeze({
   RESERVA_VENCIDA: "RESERVA_VENCIDA",
   LUGAR_DISPONIBLE: "LUGAR_DISPONIBLE",
   PRIORIDAD_VENCIDA: "PRIORIDAD_VENCIDA",
+  ENTRADA_RECIBIDA: "ENTRADA_RECIBIDA",
 });
 
 export class Notificacion {

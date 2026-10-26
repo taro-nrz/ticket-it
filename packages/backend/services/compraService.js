@@ -27,6 +27,7 @@ export class CompraService {
       pasarelaPago = new PasarelaPagoSimulada(),
       cuponRepository = null,
       listaEspera = SIN_LISTA_ESPERA,
+      usuarioRepository = null,
     } = {},
   ) {
     this.compraRepository = compraRepository;
@@ -39,6 +40,7 @@ export class CompraService {
     this.pasarelaPago = pasarelaPago;
     this.cuponRepository = cuponRepository;
     this.listaEspera = listaEspera;
+    this.usuarioRepository = usuarioRepository;
   }
 
   // HU-04: comprar un tipo de entrada sin superar el cupo
@@ -269,6 +271,22 @@ export class CompraService {
       codigo = generarCodigoEntrada();
     } while (await this.compraRepository.findByCodigo(codigo));
     return codigo;
+  }
+
+  // D-41: el comprador le pasa la entrada a otra cuenta de comprador (por su email)
+  async transferir(id, usuario, email) {
+    const compra = await this.obtenerParaParticipante(id, usuario);
+    if (!compra.esDelComprador(usuario)) {
+      throw new ForbiddenError("Sólo el titular puede transferir la entrada");
+    }
+    const destinatario = await this.usuarioRepository.findByEmail(email);
+    if (!destinatario) {
+      throw new NotFoundError("No hay ninguna cuenta con ese email");
+    }
+    compra.transferir(destinatario, this.reloj.ahora(), await this.codigoUnico());
+    await this.compraRepository.save(compra);
+    await this.notificaciones.entradaTransferida(compra, usuario);
+    return { transferidaA: { nombre: destinatario.nombre, apellido: destinatario.apellido } };
   }
 
   async historial(id, usuario) {

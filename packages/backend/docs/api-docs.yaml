@@ -282,6 +282,7 @@ components:
               RESERVA_VENCIDA,
               LUGAR_DISPONIBLE,
               PRIORIDAD_VENCIDA,
+              ENTRADA_RECIBIDA,
             ]
         titulo: { type: string, example: Mensaje de Sofía Pérez }
         mensaje: { type: string, example: "Noche Indie en Obras: “Genial, ¡gracias!”" }
@@ -1245,6 +1246,42 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /compra/{id}/transferir:
+    post:
+      tags: [Ciclo de vida de la compra]
+      summary: Transferir la entrada a otra cuenta de comprador (D-41)
+      description: |-
+        Sólo el titular, con la compra CONFIRMADA y el evento vigente. La compra pasa al destinatario con un código QR
+        nuevo (el anterior deja de servir), el chat empieza de cero y el destinatario recibe una notificación.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email, example: juan@ticketit.com }
+      responses:
+        "200":
+          description: Entrada transferida
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferidaA:
+                    type: object
+                    properties:
+                      nombre: { type: string, example: Juan }
+                      apellido: { type: string, example: Rodríguez }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/BusinessRule" }
 

@@ -34,7 +34,7 @@ describe("M4 - Ciclo de vida de la compra", () => {
       expect(res.status).toBe(200);
       expect(res.body.estado).toBe("CONFIRMADA");
       expect(res.body.diasRestantes).toBe(10);
-      expect(res.body.accionesDisponibles).toEqual(["CANCELAR", "CHATEAR"]);
+      expect(res.body.accionesDisponibles).toEqual(["CANCELAR", "TRANSFERIR", "CHATEAR"]);
     });
 
     test("pagar una compra ya confirmada responde 422", async () => {

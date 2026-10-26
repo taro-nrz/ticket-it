@@ -501,6 +501,13 @@ Formato: **contexto → opciones → decisión → justificación**.
   inscripción por persona y tipo; cancelar el evento cierra la lista. `CompraService` pasó a recibir sus
   dependencias opcionales en un objeto de opciones (eran demasiados parámetros posicionales).
 
+### D-41 — Transferir una entrada (M20)
+- Decisión: `Compra.transferir(destinatario)` cambia el titular y **regenera el código QR** (así una captura del
+  QR viejo no sirve para entrar); queda registro en `transferencias`.
+- **Sin consultar**: sólo a cuentas de comprador existentes (no se inventan cuentas por email); el chat empieza
+  de cero por privacidad del titular anterior; no hay "aceptar" la transferencia (llega directo, como pasar la
+  entrada en mano); no se puede deshacer.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

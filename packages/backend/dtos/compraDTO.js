@@ -58,6 +58,12 @@ export function compraDTO(compra, { usuario, ahora, yaResenio = false, conDetall
     accionesDisponibles: compra.accionesDisponiblesPara(usuario, ahora, { yaResenio }),
   };
   if (conDetalle) {
+    // D-41: de quién recibió la entrada (sólo nombres, sin emails)
+    dto.transferencias = compra.transferencias.map((t) => ({
+      de: usuarioResumenDTO(t.de),
+      a: usuarioResumenDTO(t.a),
+      fecha: t.fecha,
+    }));
     dto.organizador = usuarioResumenDTO(compra.evento.organizador);
     dto.historial = compra.historial.map(cambioEstadoDTO);
   }

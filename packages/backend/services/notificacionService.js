@@ -118,6 +118,16 @@ export class NotificacionService {
     });
   }
 
+  async entradaTransferida(compra, anterior) {
+    await this.notificar({
+      usuario: compra.comprador,
+      tipo: TipoNotificacion.ENTRADA_RECIBIDA,
+      titulo: `${nombre(anterior)} te pasó una entrada`,
+      mensaje: `${compra.cantidad} × ${compra.tipoEntrada.nombre} para ${compra.evento.nombre}. Ya está en Mis entradas con su código QR.`,
+      link: `/compra/${compra.id}`,
+    });
+  }
+
   async entradaUtilizada(compra) {
     await this.notificar({
       usuario: compra.comprador,
