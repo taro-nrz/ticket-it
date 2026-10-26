@@ -995,6 +995,20 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/BusinessRule" }
 
+  /evento/{id}/calendario.ics:
+    get:
+      tags: [Eventos]
+      summary: El evento en formato iCalendar para agregarlo al calendario (D-43)
+      description: Público. Incluye lugar, link al evento, recordatorio 2 horas antes y STATUS:CANCELLED si se canceló.
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Archivo .ics
+          content:
+            text/calendar:
+              schema: { type: string, example: "BEGIN:VCALENDAR\r\nVERSION:2.0\r\n…" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
   /evento/{id}/estadisticas:
     get:
       tags: [Eventos]

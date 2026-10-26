@@ -518,6 +518,15 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: también se puede pegar un enlace (para no perder lo que ya existía); no se redimensionan las
   imágenes en el servidor (el selector las comprime al 80 %).
 
+### D-43 — Compartir y agregar al calendario (M22)
+- Compartir usa la **hoja nativa** (`Share` de React Native, `navigator.share` en web) y, si no existe, copia el
+  enlace. Calendario con un **.ics estándar** generado en el backend: funciona con Google, Apple y Outlook sin
+  integrar ninguna API ni pedir permisos de calendario.
+- ESLint encontró un error en el generador: `"\;"` en JavaScript es sólo `;`, así que los punto y coma no se
+  escapaban; el test tenía el mismo error y pasaba igual. Se corrigieron los dos (buen ejemplo de por qué el lint
+  sin avisos vale la pena).
+- **Sin consultar**: duración asumida de 3 h (el modelo no tiene hora de fin); recordatorio 2 h antes.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

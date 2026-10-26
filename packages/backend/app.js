@@ -139,7 +139,10 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   server.setController(AuthController, new AuthController(authService, usuarioService));
   server.setController(UsuarioController, new UsuarioController(usuarioService));
   server.setController(CategoriaController, new CategoriaController(categoriaService));
-  server.setController(EventoController, new EventoController(eventoService));
+  server.setController(
+    EventoController,
+    new EventoController(eventoService, { webUrl: config.webUrl }),
+  );
   server.setController(CompraController, new CompraController(compraService));
   server.setController(MensajeController, new MensajeController(mensajeService));
   server.setController(ReseniaController, new ReseniaController(reseniaService));

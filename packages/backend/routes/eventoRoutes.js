@@ -26,6 +26,11 @@ export default function eventoRoutes(getController, auth) {
     getController(EventoController).findById(req, res, next);
   });
 
+  // D-43: público (lo abre el calendario del dispositivo, sin la sesión de la app)
+  router.get(pathEvento + "/:id/calendario.ics", (req, res, next) => {
+    getController(EventoController).calendario(req, res, next);
+  });
+
   router.get(pathEvento + "/:id/estadisticas", ...soloOrganizador, (req, res, next) => {
     getController(EventoController).estadisticas(req, res, next);
   });
