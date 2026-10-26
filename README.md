@@ -122,3 +122,4 @@ de `packages/frontend`), o el del sistema con `CHROMIUM_PATH=/usr/bin/chromium n
 - [`specs/`](specs) — una spec por módulo con historias, criterios de aceptación y contrato de API.
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — qué agrega esta versión respecto del TP original.
 - [`docs/RESUMEN-NOCHE.md`](docs/RESUMEN-NOCHE.md) — resumen de lo hecho y decisiones para revisar.
+# ticket-it
