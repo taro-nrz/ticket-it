@@ -6,10 +6,12 @@ con QR, estadísticas, Docker y CI. Las diferencias con el TP original están en
 
 | Comprador | Organizador |
 |---|---|
-| Busca y filtra eventos, guarda favoritos, compra y paga entradas, chatea con el organizador, cancela con reembolso automático, muestra su **entrada con QR** en la puerta y califica el evento. | Publica, **edita y cancela** eventos con varios tipos de entrada, ve sus ventas y **estadísticas**, responde chats, **valida entradas** escaneando el QR y lee las reseñas de sus eventos. |
+| Busca y filtra eventos, guarda favoritos, compra con **cupones** y paga con tarjeta (**checkout** simulado), tiene **15 minutos** para pagar, se anota en la **lista de espera** si está agotado, chatea con el organizador, **transfiere** o cancela su entrada, la muestra con **QR** en la puerta, **comparte** el evento o lo agrega al **calendario** y lo califica. | Publica eventos con **fotos subidas** desde el dispositivo, los **edita y cancela**, crea **cupones**, ve ventas, **estadísticas** y la lista de espera, responde chats, **valida entradas** escaneando el QR y lee las reseñas. |
 
-Además: cuentas con **email y contraseña**, **notificaciones** dentro de la app, modo oscuro, y accesibilidad
-WCAG 2.2 AA verificada con axe en cada pantalla. Funciona en el celular (Expo Go) y en el navegador.
+Además: cuentas con **email y contraseña** (con recuperación por código), **notificaciones** dentro de la app,
+**estados de carga** según la situación (esqueletos, barras, imágenes progresivas) y **MSW** para probar con
+latencia o sin backend, modo oscuro, y accesibilidad WCAG 2.2 AA verificada con axe en cada pantalla. Funciona
+en el celular (Expo Go) y en el navegador.
 
 <p>
   <img src="docs/capturas/80-login.png" width="180" alt="Inicio de sesión">
@@ -44,8 +46,8 @@ ticket-it-pro/
 ├── packages/
 │   ├── backend/     # API REST (Express 5, Zod, JWT, Swagger) · Dockerfile
 │   └── frontend/    # App React Native + Expo (web y mobile) · Dockerfile + nginx
-├── specs/           # Una spec por módulo (SDD + historias de usuario), M0 a M14
-├── docs/            # Bitácora de decisiones (D-01 a D-35), alcance, changelog y capturas
+├── specs/           # Una spec por módulo (SDD + historias de usuario), M0 a M23
+├── docs/            # Bitácora de decisiones (D-01 a D-44), alcance, changelog y capturas
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
 ```
@@ -107,6 +109,12 @@ Todos con la contraseña **`ticketit123`**. En la pantalla de ingreso, "Cuentas 
 | `martin@ticketit.com` | Martín Gómez | Organizador | |
 | `sofia@ticketit.com` | Sofía Pérez | Compradora | compras en los 5 estados, chat con mensajes |
 | `juan@ticketit.com` | Juan Rodríguez | Comprador | entrada **`TK-JUAN-H7Y5`** para el stand-up de hoy; compra 6 utilizada sin reseñar |
+
+Más datos para la demo:
+- **Cupones**: `INDIE20` (20 %) e `INDIE2X1` (2×1) en Noche Indie; `RISAS` ($ 2.000) en el stand-up.
+- **Tarjetas de prueba**: `4242 4242 4242 4242` aprobada · `4000 0000 0000 0002` rechazada (sin fondos).
+- **Lista de espera**: comprá la última Platea del superclásico con un usuario y anotate con otro.
+- **Recuperar contraseña**: el código llega al email simulado (consola del backend o `GET /dev/emails`).
 | `valentina@ticketit.com` | Valentina López | Compradora | |
 
 Los datos viven en memoria: se reinician al reiniciar el backend, o con `POST /dev/reset` en desarrollo.
@@ -116,16 +124,16 @@ Los datos viven en memoria: se reinician al reiniciar el backend, o con `POST /d
 | Comando | Qué hace |
 |---|---|
 | `npm run verificar` | lint + formato + tests del backend (lo mismo que corre el CI) |
-| `npm run test:backend` | 189 tests (Jest + Supertest) |
+| `npm run test:backend` | 245 tests (Jest + Supertest) |
 | `npm run test:coverage` | tests con cobertura (umbral 90 % líneas / 80 % ramas) |
-| `npm run test:e2e` | 162 tests E2E + accesibilidad con axe, en web, mobile y modo oscuro |
+| `npm run test:e2e` | 250 tests E2E + accesibilidad con axe, en web, mobile, modo oscuro y sin backend (MSW) |
 | `npm run lint` · `npm run format:check` | ESLint (backend y frontend, sin avisos) · Prettier |
 
 Los tests E2E levantan solos un backend y la app web. Necesitan Chromium: `npx playwright install chromium` (dentro
 de `packages/frontend`), o el del sistema con `CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e`.
 
 ## Documentación
-- [`docs/DOCUMENTACION.md`](docs/DOCUMENTACION.md) — metodología, decisiones de diseño (D-01 a D-35), avance, uso de IA y guion del video.
+- [`docs/DOCUMENTACION.md`](docs/DOCUMENTACION.md) — metodología, decisiones de diseño (D-01 a D-44), avance, uso de IA y guion del video.
 - [`docs/BACKEND-MODULOS.md`](docs/BACKEND-MODULOS.md) — alcance del backend y trazabilidad enunciado → requerimiento → módulo.
 - [`specs/`](specs) — una spec por módulo con historias, criterios de aceptación y contrato de API.
 - [`docs/CHANGELOG.md`](docs/CHANGELOG.md) — qué agrega esta versión respecto del TP original.

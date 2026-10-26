@@ -20,6 +20,8 @@ import { ListaEsperaService } from "./services/listaEsperaService.js";
 import { ListaEsperaController } from "./controllers/listaEsperaController.js";
 import { ArchivoService } from "./services/archivoService.js";
 import { ArchivoController } from "./controllers/archivoController.js";
+import { EmailSimulado } from "./services/emailService.js";
+import { CodigoRecuperacionRepository } from "./models/repositories/codigoRecuperacionRepository.js";
 import { PasarelaPagoSimulada } from "./services/pasarelaPago.js";
 
 import { AuthService } from "./services/authService.js";
@@ -61,6 +63,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     notificacionRepository: new NotificacionRepository(),
     cuponRepository: new CuponRepository(),
     inscripcionEsperaRepository: new InscripcionEsperaRepository(),
+    codigoRecuperacionRepository: new CodigoRecuperacionRepository(),
   };
   const {
     usuarioRepository,
@@ -91,7 +94,13 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     notificacionService,
     listaEsperaService,
   );
-  const authService = new AuthService(usuarioRepository, config);
+  // D-44: el email es simulado (consola + GET /dev/emails); en los tests no se muestra en la consola
+  const email = new EmailSimulado({ mostrarEnConsola: config.nodeEnv !== "test" });
+  const authService = new AuthService(usuarioRepository, config, {
+    codigoRepository: repositorios.codigoRecuperacionRepository,
+    email,
+    reloj,
+  });
   const usuarioService = new UsuarioService(usuarioRepository, eventoService);
   const categoriaService = new CategoriaService(categoriaRepository);
   const compraService = new CompraService(
@@ -153,7 +162,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     new ArchivoController(new ArchivoService(config.uploadsDir), config),
   );
   server.setController(NotificacionController, new NotificacionController(notificacionService));
-  server.setController(DevController, new DevController(recargarDatos));
+  server.setController(DevController, new DevController(recargarDatos, email));
 
   // ---------- RUTAS ----------
   server.setAuth({

@@ -119,6 +119,16 @@ export default function Login() {
         returnKeyType="go"
         onSubmitEditing={enviar}
       />
+      <Link
+        href={
+          valores.email ? `/recuperar?email=${encodeURIComponent(valores.email)}` : "/recuperar"
+        }
+        replace
+        style={styles.olvido}
+        accessibilityRole="link"
+      >
+        ¿Olvidaste tu contraseña?
+      </Link>
       <Boton titulo="Ingresar" variante="acento" onPress={enviar} cargando={enviando} />
 
       <View style={styles.registro}>
@@ -173,6 +183,16 @@ const crearEstilos = ({ colores }) => ({
     color: colores.texto,
     textDecorationLine: "underline",
     paddingVertical: 12,
+  },
+  olvido: {
+    alignSelf: "flex-end",
+    fontFamily: fuentes.semi,
+    fontSize: 14,
+    color: colores.texto,
+    textDecorationLine: "underline",
+    paddingVertical: 12,
+    marginTop: -espacio.s,
+    marginBottom: espacio.s,
   },
   demo: {
     marginTop: espacio.xl,
