@@ -41,6 +41,8 @@ tags:
     description: Pagar, utilizar, cancelar e historial (M4 — HU-09, HU-10)
   - name: Mensajes
     description: Chat de la compra (M5 — HU-07, HU-08)
+  - name: Cupones
+    description: Cupones de descuento por evento (M17 — D-38)
   - name: Notificaciones
     description: Avisos dentro de la app (M12 — D-32)
   - name: Reseñas
@@ -217,6 +219,34 @@ components:
           description: Al menos una letra y un número
           example: secreta123
         rol: { type: string, enum: [COMPRADOR, ORGANIZADOR] }
+
+    Cupon:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        codigo: { type: string, example: INDIE20 }
+        tipo: { type: string, enum: [PORCENTAJE, MONTO_FIJO, DOS_POR_UNO] }
+        descripcion: { type: string, example: 20% de descuento }
+        porcentaje: { type: [integer, "null"], example: 20 }
+        monto: { type: [number, "null"] }
+        usos: { type: integer, example: 0 }
+        usosMaximos: { type: [integer, "null"], description: null = sin límite }
+        usosRestantes: { type: [integer, "null"] }
+        vence: { type: [string, "null"], format: date-time }
+        activo: { type: boolean }
+        disponible: { type: boolean, description: Activo, no vencido y con usos disponibles }
+
+    CuponInput:
+      type: object
+      required: [tipo, codigo]
+      description: Según el tipo se envía `porcentaje` (1–100) o `monto` (> 0); el 2×1 no lleva valor.
+      properties:
+        tipo: { type: string, enum: [PORCENTAJE, MONTO_FIJO, DOS_POR_UNO] }
+        codigo: { type: string, pattern: "^[A-Za-z0-9]{3,20}$", example: PROMO500 }
+        porcentaje: { type: integer, minimum: 1, maximum: 100 }
+        monto: { type: number, example: 500 }
+        usosMaximos: { type: [integer, "null"], example: 100 }
+        vence: { type: [string, "null"], format: date-time }
 
     Notificacion:
       type: object
@@ -423,6 +453,13 @@ components:
           type: [string, "null"]
           description: Código de la entrada (QR), sólo para el comprador y desde que se paga (D-33)
           example: TK-JUAN-H7Y5
+        subtotal: { type: number, description: Precio sin descuento, example: 30000 }
+        descuento: { type: number, description: Descuento por cupón (0 si no hubo), example: 6000 }
+        cupon:
+          type: [object, "null"]
+          properties:
+            codigo: { type: string, example: INDIE20 }
+            descripcion: { type: string, example: 20% de descuento }
         pago:
           type: [object, "null"]
           description: Sólo para el comprador (D-37)
@@ -460,6 +497,10 @@ components:
           maximum: 10
           description: Máximo configurable (MAX_ENTRADAS_POR_COMPRA)
           example: 2
+        codigoCupon:
+          type: string
+          description: Cupón de descuento del evento (D-38), sin distinguir mayúsculas
+          example: INDIE20
 
     ComprasDeEvento:
       allOf:
@@ -1303,6 +1344,90 @@ paths:
       responses:
         "204": { description: Mensajes marcados como leídos }
         "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- CUPONES
+  /evento/{id}/cupones:
+    get:
+      tags: [Cupones]
+      summary: Cupones del evento (sólo su organizador)
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      responses:
+        "200":
+          description: Cupones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Cupon" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      tags: [Cupones]
+      summary: Crear un cupón para el evento (sólo su organizador)
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CuponInput" }
+      responses:
+        "201":
+          description: Cupón creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cupon" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /evento/{id}/cupones/validar:
+    get:
+      tags: [Cupones]
+      summary: Vista previa del descuento de un cupón antes de comprar
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - { in: query, name: codigo, required: true, schema: { type: string, example: INDIE20 } }
+        - { in: query, name: tipoEntradaId, required: true, schema: { type: integer, example: 1 } }
+        - { in: query, name: cantidad, required: true, schema: { type: integer, example: 2 } }
+      responses:
+        "200":
+          description: Precio con el descuento
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cupon:
+                    type: object
+                    properties:
+                      codigo: { type: string }
+                      descripcion: { type: string }
+                  subtotal: { type: number, example: 30000 }
+                  descuento: { type: number, example: 6000 }
+                  total: { type: number, example: 24000 }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /evento/{id}/cupones/{cuponId}:
+    delete:
+      tags: [Cupones]
+      summary: Desactivar un cupón (deja de poder usarse; las compras hechas no cambian)
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - { in: path, name: cuponId, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: Cupón desactivado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Cupon" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
 

@@ -119,6 +119,12 @@ export default function CompraDetalle() {
                 valor={`${compra.cantidad} × ${compra.tipoEntrada.nombre}`}
               />
               <Dato etiqueta="Total" valor={formatearPrecio(compra.total)} grande />
+              {compra.cupon && (
+                <Dato
+                  etiqueta={`Cupón ${compra.cupon.codigo}`}
+                  valor={`− ${formatearPrecio(compra.descuento)} (antes ${formatearPrecio(compra.subtotal)})`}
+                />
+              )}
               <Dato etiqueta="Titular" valor={nombreCompleto(compra.comprador)} />
               <Dato etiqueta="Organiza" valor={nombreCompleto(compra.organizador)} />
             </View>

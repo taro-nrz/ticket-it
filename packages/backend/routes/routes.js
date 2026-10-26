@@ -8,6 +8,7 @@ import compraRoutes from "./compraRoutes.js";
 import mensajeRoutes from "./mensajeRoutes.js";
 import reseniaRoutes from "./reseniaRoutes.js";
 import notificacionRoutes from "./notificacionRoutes.js";
+import cuponRoutes from "./cuponRoutes.js";
 import devRoutes from "./devRoutes.js";
 
 const routes = [
@@ -21,6 +22,7 @@ const routes = [
   mensajeRoutes,
   reseniaRoutes,
   notificacionRoutes,
+  cuponRoutes,
   devRoutes,
 ];
 

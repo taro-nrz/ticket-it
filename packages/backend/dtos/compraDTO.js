@@ -32,6 +32,12 @@ export function compraDTO(compra, { usuario, ahora, yaResenio = false, conDetall
       precio: compra.tipoEntrada.precio,
     },
     cantidad: compra.cantidad,
+    // D-38: subtotal y descuento por cupón (si no hubo cupón, descuento 0 y subtotal = total)
+    subtotal: compra.subtotal,
+    descuento: compra.descuento,
+    cupon: compra.cupon
+      ? { codigo: compra.cupon.codigo, descripcion: compra.cupon.descripcion() }
+      : null,
     total: compra.total,
     estado: compra.estado,
     fechaCompra: compra.fechaCompra,

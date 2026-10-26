@@ -464,6 +464,15 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: primero se verifican las reglas de la compra (vencida, evento cancelado) y después se
   cobra, para no cobrar algo que no se puede confirmar.
 
+### D-38 — Cupones de descuento con polimorfismo (M17)
+- Decisión (consultada): cupones **por evento** creados por su organizador: porcentaje, monto fijo o 2×1, con
+  código, usos máximos y vencimiento opcionales.
+- Diseño: jerarquía `Cupon` → `CuponPorcentaje` / `CuponMontoFijo` / `CuponDosPorUno`, cada una con su
+  `descuentoPara()`: el mismo patrón que los descuentos polimórficos de la primera rama de clase (`domain.js`).
+  Agregar un tipo nuevo es agregar una subclase, sin tocar `Compra` ni `CompraService`.
+- **Sin consultar**: el descuento se fija al comprar (si después se desactiva el cupón, la compra no cambia);
+  el uso se devuelve si la compra se cancela o vence; el cupón se valida antes de reservar el cupo.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

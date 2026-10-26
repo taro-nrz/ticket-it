@@ -33,13 +33,21 @@ export class Compra {
     tipoEntrada,
     cantidad,
     fechaCompra,
-    { minutosReserva = MINUTOS_RESERVA } = {},
+    { minutosReserva = MINUTOS_RESERVA, cupon = null, ahora = fechaCompra } = {},
   ) {
     this.comprador = comprador;
     this.evento = evento;
     this.tipoEntrada = tipoEntrada;
     this.cantidad = cantidad;
-    this.total = tipoEntrada.precio * cantidad;
+    // D-38: el precio se fija al comprar; con cupón se guarda el subtotal y el descuento aplicado
+    const precio = cupon
+      ? cupon.aplicar(tipoEntrada.precio, cantidad, new Date(ahora))
+      : { subtotal: tipoEntrada.precio * cantidad, descuento: 0 };
+    this.subtotal = precio.subtotal;
+    this.descuento = precio.descuento;
+    this.total = precio.subtotal - precio.descuento;
+    this.cupon = cupon;
+    cupon?.usar();
     this.fechaCompra = new Date(fechaCompra);
     this.venceEn = new Date(this.fechaCompra.getTime() + minutosReserva * 60 * 1000);
     this.estado = EstadoCompra.PENDIENTE;
@@ -86,6 +94,7 @@ export class Compra {
   vencer(ahora) {
     this.actualizarEstado(EstadoCompra.VENCIDA, null, ahora);
     this.tipoEntrada.liberar(this.cantidad);
+    this.cupon?.liberarUso();
   }
 
   // Sólo una entrada pagada y todavía no usada sirve para entrar
@@ -122,6 +131,7 @@ export class Compra {
     const estabaPagada = this.estado === EstadoCompra.CONFIRMADA;
     this.actualizarEstado(EstadoCompra.CANCELADA, quien, ahora);
     this.tipoEntrada.liberar(this.cantidad);
+    this.cupon?.liberarUso();
     if (estabaPagada) {
       this.actualizarEstado(EstadoCompra.REEMBOLSADA, quien, ahora);
     }
