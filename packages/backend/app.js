@@ -1,0 +1,105 @@
+import express from "express";
+
+import routes from "./routes/routes.js";
+import { Server } from "./server.js";
+import { obtenerConfig } from "./config/config.js";
+import { RelojSistema } from "./utils/reloj.js";
+import { crearMiddlewaresDeUsuario } from "./middlewares/usuarioMiddleware.js";
+import { cargarDatosSemilla } from "./data/seed.js";
+
+import { UsuarioRepository } from "./models/repositories/usuarioRepository.js";
+import { CategoriaRepository } from "./models/repositories/categoriaRepository.js";
+import { EventoRepository } from "./models/repositories/eventoRepository.js";
+import { CompraRepository } from "./models/repositories/compraRepository.js";
+import { ReseniaRepository } from "./models/repositories/reseniaRepository.js";
+
+import { UsuarioService } from "./services/usuarioService.js";
+import { CategoriaService } from "./services/categoriaService.js";
+import { EventoService } from "./services/eventoService.js";
+import { CompraService } from "./services/compraService.js";
+import { MensajeService } from "./services/mensajeService.js";
+import { ReseniaService } from "./services/reseniaService.js";
+
+import { UsuarioController } from "./controllers/usuarioController.js";
+import { CategoriaController } from "./controllers/categoriaController.js";
+import { EventoController } from "./controllers/eventoController.js";
+import { CompraController } from "./controllers/compraController.js";
+import { MensajeController } from "./controllers/mensajeController.js";
+import { ReseniaController } from "./controllers/reseniaController.js";
+import { DevController } from "./controllers/devController.js";
+
+// Arma la aplicación completa (inyección de dependencias manual, como en clase).
+// Recibe el reloj para que los tests puedan fijar "ahora".
+export async function crearApp({ reloj = new RelojSistema(), config = obtenerConfig() } = {}) {
+  const server = new Server(express(), {
+    port: config.port,
+    allowedOrigins: config.allowedOrigins,
+  });
+
+  // ---------- REPOSITORIOS (persistencia en memoria) ----------
+  const repositorios = {
+    usuarioRepository: new UsuarioRepository(),
+    categoriaRepository: new CategoriaRepository(),
+    eventoRepository: new EventoRepository(),
+    compraRepository: new CompraRepository(),
+    reseniaRepository: new ReseniaRepository(),
+  };
+  const {
+    usuarioRepository,
+    categoriaRepository,
+    eventoRepository,
+    compraRepository,
+    reseniaRepository,
+  } = repositorios;
+
+  // ---------- SERVICES ----------
+  const eventoService = new EventoService(
+    eventoRepository,
+    categoriaRepository,
+    compraRepository,
+    reseniaRepository,
+    reloj,
+  );
+  const usuarioService = new UsuarioService(usuarioRepository, eventoService);
+  const categoriaService = new CategoriaService(categoriaRepository);
+  const compraService = new CompraService(
+    compraRepository,
+    eventoRepository,
+    reseniaRepository,
+    reloj,
+    config,
+  );
+  const mensajeService = new MensajeService(compraService, compraRepository, reloj);
+  const reseniaService = new ReseniaService(
+    reseniaRepository,
+    eventoRepository,
+    compraRepository,
+    usuarioRepository,
+    reloj,
+  );
+
+  // ---------- DATOS SEMILLA ----------
+  const recargarDatos = async () => {
+    for (const repositorio of Object.values(repositorios)) {
+      await repositorio.clear();
+    }
+    return cargarDatosSemilla(repositorios, reloj.ahora());
+  };
+  await recargarDatos();
+
+  // ---------- CONTROLLERS ----------
+  server.setController(UsuarioController, new UsuarioController(usuarioService));
+  server.setController(CategoriaController, new CategoriaController(categoriaService));
+  server.setController(EventoController, new EventoController(eventoService));
+  server.setController(CompraController, new CompraController(compraService));
+  server.setController(MensajeController, new MensajeController(mensajeService));
+  server.setController(ReseniaController, new ReseniaController(reseniaService));
+  server.setController(DevController, new DevController(recargarDatos));
+
+  // ---------- RUTAS ----------
+  server.setAuth(crearMiddlewaresDeUsuario(usuarioRepository));
+  routes.forEach((route) => server.addRoute(route));
+  server.configureRoutes();
+
+  return server;
+}

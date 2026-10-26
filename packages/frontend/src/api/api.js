@@ -1,0 +1,54 @@
+import { cliente } from "./cliente.js";
+
+// Una función por endpoint (como src/api/api.js de clase). Devuelven directamente response.data.
+const datos = (promesa) => promesa.then((response) => response.data);
+
+// ---------- USUARIOS Y CATEGORÍAS ----------
+export const getUsuarios = () => datos(cliente.get("/usuario"));
+export const getUsuarioActual = () => datos(cliente.get("/usuario/me"));
+export const getCategorias = () => datos(cliente.get("/categoria"));
+
+// ---------- FAVORITOS ----------
+export const getFavoritos = () =>
+  datos(cliente.get("/usuario/me/favoritos", { params: { limit: 100 } }));
+export const agregarFavorito = (eventoId) =>
+  datos(cliente.post(`/usuario/me/favoritos/${eventoId}`));
+export const quitarFavorito = (eventoId) => cliente.delete(`/usuario/me/favoritos/${eventoId}`);
+
+// ---------- EVENTOS ----------
+// filtros: { texto, categoria, orden, dir, page, limit, ... }
+export const getEventos = (filtros) => datos(cliente.get("/evento", { params: filtros }));
+export const getEvento = (id) => datos(cliente.get(`/evento/${id}`));
+export const getMisEventos = (page = 1) =>
+  datos(cliente.get("/evento/mios", { params: { page, limit: 20 } }));
+export const crearEvento = (evento) => datos(cliente.post("/evento", evento));
+
+// ---------- COMPRAS ----------
+export const comprar = (eventoId, tipoEntradaId, cantidad) =>
+  datos(cliente.post("/compra", { eventoId, tipoEntradaId, cantidad }));
+export const getMisCompras = (estado) =>
+  datos(cliente.get("/compra/mias", { params: { estado, limit: 100 } }));
+export const getCompra = (id) => datos(cliente.get(`/compra/${id}`));
+export const getComprasDeEvento = (eventoId, estado) =>
+  datos(cliente.get(`/evento/${eventoId}/compras`, { params: { estado, limit: 100 } }));
+
+// ---------- CICLO DE VIDA ----------
+export const pagarCompra = (id) => datos(cliente.post(`/compra/${id}/pagar`));
+export const cancelarCompra = (id) => datos(cliente.post(`/compra/${id}/cancelar`));
+export const utilizarCompra = (id) => datos(cliente.post(`/compra/${id}/utilizar`));
+
+// ---------- MENSAJES ----------
+export const getMensajes = (compraId, desde) =>
+  datos(cliente.get(`/compra/${compraId}/mensajes`, { params: { desde } }));
+export const enviarMensaje = (compraId, mensaje) =>
+  datos(cliente.post(`/compra/${compraId}/mensajes`, { mensaje }));
+export const marcarMensajesLeidos = (compraId) =>
+  cliente.post(`/compra/${compraId}/mensajes/leidos`);
+
+// ---------- RESEÑAS ----------
+export const reseniarEvento = (eventoId, puntuacion, detalle) =>
+  datos(cliente.post(`/evento/${eventoId}/resenias`, { puntuacion, detalle }));
+export const getReseniasDeEvento = (eventoId) =>
+  datos(cliente.get(`/evento/${eventoId}/resenias`, { params: { limit: 50 } }));
+export const getReseniasDeOrganizador = (organizadorId) =>
+  datos(cliente.get(`/usuario/${organizadorId}/resenias`, { params: { limit: 50 } }));
