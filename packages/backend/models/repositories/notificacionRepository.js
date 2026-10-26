@@ -1,7 +1,8 @@
 import { EstadoNotificacion } from "../entities/notificacion.js";
 import { InMemoryRepository } from "./inMemoryRepository.js";
 
-const masRecientePrimero = (a, b) => b.fecha - a.fecha;
+// Con la misma fecha, la creada después va primero
+const masRecientePrimero = (a, b) => b.fecha - a.fecha || b.id - a.id;
 
 export class NotificacionRepository extends InMemoryRepository {
   async findByUsuario(usuarioId, estado) {

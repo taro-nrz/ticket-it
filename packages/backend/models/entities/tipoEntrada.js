@@ -4,6 +4,8 @@ export class TipoEntrada {
   id;
   // Entradas reservadas por compras activas (PENDIENTE, CONFIRMADA o UTILIZADA)
   vendidas = 0;
+  // D-40: entradas liberadas que se guardan para quien está primero en la lista de espera
+  retenidas = 0;
 
   constructor(nombre, descripcion, precio, cupo) {
     this.nombre = nombre;
@@ -13,7 +15,15 @@ export class TipoEntrada {
   }
 
   disponibles() {
-    return this.cupo - this.vendidas;
+    return this.cupo - this.vendidas - this.retenidas;
+  }
+
+  retener(cantidad) {
+    this.retenidas += cantidad;
+  }
+
+  soltar(cantidad) {
+    this.retenidas = Math.max(0, this.retenidas - cantidad);
   }
 
   hayCupoPara(cantidad) {

@@ -15,6 +15,9 @@ import { CompraRepository } from "./models/repositories/compraRepository.js";
 import { ReseniaRepository } from "./models/repositories/reseniaRepository.js";
 import { NotificacionRepository } from "./models/repositories/notificacionRepository.js";
 import { CuponRepository } from "./models/repositories/cuponRepository.js";
+import { InscripcionEsperaRepository } from "./models/repositories/inscripcionEsperaRepository.js";
+import { ListaEsperaService } from "./services/listaEsperaService.js";
+import { ListaEsperaController } from "./controllers/listaEsperaController.js";
 import { PasarelaPagoSimulada } from "./services/pasarelaPago.js";
 
 import { AuthService } from "./services/authService.js";
@@ -55,6 +58,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     reseniaRepository: new ReseniaRepository(),
     notificacionRepository: new NotificacionRepository(),
     cuponRepository: new CuponRepository(),
+    inscripcionEsperaRepository: new InscripcionEsperaRepository(),
   };
   const {
     usuarioRepository,
@@ -64,11 +68,18 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     reseniaRepository,
     notificacionRepository,
     cuponRepository,
+    inscripcionEsperaRepository,
   } = repositorios;
 
   // ---------- SERVICES ----------
   // D-32: los services avisan al de notificaciones lo que pasó (compras, mensajes, cancelaciones, reseñas)
   const notificacionService = new NotificacionService(notificacionRepository, reloj);
+  const listaEsperaService = new ListaEsperaService(
+    inscripcionEsperaRepository,
+    eventoRepository,
+    reloj,
+    notificacionService,
+  );
   const eventoService = new EventoService(
     eventoRepository,
     categoriaRepository,
@@ -76,6 +87,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     reseniaRepository,
     reloj,
     notificacionService,
+    listaEsperaService,
   );
   const authService = new AuthService(usuarioRepository, config);
   const usuarioService = new UsuarioService(usuarioRepository, eventoService);
@@ -86,9 +98,12 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     reseniaRepository,
     reloj,
     config,
-    notificacionService,
-    new PasarelaPagoSimulada(),
-    cuponRepository,
+    {
+      notificaciones: notificacionService,
+      pasarelaPago: new PasarelaPagoSimulada(),
+      cuponRepository,
+      listaEspera: listaEsperaService,
+    },
   );
   const cuponService = new CuponService(cuponRepository, eventoService, reloj);
   const mensajeService = new MensajeService(
@@ -126,6 +141,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   server.setController(MensajeController, new MensajeController(mensajeService));
   server.setController(ReseniaController, new ReseniaController(reseniaService));
   server.setController(CuponController, new CuponController(cuponService));
+  server.setController(ListaEsperaController, new ListaEsperaController(listaEsperaService));
   server.setController(NotificacionController, new NotificacionController(notificacionService));
   server.setController(DevController, new DevController(recargarDatos));
 
@@ -134,7 +150,12 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     ...crearMiddlewaresDeUsuario(authService),
     limitarLogin: crearLimiteDeLogin(config),
   });
-  server.addMiddleware(crearMantenimientoMiddleware([() => compraService.vencerReservas()]));
+  server.addMiddleware(
+    crearMantenimientoMiddleware([
+      () => compraService.vencerReservas(),
+      () => listaEsperaService.expirarPrioridades(),
+    ]),
+  );
   routes.forEach((route) => server.addRoute(route));
   server.configureRoutes();
 

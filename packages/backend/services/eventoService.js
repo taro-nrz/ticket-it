@@ -14,6 +14,7 @@ import { ordenarProximosPrimero } from "../utils/orden.js";
 import { sumarDias } from "../utils/reloj.js";
 import { paginar } from "../utils/paginacion.js";
 import { SIN_NOTIFICACIONES } from "./notificacionService.js";
+import { SIN_LISTA_ESPERA } from "./listaEsperaService.js";
 
 const CANTIDAD_ULTIMAS_RESENIAS = 5;
 
@@ -31,6 +32,7 @@ export class EventoService {
     reseniaRepository,
     reloj,
     notificaciones = SIN_NOTIFICACIONES,
+    listaEspera = SIN_LISTA_ESPERA,
   ) {
     this.eventoRepository = eventoRepository;
     this.categoriaRepository = categoriaRepository;
@@ -38,6 +40,7 @@ export class EventoService {
     this.reseniaRepository = reseniaRepository;
     this.reloj = reloj;
     this.notificaciones = notificaciones;
+    this.listaEspera = listaEspera;
   }
 
   // HU-01: el organizador publica un evento con sus tipos de entrada
@@ -63,6 +66,10 @@ export class EventoService {
     const { categoriaId: _categoriaId, ...cambios } = datos;
     evento.actualizar({ ...cambios, categoria }, crearTipoEntrada);
     await this.eventoRepository.save(evento);
+    // D-40: si subió el cupo de un tipo agotado, avanza su lista de espera
+    for (const tipo of evento.tiposEntrada) {
+      await this.listaEspera.cupoLiberado(evento, tipo);
+    }
     return this.aDetalle(evento, organizador);
   }
 
@@ -81,6 +88,7 @@ export class EventoService {
     }
     await this.eventoRepository.save(evento);
     await this.notificaciones.eventoCancelado(evento, activas);
+    await this.listaEspera.cerrarListas(evento);
     return {
       evento: await this.aDetalle(evento, organizador),
       comprasCanceladas: activas.length,
@@ -249,6 +257,8 @@ export class EventoService {
       ahora: this.reloj.ahora(),
       usuario,
       ultimasResenias: resenias.slice(0, CANTIDAD_ULTIMAS_RESENIAS).map(reseniaDTO),
+      // D-40: cuántos esperan por tipo y la inscripción de quien mira
+      listaEspera: (await this.listaEspera.resumen(evento, usuario)) ?? { enEspera: {}, mias: [] },
     });
   }
 

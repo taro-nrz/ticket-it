@@ -55,7 +55,10 @@ export function eventoResumenDTO(evento, { reputacion, ahora, usuario }) {
   };
 }
 
-export function eventoDetalleDTO(evento, { reputacion, ahora, usuario, ultimasResenias = [] }) {
+export function eventoDetalleDTO(
+  evento,
+  { reputacion, ahora, usuario, ultimasResenias = [], listaEspera = { enEspera: {}, mias: [] } },
+) {
   return {
     id: evento.id,
     nombre: evento.nombre,
@@ -80,6 +83,7 @@ export function eventoDetalleDTO(evento, { reputacion, ahora, usuario, ultimasRe
     tiposEntrada: evento.tiposEntrada.map(tipoEntradaDTO),
     organizador: organizadorDTO(evento.organizador, reputacion),
     ultimasResenias,
+    listaEspera,
   };
 }
 

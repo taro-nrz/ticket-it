@@ -490,6 +490,17 @@ Formato: **contexto → opciones → decisión → justificación**.
   dispositivo); en modo sin backend no se puede comprar ni publicar (503 explicado), para no duplicar las reglas
   del backend en el front.
 
+### D-40 — Lista de espera con prioridad (M19)
+- Decisión (consultada): al liberarse cupo de un tipo agotado se **avisa al primero** y se le **guardan las
+  entradas 30 minutos** (`TipoEntrada.retenidas`); si no compra, pasan al siguiente. Nunca se compra sin que la
+  persona lo pida.
+- Implementación: `ListaEsperaService.cupoLiberado()` se llama desde todos los lugares donde vuelve a haber cupo
+  (cancelación, reserva vencida, edición del evento); las prioridades vencidas se procesan en el mismo
+  middleware de mantenimiento que las reservas (D-36).
+- **Sin consultar**: orden estricto de llegada (si el primero pide 2 y se libera 1, nadie se adelanta); una
+  inscripción por persona y tipo; cancelar el evento cierra la lista. `CompraService` pasó a recibir sus
+  dependencias opcionales en un objeto de opciones (eran demasiados parámetros posicionales).
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)
