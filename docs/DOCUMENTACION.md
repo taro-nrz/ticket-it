@@ -52,6 +52,12 @@ El backend se divide en **7 módulos** que se desarrollan en orden de dependenci
 | M6 — Reseñas y reputación | Reseñar compras utilizadas, ver reseñas del organizador, puntaje promedio | HU-11, HU-12 (+ cierre HU-03) | M4 | Implementado |
 | M7 — Frontend | App React Native + Expo (web y mobile) | Todas | M0–M6 | Implementado |
 | M8 — Mejoras | Mensajes sin leer, galería de fotos, reseñas por evento | HU-07/08, HU-12 (extensión) | M5–M7 | Implementado |
+| M9 — Autenticación (pro) | Registro, login con email y contraseña, JWT, rate limit | HU-A1..A3 | M1 | Implementado |
+| M10 — Perfil (pro) | Editar datos, cambiar contraseña | HU-P1, HU-P2 | M9 | Implementado |
+| M11 — Gestión de eventos (pro) | Editar y cancelar eventos con reembolso | HU-G1, HU-G2 | M2–M4 | Implementado |
+| M12 — Notificaciones (pro) | Avisos in-app con campana y agrupación | HU-N1, HU-N2 | M3–M6, M11 | Implementado |
+| M13 — Entrada con QR (pro) | Código/QR de la entrada y validación en la puerta | HU-Q1, HU-Q2 | M4, M9 | Implementado |
+| M14 — Estadísticas (pro) | Panel de números del evento con gráficos accesibles | HU-E1 | M3, M4, M6 | Implementado |
 
 Historias de usuario del enunciado y su módulo:
 
@@ -99,7 +105,7 @@ Formato: **contexto → opciones → decisión → justificación**.
   Como los repositorios están aislados, migrar a Mongo sería cambiar sólo esa capa (argumento para la exposición).
 - Consecuencia: los datos se pierden al reiniciar el server → el seed se carga en cada arranque.
 
-### D-03 — Identificación del usuario por header `x-user-id`
+### D-03 — Identificación del usuario por header `x-user-id` (reemplazada por D-29 en la versión pro)
 - Contexto: el enunciado no pide login, pero las HU dependen del rol (comprador / organizador).
 - Opciones: header simulado, login con JWT, id en body/params.
 - Decisión: **header `x-user-id`** con usuarios precargados; un middleware lo resuelve y deja el usuario en `req.usuario`
@@ -487,6 +493,19 @@ Formato: **contexto → opciones → decisión → justificación**.
 | Compras de un evento | `src/features/organizador/ComprasDeEvento.js` | HU-06 |
 | Publicar evento | `src/features/organizador/CrearEvento.js` | HU-01 |
 
+### Versión pro — M9 a M14 + infraestructura (copia `ticket-it-pro/`)
+Hecha de forma autónoma a partir del TP terminado, una fase por commit (ver `git log` y `docs/RESUMEN-NOCHE.md`):
+login real con JWT, perfil, edición y cancelación de eventos, notificaciones, entrada con QR, estadísticas,
+seguridad del backend, Docker, CI y lint del frontend.
+
+| Verificación | Resultado |
+|---|---|
+| Tests del backend (`npm run test:backend`) | **189** pasando (cobertura 95 % líneas / 82 % ramas, umbral 90/80) |
+| E2E + accesibilidad (`npm run test:e2e`) | **162** pasando en web, mobile y mobile en modo oscuro, axe sin violaciones |
+| `npm run lint` / `npm run format:check` | 0 errores, 0 avisos (backend **y frontend**) |
+| `expo-doctor` | 20/20 |
+| `docker compose up --build` | backend *healthy* + web; login y catálogo probados en un navegador sobre la build |
+
 ## 6. Uso de IA durante el desarrollo (para la conclusión del video)
 
 Registro de observaciones sobre el uso de IA: qué aceleró, qué hubo que corregir, decisiones que la IA consultó
@@ -560,3 +579,16 @@ en lugar de asumir, errores detectados en el código de referencia, etc.
 5. Demo en la interfaz: entrar como Sofía → Mis compras → compra "Noche Indie" confirmada → Cancelar → ver el
    seguimiento; luego entrar como Lucía → Mis eventos → Ver compras → el cupo liberado.
 6. Conclusión sobre IA: ventajas, desventajas, dificultades, aprendizajes, impacto en productividad/calidad.
+
+### Guion alternativo para la versión pro (flujo completo de una entrada, 8–10 min)
+1. **Registro e inicio de sesión** (M9): crear una cuenta de comprador; mostrar en Swagger `POST /auth/login`, el
+   token y cómo `requiereUsuario` lo valida (`middlewares/usuarioMiddleware.js` → `AuthService.usuarioDelToken`).
+   Punto fuerte: **ninguna ruta cambió** al pasar de `x-user-id` a JWT, porque la identificación estaba aislada.
+2. **Compra y pago** (HU-04): elegir entrada, pagar; el organizador recibe la notificación "Nueva venta" (M12).
+3. **Entrada con QR** (M13): el comprador ve el QR; Lucía (organizadora) abre "Validar entradas" y valida
+   `TK-JUAN-H7Y5` (Juan, evento de hoy) → "Puede pasar"; validarla de nuevo → "No puede pasar: ya se usó".
+   En el código: `CompraService.validarEntrada` reutiliza `Compra.utilizar()` (máquina de estados de M4).
+4. **Reseña** (HU-11): Juan recibe "¡Que disfrutes…!" y califica; Lucía recibe "Nueva reseña".
+5. **Cancelar un evento** (M11): Lucía cancela un evento futuro con motivo → las compras pagadas quedan
+   REEMBOLSADAS reutilizando `Compra.cancelar()`; el comprador lo ve en su compra y en sus notificaciones.
+6. **Calidad**: correr `npm run verificar` y mostrar el CI, el chequeo de accesibilidad con axe y `docker compose up`.
