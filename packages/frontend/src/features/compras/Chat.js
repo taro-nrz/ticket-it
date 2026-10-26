@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -104,6 +103,8 @@ export default function Chat() {
       activo = false;
       clearInterval(intervalo);
     };
+    // El sondeo se reinicia sólo al cambiar de chat; las funciones que usa leen refs y setters estables
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const enviar = async () => {
@@ -209,7 +210,7 @@ export default function Chat() {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores }) => ({
   ancho: { width: "100%", maxWidth: 720, alignSelf: "center" },
   resumen: {
     marginHorizontal: espacio.xl,

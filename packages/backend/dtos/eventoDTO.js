@@ -73,7 +73,9 @@ export function eventoDetalleDTO(evento, { reputacion, ahora, usuario, ultimasRe
     motivoCancelacion: evento.motivoCancelacion,
     fechaCancelacion: evento.fechaCancelacion,
     // Para el front: el organizador puede editar o cancelar mientras el evento siga vigente
-    puedeEditarse: Boolean(usuario && evento.esOrganizadoPor(usuario) && evento.puedeEditarse(ahora)),
+    puedeEditarse: Boolean(
+      usuario && evento.esOrganizadoPor(usuario) && evento.puedeEditarse(ahora),
+    ),
     esFavorito: esFavoritoDe(usuario, evento),
     tiposEntrada: evento.tiposEntrada.map(tipoEntradaDTO),
     organizador: organizadorDTO(evento.organizador, reputacion),

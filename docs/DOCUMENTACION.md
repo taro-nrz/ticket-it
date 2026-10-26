@@ -423,6 +423,22 @@ Formato: **contexto → opciones → decisión → justificación**.
 - Accesibilidad: resumen en texto + "Ver como tabla" (en el celular no hay *hover*, así que la tabla reemplaza
   al tooltip).
 
+### D-35 — Calidad e infraestructura (versión pro)
+- **Backend**: `helmet` (headers de seguridad, sin `X-Powered-By`; CSP desactivada porque la API sólo devuelve JSON
+  y Swagger UI usa scripts en línea), límite de 100 kB en el body (413), `X-Request-Id` + log con status y
+  duración, **configuración validada con Zod al arrancar** (en producción exige `JWT_SECRET` de 32+ caracteres y el
+  servidor no arranca si falta), cierre ordenado ante `SIGTERM`/`SIGINT`.
+- **Docker**: `packages/backend/Dockerfile` (usuario sin privilegios, healthcheck) y `packages/frontend/Dockerfile`
+  (build estático de la web servido con nginx, con fallback para el router), `docker-compose.yml` con puertos
+  configurables (`API_PORT`, `WEB_PORT`). Verificado: compose levanta los dos servicios sanos y un navegador hace
+  login y ve el catálogo sobre la build de producción.
+- **CI** (`.github/workflows/ci.yml`): lint, formato, tests con cobertura (artefacto), E2E + axe y build de imágenes.
+- **Lint**: ESLint ahora revisa también el frontend con las reglas de React y de hooks (antes estaba excluido): se
+  corrigieron 38 avisos (imports sin usar, un componente sin nombre) y `npm run lint` falla ante cualquier aviso.
+  Prettier con `npm run format:check`. Cobertura del backend: 95 % de líneas, 82 % de ramas (umbral 90/80).
+- **Frontend**: pantalla 404 propia, "deslizar para recargar" en todas las listas, colores de marca en `app.json`.
+- **Sin consultar**: `ALLOWED_ORIGINS` en compose apunta sólo a la web; `/dev/reset` responde 403 en producción.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

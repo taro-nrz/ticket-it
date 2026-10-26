@@ -7,6 +7,7 @@ export function useCarga(funcionDeCarga, dependencias = [], { alEnfocar = false 
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
+  const [refrescando, setRefrescando] = useState(false);
 
   // Las dependencias las define quien usa el hook (ej. [id, filtros])
   const cargar = useCallback(async () => {
@@ -18,6 +19,8 @@ export function useCarga(funcionDeCarga, dependencias = [], { alEnfocar = false 
     } finally {
       setCargando(false);
     }
+    // Las dependencias las elige quien llama (como en useEffect); la regla no puede verificarlas
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencias);
 
   useEffect(() => {
@@ -33,5 +36,12 @@ export function useCarga(funcionDeCarga, dependencias = [], { alEnfocar = false 
     }, [cargar, alEnfocar]),
   );
 
-  return { datos, cargando, error, recargar: cargar, setDatos };
+  // D-35: "deslizar para recargar" en las listas (no muestra el spinner de carga inicial)
+  const refrescar = useCallback(async () => {
+    setRefrescando(true);
+    await cargar();
+    setRefrescando(false);
+  }, [cargar]);
+
+  return { datos, cargando, error, recargar: cargar, setDatos, refrescando, refrescar };
 }

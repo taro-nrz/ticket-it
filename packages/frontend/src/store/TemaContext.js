@@ -53,8 +53,6 @@ export const TemaProvider = ({ children }) => {
       preferencia,
       setPreferencia,
     };
-    // setPreferencia es estable en la práctica (sólo usa setters)
-    // eslint-disable-next-line
   }, [nombre, preferencia]);
 
   return <TemaContext.Provider value={valor}>{children}</TemaContext.Provider>;

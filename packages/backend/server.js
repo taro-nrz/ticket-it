@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { loggerMiddleware } from "./middlewares/loggerMiddleware.js";
 
@@ -14,7 +15,9 @@ export class Server {
     this.#app = app;
     this.port = port;
     this.#routes = [];
-    this.#app.use(express.json());
+    // D-35: headers de seguridad. La API sólo devuelve JSON (la CSP se desactiva para que Swagger UI funcione).
+    this.#app.use(helmet({ contentSecurityPolicy: false }));
+    this.#app.use(express.json({ limit: "100kb" }));
     this.#app.use(
       cors({
         origin: allowedOrigins === "*" ? "*" : allowedOrigins.split(",").map((o) => o.trim()),
@@ -63,8 +66,9 @@ export class Server {
     this.#app.use(errorHandler);
   }
 
+  // Devuelve el servidor HTTP para poder cerrarlo de forma ordenada (index.js)
   launch(host = "0.0.0.0") {
-    this.#app.listen(this.port, host, () => {
+    return this.#app.listen(this.port, host, () => {
       console.log(`Server running on http://${host}:${this.port} (docs en /api-docs)`);
     });
   }

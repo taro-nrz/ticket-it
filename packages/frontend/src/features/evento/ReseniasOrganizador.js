@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { getReseniasDeOrganizador } from "../../api/api.js";
 import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
@@ -88,7 +88,7 @@ export default function ReseniasOrganizador() {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores, texto }) => ({
   encabezado: {
     alignItems: "center",
     gap: 6,

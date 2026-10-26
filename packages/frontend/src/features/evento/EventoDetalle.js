@@ -1,7 +1,7 @@
 import { Icono } from "../../components/Icono.js";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   agregarFavorito,
@@ -395,7 +395,7 @@ function ReseniasDeEsteEvento({ eventoId, onVerTodas }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores, texto }) => ({
   fila: { flexDirection: "row", alignItems: "center", gap: 6 },
   filaEntre: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   botonesFlotantes: {

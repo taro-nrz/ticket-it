@@ -36,7 +36,10 @@ describe("M10 - Perfil (D-30)", () => {
   });
 
   test("cambia la contraseña con la actual correcta", async () => {
-    const res = await cambiarPassword({ passwordActual: "ticketit123", passwordNueva: "nueva4567" });
+    const res = await cambiarPassword({
+      passwordActual: "ticketit123",
+      passwordNueva: "nueva4567",
+    });
     expect(res.status).toBe(204);
     expect((await login("ticketit123")).status).toBe(401);
     expect((await login("nueva4567")).status).toBe(200);

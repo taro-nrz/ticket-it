@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { actualizarEvento, crearEvento, getCategorias } from "../../api/api.js";
 import { Icono } from "../../components/Icono.js";
 import { CampoFecha } from "../../components/CampoFecha.js";
@@ -426,7 +426,7 @@ export default function CrearEvento({ evento = null }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores }) => ({
   indicacion: {
     fontFamily: fuentes.texto,
     fontSize: 14,

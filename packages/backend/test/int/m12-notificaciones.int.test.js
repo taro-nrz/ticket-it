@@ -80,9 +80,15 @@ describe("M12 - Notificaciones (D-32)", () => {
 
   test("los mensajes de un mismo chat se agrupan y se leen al abrir el chat", async () => {
     avanzar(1);
-    await request(app).post("/compra/1/mensajes").set(auth(COMPRADORA_SOFIA)).send({ mensaje: "Uno" });
+    await request(app)
+      .post("/compra/1/mensajes")
+      .set(auth(COMPRADORA_SOFIA))
+      .send({ mensaje: "Uno" });
     avanzar(1);
-    await request(app).post("/compra/1/mensajes").set(auth(COMPRADORA_SOFIA)).send({ mensaje: "Dos" });
+    await request(app)
+      .post("/compra/1/mensajes")
+      .set(auth(COMPRADORA_SOFIA))
+      .send({ mensaje: "Dos" });
 
     const delChat = (await notificaciones(ORGANIZADORA_LUCIA)).body.data.filter(
       (n) => n.link === "/compra/1/chat" && n.estado === "NO_LEIDA",

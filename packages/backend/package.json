@@ -9,12 +9,32 @@
     "dev": "node --watch index.js",
     "test": "NODE_OPTIONS=\"--experimental-vm-modules --no-warnings=ExperimentalWarning\" jest",
     "test:unit": "NODE_OPTIONS=\"--experimental-vm-modules --no-warnings=ExperimentalWarning\" jest --testPathPatterns=unit",
-    "test:integration": "NODE_OPTIONS=\"--experimental-vm-modules --no-warnings=ExperimentalWarning\" jest --testPathPatterns=int"
+    "test:integration": "NODE_OPTIONS=\"--experimental-vm-modules --no-warnings=ExperimentalWarning\" jest --testPathPatterns=int",
+    "test:coverage": "NODE_OPTIONS=\"--experimental-vm-modules --no-warnings=ExperimentalWarning\" jest --coverage"
   },
   "license": "ISC",
   "jest": {
     "testEnvironment": "node",
-    "transform": {}
+    "transform": {},
+    "collectCoverageFrom": [
+      "**/*.js",
+      "!index.js",
+      "!coverage/**",
+      "!test/**",
+      "!node_modules/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 90,
+        "branches": 80,
+        "functions": 90,
+        "lines": 90
+      }
+    },
+    "coverageReporters": [
+      "text-summary",
+      "lcov"
+    ]
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -22,6 +42,7 @@
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "swagger-ui-express": "^5.0.1",
     "yaml": "^2.9.1",

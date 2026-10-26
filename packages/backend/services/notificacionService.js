@@ -110,7 +110,9 @@ export class NotificacionService {
   }
 
   async mensajeNuevo(compra, autor, texto) {
-    const destinatario = compra.esDelComprador(autor) ? compra.evento.organizador : compra.comprador;
+    const destinatario = compra.esDelComprador(autor)
+      ? compra.evento.organizador
+      : compra.comprador;
     await this.notificar({
       usuario: destinatario,
       tipo: TipoNotificacion.NUEVO_MENSAJE,

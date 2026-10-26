@@ -1,0 +1,7 @@
+# Documentación en Markdown: se escribe a mano (las tablas y listas quedan como se redactaron)
+*.md
+package-lock.json
+docs/capturas/
+packages/frontend/.expo/
+packages/frontend/dist/
+coverage/

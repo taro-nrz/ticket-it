@@ -1,3 +1,4 @@
+import { obtenerConfig } from "../../config/config.js";
 import { generarCodigoEntrada, normalizarCodigoEntrada } from "../../utils/codigo.js";
 import { paginar, normalizarPaginacion } from "../../utils/paginacion.js";
 import { normalizarTexto } from "../../utils/texto.js";
@@ -70,5 +71,26 @@ describe("Código de entrada (D-33)", () => {
     expect(normalizarCodigoEntrada("JUANH7Y5")).toBe("TK-JUAN-H7Y5");
     expect(normalizarCodigoEntrada("TK TKAB 2345")).toBe("TK-TKAB-2345");
     expect(normalizarCodigoEntrada("corto")).toBeNull();
+  });
+});
+
+describe("Configuración (D-35)", () => {
+  test("usa valores por defecto en desarrollo", () => {
+    const config = obtenerConfig({});
+    expect(config).toMatchObject({ port: 3000, nodeEnv: "development", bcryptRondas: 10 });
+    expect(config.jwtSecret).toBeTruthy();
+  });
+
+  test("en producción exige un JWT_SECRET largo", () => {
+    expect(() => obtenerConfig({ NODE_ENV: "production" })).toThrow(/JWT_SECRET/);
+    expect(() => obtenerConfig({ NODE_ENV: "production", JWT_SECRET: "corto" })).toThrow(/32/);
+    expect(obtenerConfig({ NODE_ENV: "production", JWT_SECRET: "x".repeat(32) }).nodeEnv).toBe(
+      "production",
+    );
+  });
+
+  test("rechaza valores con formato inválido diciendo cuál", () => {
+    expect(() => obtenerConfig({ PORT: "abc" })).toThrow(/PORT/);
+    expect(() => obtenerConfig({ NODE_ENV: "staging" })).toThrow(/NODE_ENV/);
   });
 });
