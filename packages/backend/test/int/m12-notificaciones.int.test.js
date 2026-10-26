@@ -6,6 +6,7 @@ import {
   COMPRADORA_SOFIA,
   ORGANIZADOR_MARTIN,
   ORGANIZADORA_LUCIA,
+  TARJETA_PRUEBA,
 } from "./utils/buildTestServer.js";
 
 describe("M12 - Notificaciones (D-32)", () => {
@@ -67,7 +68,10 @@ describe("M12 - Notificaciones (D-32)", () => {
       .post("/compra")
       .set(auth(COMPRADORA_SOFIA))
       .send({ eventoId: 1, tipoEntradaId: 1, cantidad: 2 });
-    await request(app).post(`/compra/${compra.body.id}/pagar`).set(auth(COMPRADORA_SOFIA));
+    await request(app)
+      .post(`/compra/${compra.body.id}/pagar`)
+      .set(auth(COMPRADORA_SOFIA))
+      .send({ tarjeta: TARJETA_PRUEBA });
 
     const [ultima] = (await notificaciones(ORGANIZADORA_LUCIA)).body.data;
     expect(ultima).toMatchObject({

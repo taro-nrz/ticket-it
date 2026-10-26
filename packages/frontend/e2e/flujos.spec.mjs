@@ -46,6 +46,12 @@ test("HU-04: comprar entradas y pagar", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Compra #\d+/ })).toBeVisible();
   await expect(page.getByText("Pendiente de pago").first()).toBeVisible();
   await page.getByRole("button", { name: "Pagar $ 50.000" }).click();
+
+  // D-37: checkout con la tarjeta de prueba aprobada
+  await expect(page.getByRole("heading", { name: "Pagar", level: 1 })).toBeVisible();
+  await page.getByRole("button", { name: /4242 4242 4242 4242/ }).click();
+  await page.getByRole("button", { name: "Pagar $ 50.000" }).click();
+  await expect(page.getByRole("status")).toContainText("Pago aprobado");
   await expect(
     page.getByText("Faltan 20 días").or(page.getByText(/Faltan \d+ días/)),
   ).toBeVisible();

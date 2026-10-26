@@ -24,6 +24,14 @@ export function auth(usuarioId, opciones = { expiresIn: "1h" }) {
   return { Authorization: `Bearer ${token}` };
 }
 
+// D-37: tarjeta de prueba aprobada por la pasarela simulada
+export const TARJETA_PRUEBA = {
+  numero: "4242 4242 4242 4242",
+  titular: "SOFIA PEREZ",
+  vencimiento: "12/30",
+  cvv: "123",
+};
+
 // Usuarios de los datos semilla
 export const ORGANIZADORA_LUCIA = "1";
 export const ORGANIZADOR_MARTIN = "2";

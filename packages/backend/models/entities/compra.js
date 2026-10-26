@@ -20,6 +20,8 @@ export class Compra {
   mensajes = [];
   historial = [];
   codigo = null;
+  // D-37: datos no sensibles del pago (marca, últimos 4 dígitos, autorización)
+  pago = null;
   // D-26: hasta cuándo leyó el chat cada participante (id de usuario -> fecha)
   ultimaLectura = new Map();
 
@@ -58,7 +60,7 @@ export class Compra {
   }
 
   // D-33: al pagarse, la compra recibe el código de la entrada (el que se muestra como QR en la puerta)
-  pagar(quien, ahora, codigo = generarCodigoEntrada()) {
+  pagar(quien, ahora, { codigo = generarCodigoEntrada(), pago = null } = {}) {
     if (this.estado === EstadoCompra.VENCIDA || this.reservaVencida(ahora)) {
       throw new BusinessRuleError(
         "La reserva venció porque no se pagó a tiempo. Volvé a comprar las entradas.",
@@ -72,6 +74,7 @@ export class Compra {
     }
     this.actualizarEstado(EstadoCompra.CONFIRMADA, quien, ahora);
     this.codigo = codigo;
+    this.pago = pago;
   }
 
   // D-36: una reserva pendiente vence al cumplirse el plazo sin pagar

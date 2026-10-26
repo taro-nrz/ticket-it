@@ -6,6 +6,7 @@ import {
   COMPRADORA_SOFIA,
   ORGANIZADOR_MARTIN,
   ORGANIZADORA_LUCIA,
+  TARJETA_PRUEBA,
 } from "./utils/buildTestServer.js";
 
 // Semilla: Juan tiene la entrada TK-JUAN-H7Y5 (CONFIRMADA) para el stand-up de hoy (evento 6, de Lucía)
@@ -29,7 +30,8 @@ describe("M13 - Entrada con QR y validación en la puerta (D-33)", () => {
 
     const pagada = await request(app)
       .post(`/compra/${compra.body.id}/pagar`)
-      .set(auth(COMPRADORA_SOFIA));
+      .set(auth(COMPRADORA_SOFIA))
+      .send({ tarjeta: TARJETA_PRUEBA });
     expect(pagada.body.codigo).toMatch(/^TK-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/);
 
     const vistaOrganizador = await request(app)

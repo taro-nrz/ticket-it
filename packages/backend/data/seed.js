@@ -217,11 +217,16 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   const guardar = async (compra) => compras.push(await compraRepository.save(compra));
   const haceDias = (dias) => sumarDias(ahora, -dias);
   const haceMinutos = (minutos) => new Date(ahora.getTime() - minutos * 60 * 1000);
+  // D-37: las compras pagadas de la semilla tienen un pago de prueba (sólo marca y últimos 4 dígitos)
+  const pagoDemo = (marca, ultimos4) => ({ marca, ultimos4, autorizacion: "SIM-SEMILLA" });
 
   // Sofía: CONFIRMADA con chat, PENDIENTE, CANCELADA, REEMBOLSADA y UTILIZADA (reseñada)
   const sofiaIndie = await comprar(sofia, indie, 1, 2, haceDias(5));
   // D-33: códigos fijos en las entradas que se usan en la demo (el resto se genera al azar)
-  sofiaIndie.pagar(sofia, new Date(haceDias(5).getTime() + 10 * 60 * 1000), "TK-SOFA-2N7D");
+  sofiaIndie.pagar(sofia, new Date(haceDias(5).getTime() + 10 * 60 * 1000), {
+    codigo: "TK-SOFA-2N7D",
+    pago: pagoDemo("Visa", "4242"),
+  });
   sofiaIndie.agregarMensaje(sofia, "Hola! ¿A qué hora abren las puertas?", haceDias(4));
   sofiaIndie.agregarMensaje(lucia, "¡Hola Sofía! Las puertas abren a las 19 hs.", haceDias(4));
   sofiaIndie.agregarMensaje(sofia, "Genial, ¡gracias!", haceDias(3));
@@ -235,50 +240,57 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
   await guardar(sofiaSuperclasico);
 
   const sofiaPrimavera = await comprar(sofia, primavera, 1, 2, haceDias(12));
-  sofiaPrimavera.pagar(sofia, haceDias(12));
+  sofiaPrimavera.pagar(sofia, haceDias(12), { pago: pagoDemo("Visa", "4242") });
   sofiaPrimavera.cancelar(sofia, haceDias(2));
   await guardar(sofiaPrimavera);
 
   const sofiaAcustico = await comprar(sofia, acustico, 1, 2, sumarDias(acustico.fecha, -20));
-  sofiaAcustico.pagar(sofia, sumarDias(acustico.fecha, -20));
+  sofiaAcustico.pagar(sofia, sumarDias(acustico.fecha, -20), { pago: pagoDemo("Visa", "4242") });
   sofiaAcustico.utilizar(lucia, acustico.fecha);
   await guardar(sofiaAcustico);
 
   // Juan: UTILIZADA sin reseña (para probar HU-11), UTILIZADA reseñada, CONFIRMADA de hoy y CONFIRMADA futura
   const juanAcustico = await comprar(juan, acustico, 1, 1, sumarDias(acustico.fecha, -10));
-  juanAcustico.pagar(juan, sumarDias(acustico.fecha, -10));
+  juanAcustico.pagar(juan, sumarDias(acustico.fecha, -10), { pago: pagoDemo("Visa", "4242") });
   juanAcustico.utilizar(lucia, acustico.fecha);
   await guardar(juanAcustico);
 
   const juanCarroza = await comprar(juan, carroza, 1, 2, sumarDias(carroza.fecha, -15));
-  juanCarroza.pagar(juan, sumarDias(carroza.fecha, -15));
+  juanCarroza.pagar(juan, sumarDias(carroza.fecha, -15), { pago: pagoDemo("Visa", "4242") });
   juanCarroza.utilizar(martin, carroza.fecha);
   await guardar(juanCarroza);
 
   const juanStandup = await comprar(juan, standup, 1, 2, haceDias(3));
-  juanStandup.pagar(juan, haceDias(3), "TK-JUAN-H7Y5");
+  juanStandup.pagar(juan, haceDias(3), {
+    codigo: "TK-JUAN-H7Y5",
+    pago: pagoDemo("Mastercard", "4444"),
+  });
   juanStandup.agregarMensaje(juan, "¿Se puede entrar con comida?", haceDias(2));
   await guardar(juanStandup);
 
   const juanConferencia = await comprar(juan, conferenciaIA, 1, 1, haceDias(2));
-  juanConferencia.pagar(juan, haceDias(2));
+  juanConferencia.pagar(juan, haceDias(2), { pago: pagoDemo("Visa", "4242") });
   await guardar(juanConferencia);
 
   // Valentina: UTILIZADAS reseñadas, PENDIENTE y la última platea del superclásico (queda 1)
   const valentinaVerano = await comprar(valentina, verano, 1, 4, sumarDias(verano.fecha, -30));
-  valentinaVerano.pagar(valentina, sumarDias(verano.fecha, -30));
+  valentinaVerano.pagar(valentina, sumarDias(verano.fecha, -30), {
+    pago: pagoDemo("Visa", "4242"),
+  });
   valentinaVerano.utilizar(lucia, verano.fecha);
   await guardar(valentinaVerano);
 
   const valentinaCarroza = await comprar(valentina, carroza, 1, 1, sumarDias(carroza.fecha, -5));
-  valentinaCarroza.pagar(valentina, sumarDias(carroza.fecha, -5));
+  valentinaCarroza.pagar(valentina, sumarDias(carroza.fecha, -5), {
+    pago: pagoDemo("Visa", "4242"),
+  });
   valentinaCarroza.utilizar(martin, carroza.fecha);
   await guardar(valentinaCarroza);
 
   await guardar(await comprar(valentina, indie, 3, 1, haceMinutos(8)));
 
   const valentinaSuperclasico = await comprar(valentina, superclasico, 2, 1, haceDias(4));
-  valentinaSuperclasico.pagar(valentina, haceDias(4));
+  valentinaSuperclasico.pagar(valentina, haceDias(4), { pago: pagoDemo("Visa", "4242") });
   await guardar(valentinaSuperclasico);
 
   for (const evento of eventos) {

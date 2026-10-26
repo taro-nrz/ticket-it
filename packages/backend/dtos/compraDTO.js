@@ -44,6 +44,11 @@ export function compraDTO(compra, { usuario, ahora, yaResenio = false, conDetall
     mensajesSinLeer: compra.mensajesSinLeerPara(usuario),
     // D-33: el código de la entrada sólo lo ve su dueño (es lo que se muestra como QR en la puerta)
     codigo: compra.esDelComprador(usuario) ? compra.codigo : null,
+    // D-37: con qué se pagó (sólo marca y últimos 4 dígitos, y sólo para el comprador)
+    pago:
+      compra.pago && compra.esDelComprador(usuario)
+        ? { marca: compra.pago.marca, ultimos4: compra.pago.ultimos4 }
+        : null,
     accionesDisponibles: compra.accionesDisponiblesPara(usuario, ahora, { yaResenio }),
   };
   if (conDetalle) {
