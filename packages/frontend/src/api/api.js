@@ -27,6 +27,9 @@ export const getEvento = (id) => datos(cliente.get(`/evento/${id}`));
 export const getMisEventos = (page = 1) =>
   datos(cliente.get("/evento/mios", { params: { page, limit: 20 } }));
 export const crearEvento = (evento) => datos(cliente.post("/evento", evento));
+export const actualizarEvento = (id, evento) => datos(cliente.put(`/evento/${id}`, evento));
+export const cancelarEvento = (id, motivo) =>
+  datos(cliente.post(`/evento/${id}/cancelar`, { motivo }));
 
 // ---------- COMPRAS ----------
 export const comprar = (eventoId, tipoEntradaId, cantidad) =>

@@ -378,6 +378,17 @@ Formato: **contexto → opciones → decisión → justificación**.
   por correo, fuera de alcance). Cambiar la contraseña no invalida los otros tokens ya emitidos (con JWT sin
   estado haría falta una lista de revocación; se anota como mejora).
 
+### D-31 — Editar y cancelar eventos (M11, requerimiento nuevo)
+- Contexto: el enunciado sólo pide crear eventos; en un producto real el organizador necesita corregirlos y, si
+  no se pueden hacer, cancelarlos devolviendo el dinero.
+- Decisión: **editar** reutiliza el formulario de publicación (mismo schema Zod + `id` en los tipos existentes);
+  la entidad `Evento.actualizar()` protege las ventas (no baja el cupo debajo de lo vendido ni quita tipos con
+  ventas) y modifica los mismos objetos `TipoEntrada` que referencian las compras, así que las compras viejas
+  conservan su total. **Cancelar** (`Evento.cancelar()`) reutiliza `Compra.cancelar()` (máquina de estados de
+  M4) con la opción `porCancelacionDelEvento`, y el reembolso automático sale gratis de lo ya hecho.
+- **Sin consultar**: el motivo de cancelación es obligatorio (los compradores lo ven); los eventos cancelados no
+  se borran (baja lógica, como recomienda la clase) y quedan en "Mis eventos" > Cancelados.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

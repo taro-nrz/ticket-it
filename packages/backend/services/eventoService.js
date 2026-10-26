@@ -1,6 +1,12 @@
 import { eventoDetalleDTO, eventoResumenDTO, tipoEntradaDTO } from "../dtos/eventoDTO.js";
 import { reseniaDTO } from "../dtos/reseniaDTO.js";
-import { ConflictError, NotFoundError, ValidationError } from "../error/appError.js";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  BusinessRuleError,
+  ValidationError,
+} from "../error/appError.js";
 import { EstadoCompra } from "../models/entities/estadoCompra.js";
 import { Evento } from "../models/entities/evento.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
@@ -26,12 +32,68 @@ export class EventoService {
 
   // HU-01: el organizador publica un evento con sus tipos de entrada
   async crear(datos, organizador) {
+    const categoria = await this.validarDatos(datos, organizador);
+    const tiposEntrada = datos.tiposEntrada.map(crearTipoEntrada);
+    const evento = new Evento({ ...datos, categoria, tiposEntrada, organizador });
+    const guardado = await this.eventoRepository.save(evento);
+    return this.aDetalle(guardado, organizador);
+  }
+
+  // D-31: el organizador edita un evento propio que todavía no se realizó
+  async actualizar(id, datos, organizador) {
+    const evento = await this.obtenerPropio(id, organizador);
+    if (!evento.puedeEditarse(this.reloj.ahora())) {
+      throw new BusinessRuleError(
+        evento.cancelado
+          ? "No se puede editar un evento cancelado"
+          : "No se puede editar un evento que ya se realizó",
+      );
+    }
+    const categoria = await this.validarDatos(datos, organizador, evento);
+    const { categoriaId: _categoriaId, ...cambios } = datos;
+    evento.actualizar({ ...cambios, categoria }, crearTipoEntrada);
+    await this.eventoRepository.save(evento);
+    return this.aDetalle(evento, organizador);
+  }
+
+  // D-31: cancelar un evento cancela todas sus compras activas (y reembolsa las pagadas)
+  async cancelar(id, motivo, organizador) {
     const ahora = this.reloj.ahora();
+    const evento = await this.obtenerPropio(id, organizador);
+    evento.cancelar(motivo, ahora);
+
+    const activas = (await this.compraRepository.findByEvento(evento.id)).filter((compra) =>
+      [EstadoCompra.PENDIENTE, EstadoCompra.CONFIRMADA].includes(compra.estado),
+    );
+    for (const compra of activas) {
+      compra.cancelar(organizador, ahora, { porCancelacionDelEvento: true });
+      await this.compraRepository.save(compra);
+    }
+    await this.eventoRepository.save(evento);
+    return {
+      evento: await this.aDetalle(evento, organizador),
+      comprasCanceladas: activas.length,
+      comprasReembolsadas: activas.filter((compra) => compra.estado === EstadoCompra.REEMBOLSADA)
+        .length,
+      compras: activas,
+    };
+  }
+
+  async obtenerPropio(id, organizador) {
+    const evento = await this.obtenerEntidad(id);
+    if (!evento.esOrganizadoPor(organizador)) {
+      throw new ForbiddenError("Sólo el organizador del evento puede modificarlo");
+    }
+    return evento;
+  }
+
+  // Reglas comunes de publicar y editar; devuelve la categoría
+  async validarDatos(datos, organizador, eventoActual = null) {
     const categoria = await this.categoriaRepository.findById(datos.categoriaId);
     if (!categoria) {
       throw new NotFoundError(`No existe la categoría con id ${datos.categoriaId}`);
     }
-    if (datos.fecha <= ahora) {
+    if (datos.fecha <= this.reloj.ahora()) {
       throw new ValidationError("Datos de validación inválidos", [
         { campo: "fecha", mensaje: "La fecha del evento debe ser futura" },
       ]);
@@ -50,16 +112,10 @@ export class EventoService {
       organizador.id,
       datos.fecha,
     );
-    if (duplicado) {
+    if (duplicado && duplicado.id !== eventoActual?.id) {
       throw new ConflictError("Ya publicaste un evento con ese nombre en esa misma fecha");
     }
-
-    const tiposEntrada = datos.tiposEntrada.map(
-      (tipo) => new TipoEntrada(tipo.nombre, tipo.descripcion, tipo.precio, tipo.cupo),
-    );
-    const evento = new Evento({ ...datos, categoria, tiposEntrada, organizador });
-    const guardado = await this.eventoRepository.save(evento);
-    return this.aDetalle(guardado, organizador);
+    return categoria;
   }
 
   // HU-02 + HU-03: búsqueda, filtros, orden y paginación
@@ -147,6 +203,10 @@ export class EventoService {
       ),
     };
   }
+}
+
+function crearTipoEntrada(tipo) {
+  return new TipoEntrada(tipo.nombre, tipo.descripcion, tipo.precio, tipo.cupo);
 }
 
 // HU-03: precio = precio mínimo del evento; puntaje = promedio del organizador (sin reseñas, al final)

@@ -44,6 +44,7 @@ const PANTALLAS = [
     titulo: "Noche Indie en Obras",
   },
   { nombre: "Publicar evento", ruta: "/crear-evento", usuario: LUCIA, titulo: "Publicar evento" },
+  { nombre: "Editar evento", ruta: "/evento/1/editar", usuario: LUCIA, titulo: "Editar evento" },
 ];
 
 test.beforeEach(async ({ request }) => {

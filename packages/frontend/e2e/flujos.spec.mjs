@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { entrarComo, JUAN, LUCIA, reiniciarDatos, SOFIA } from "./utils.mjs";
+import { API_URL, entrarComo, JUAN, LUCIA, reiniciarDatos, SOFIA } from "./utils.mjs";
 
 // Flujos críticos (preparar → actuar → verificar) con selectores por rol y etiqueta,
 // que sólo funcionan porque la interfaz es accesible.
@@ -101,4 +101,45 @@ test("si el servidor falla se muestra un aviso comprensible", async ({ page }) =
   // VERIFICAR: role="alert" con el mensaje y una forma de reintentar
   await expect(page.getByRole("alert")).toContainText("Algo salió mal");
   await expect(page.getByRole("button", { name: "Reintentar" })).toBeVisible();
+});
+
+test("D-31: el organizador edita un evento y después lo cancela", async ({ page }) => {
+  await entrarComo(page, LUCIA);
+  await page.goto("/evento/1");
+
+  // Editar: cambiar el nombre y agregar un tipo de entrada
+  await page.getByRole("button", { name: "Editar evento" }).click();
+  await expect(page.getByRole("heading", { name: "Editar evento", level: 1 })).toBeVisible();
+  await page.getByLabel("Nombre", { exact: true }).fill("Noche Indie en Obras 2");
+  await page.getByRole("button", { name: "Guardar cambios" }).click();
+  await expect(page.getByRole("status")).toContainText("Guardamos los cambios");
+  await expect(page.getByRole("heading", { name: "Noche Indie en Obras 2" })).toBeVisible();
+
+  // Cancelar: pide motivo y confirma
+  await page.getByRole("button", { name: "Cancelar evento" }).click();
+  const dialogo = page.getByRole("dialog", { name: "¿Cancelar el evento?" });
+  await dialogo.getByRole("button", { name: "Sí, cancelar el evento" }).click();
+  await expect(dialogo.getByText(/al menos 5 caracteres/)).toBeVisible();
+  await dialogo.getByLabel("Motivo de la cancelación").fill("Problemas con el lugar");
+  await dialogo.getByRole("button", { name: "Sí, cancelar el evento" }).click();
+
+  await expect(page.getByText("Este evento fue cancelado")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Editar evento" })).toHaveCount(0);
+});
+
+test("D-31: el comprador ve que el organizador canceló el evento", async ({ page, request }) => {
+  // PREPARAR: Lucía cancela el evento 1 por la API
+  const login = await request.post(`${API_URL}/auth/login`, {
+    data: { email: "lucia@ticketit.com", password: "ticketit123" },
+  });
+  const { token } = await login.json();
+  await request.post(`${API_URL}/evento/1/cancelar`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { motivo: "Problemas con el lugar" },
+  });
+
+  await entrarComo(page, SOFIA);
+  await page.goto("/compra/1");
+  await expect(page.getByText(/El organizador canceló este evento/)).toBeVisible();
+  await expect(page.getByText("Reembolsada").first()).toBeVisible();
 });

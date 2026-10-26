@@ -1,19 +1,52 @@
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { crearEvento, getCategorias } from "../../api/api.js";
+import { actualizarEvento, crearEvento, getCategorias } from "../../api/api.js";
 import { Icono } from "../../components/Icono.js";
 import { CampoFecha } from "../../components/CampoFecha.js";
-import { Encabezado, Pantalla } from "../../components/Pantalla.js";
-import { Boton, Campo, Chips, ResumenErrores, Seccion, Tarjeta, Titulo } from "../../components/ui.js";
+import { BarraVolver, Encabezado, Pantalla } from "../../components/Pantalla.js";
+import {
+  Boton,
+  Campo,
+  Chips,
+  ResumenErrores,
+  Seccion,
+  Tarjeta,
+  Titulo,
+} from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
-import { espacio, fuentes, radio } from "../../theme.js";
+import { espacio, fuentes } from "../../theme.js";
+import { aTextoFecha } from "../../components/Calendario.js";
+import { plural } from "../../utils/formato.js";
 import { anunciar } from "../../utils/accesibilidad.js";
 import { avisarError, avisarExito } from "../../utils/confirmar.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 
-const tipoVacio = () => ({ nombre: "", descripcion: "", precio: "", cupo: "" });
+const tipoVacio = () => ({ nombre: "", descripcion: "", precio: "", cupo: "", vendidas: 0 });
+
+// D-31: para editar, el formulario arranca con los datos del evento (los tipos conservan su id)
+const valoresDesdeEvento = (evento) => {
+  const fecha = new Date(evento.fecha);
+  return {
+    nombre: evento.nombre,
+    descripcion: evento.descripcion,
+    categoriaId: evento.categoria.id,
+    fecha: aTextoFecha(fecha),
+    hora: `${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`,
+    lugar: evento.lugar,
+    direccion: evento.direccion,
+    imagenes: evento.multimedia.join("\n"),
+    tiposEntrada: evento.tiposEntrada.map((tipo) => ({
+      id: tipo.id,
+      nombre: tipo.nombre,
+      descripcion: tipo.descripcion,
+      precio: String(tipo.precio),
+      cupo: String(tipo.cupo),
+      vendidas: tipo.vendidas,
+    })),
+  };
+};
 
 const valoresIniciales = () => ({
   nombre: "",
@@ -58,6 +91,8 @@ function validar(valores) {
     }
     if (!Number.isInteger(Number(tipo.cupo)) || Number(tipo.cupo) < 1) {
       errores[`tipo${indice}cupo`] = "Escribí un número entero mayor a 0";
+    } else if (Number(tipo.cupo) < tipo.vendidas) {
+      errores[`tipo${indice}cupo`] = `Ya se vendieron ${tipo.vendidas}: el cupo no puede ser menor`;
     }
   });
   return errores;
@@ -84,14 +119,18 @@ function fechaDelEvento(valores) {
   return new Date(`${valores.fecha}T${valores.hora}:00`);
 }
 
-// HU-01: crear un evento con distintos tipos de entrada, cada uno con su precio y cupo
-export default function CrearEvento() {
-  const { colores } = useTema();
+// HU-01: crear un evento con distintos tipos de entrada, cada uno con su precio y cupo.
+// D-31: con `evento`, el mismo formulario sirve para editarlo.
+export default function CrearEvento({ evento = null }) {
+  const { colores, texto } = useTema();
   const styles = useEstilos(crearEstilos);
+  const editando = Boolean(evento);
 
   const router = useRouter();
   const { datos: categorias } = useCarga(getCategorias);
-  const [valores, setValores] = useState(valoresIniciales);
+  const [valores, setValores] = useState(() =>
+    editando ? valoresDesdeEvento(evento) : valoresIniciales(),
+  );
   const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const campos = useRef({});
@@ -136,7 +175,7 @@ export default function CrearEvento() {
     }
     setEnviando(true);
     try {
-      const evento = await crearEvento({
+      const datos = {
         nombre: valores.nombre.trim(),
         descripcion: valores.descripcion.trim(),
         categoriaId: valores.categoriaId,
@@ -148,18 +187,29 @@ export default function CrearEvento() {
           .map((url) => url.trim())
           .filter(Boolean),
         tiposEntrada: valores.tiposEntrada.map((tipo) => ({
+          ...(tipo.id !== undefined && { id: tipo.id }),
           nombre: tipo.nombre.trim(),
           descripcion: tipo.descripcion.trim(),
           precio: Number(tipo.precio),
           cupo: Number(tipo.cupo),
         })),
-      });
+      };
+      if (editando) {
+        await actualizarEvento(evento.id, datos);
+        avisarExito("Guardamos los cambios del evento");
+        router.back();
+        return;
+      }
+      const publicado = await crearEvento(datos);
       setValores(valoresIniciales());
       setIntentoEnviar(false);
       avisarExito("¡Evento publicado! Ya está visible en el catálogo.");
-      router.push(`/evento/${evento.id}`);
+      router.push(`/evento/${publicado.id}`);
     } catch (e) {
-      avisarError("No se pudo publicar el evento", e.message);
+      avisarError(
+        editando ? "No se pudieron guardar los cambios" : "No se pudo publicar el evento",
+        e.message,
+      );
     } finally {
       setEnviando(false);
     }
@@ -167,7 +217,11 @@ export default function CrearEvento() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Encabezado saludo="Nuevo evento" titulo="Publicar evento" />
+      {editando ? (
+        <BarraVolver subtitulo={evento.nombre} titulo="Editar evento" />
+      ) : (
+        <Encabezado saludo="Nuevo evento" titulo="Publicar evento" />
+      )}
       <Pantalla style={{ paddingTop: 6 }}>
         <Text style={styles.indicacion}>
           Todos los campos son obligatorios salvo los marcados como opcionales.
@@ -274,20 +328,25 @@ export default function CrearEvento() {
 
         <Seccion titulo="Tipos de entrada">
           {valores.tiposEntrada.map((tipo, indice) => (
-            <Tarjeta key={indice}>
+            <Tarjeta key={tipo.id ?? `nuevo-${indice}`}>
               <View style={styles.encabezadoTipo}>
                 <Titulo nivel={3} style={styles.tipoTitulo}>
                   Entrada {indice + 1}
                 </Titulo>
-                {valores.tiposEntrada.length > 1 && (
-                  <Pressable
-                    onPress={() => quitarTipo(indice)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Quitar la entrada ${indice + 1}${tipo.nombre ? ` (${tipo.nombre})` : ""}`}
-                    style={styles.quitar}
-                  >
-                    <Icono name="trash-outline" size={20} color={colores.error} />
-                  </Pressable>
+                {/* D-31: un tipo con entradas vendidas no se puede quitar */}
+                {tipo.vendidas > 0 ? (
+                  <Text style={texto.chico}>{plural(tipo.vendidas, "vendida")}</Text>
+                ) : (
+                  valores.tiposEntrada.length > 1 && (
+                    <Pressable
+                      onPress={() => quitarTipo(indice)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Quitar la entrada ${indice + 1}${tipo.nombre ? ` (${tipo.nombre})` : ""}`}
+                      style={styles.quitar}
+                    >
+                      <Icono name="trash-outline" size={20} color={colores.error} />
+                    </Pressable>
+                  )
                 )}
               </View>
               <Campo
@@ -355,8 +414,8 @@ export default function CrearEvento() {
         />
 
         <Boton
-          titulo="Publicar evento"
-          icono="megaphone-outline"
+          titulo={editando ? "Guardar cambios" : "Publicar evento"}
+          icono={editando ? "save-outline" : "megaphone-outline"}
           variante="acento"
           onPress={publicar}
           cargando={enviando}

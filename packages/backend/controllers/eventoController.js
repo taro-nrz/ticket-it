@@ -20,6 +20,18 @@ const crearEventoSchema = z.object({
   tiposEntrada: z.array(tipoEntradaSchema).min(1).max(10),
 });
 
+// D-31: al editar, los tipos de entrada existentes llevan su id; los nuevos no
+const editarEventoSchema = crearEventoSchema.extend({
+  tiposEntrada: z
+    .array(tipoEntradaSchema.extend({ id: z.number().int().positive().optional() }))
+    .min(1)
+    .max(10),
+});
+
+const cancelarEventoSchema = z.object({
+  motivo: z.string().trim().min(5, "Contá brevemente el motivo (al menos 5 caracteres)").max(300),
+});
+
 const booleanoQuery = z
   .enum(["true", "false"])
   .transform((valor) => valor === "true")
@@ -79,6 +91,34 @@ export class EventoController {
     try {
       const evento = await this.eventoService.detalle(parsearId(req.params.id), req.usuario);
       res.json(evento);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async update(req, res, next) {
+    try {
+      const datos = validar(editarEventoSchema, req.body);
+      const evento = await this.eventoService.actualizar(
+        parsearId(req.params.id),
+        datos,
+        req.usuario,
+      );
+      res.json(evento);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async cancelar(req, res, next) {
+    try {
+      const { motivo } = validar(cancelarEventoSchema, req.body);
+      const { compras: _compras, ...resultado } = await this.eventoService.cancelar(
+        parsearId(req.params.id),
+        motivo,
+        req.usuario,
+      );
+      res.json(resultado);
     } catch (error) {
       next(error);
     }

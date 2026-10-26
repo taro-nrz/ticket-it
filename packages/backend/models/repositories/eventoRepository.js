@@ -15,6 +15,7 @@ export class EventoRepository extends InMemoryRepository {
     } = filtros;
 
     return this.findBy((evento) => {
+      if (evento.cancelado) return false;
       if (!incluirPasados && evento.yaSeRealizo(ahora)) return false;
       if (texto && !evento.coincideConTexto(texto)) return false;
       if (categoriaId !== undefined && evento.categoria.id !== categoriaId) return false;

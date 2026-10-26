@@ -12,6 +12,7 @@ import {
 } from "../../api/api.js";
 import { ImagenEvento } from "../../components/EventoCard.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
+import { CancelarEvento } from "../organizador/CancelarEvento.js";
 import { TituloPagina } from "../../components/Pantalla.js";
 import {
   Avatar,
@@ -53,6 +54,7 @@ export default function EventoDetalle() {
   const [tipoElegido, setTipoElegido] = useState(null);
   const [cantidad, setCantidad] = useState(1);
   const [comprando, setComprando] = useState(false);
+  const [cancelando, setCancelando] = useState(false);
 
   if (cargando && !evento) return <Cargando />;
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
@@ -60,7 +62,7 @@ export default function EventoDetalle() {
   const esMiEvento = usuario?.id === evento.organizador.id;
   const tipo = evento.tiposEntrada.find((t) => t.id === tipoElegido);
   const maximo = tipo ? Math.min(tipo.disponibles, MAX_POR_COMPRA) : 1;
-  const puedeComprar = esComprador && !evento.yaSeRealizo;
+  const puedeComprar = esComprador && !evento.yaSeRealizo && !evento.cancelado;
   // Si el evento ya pasó, sus reseñas tienen su propia sección: acá van las de los otros eventos
   const otrasResenias = evento.ultimasResenias.filter((r) => r.evento.id !== evento.id);
 
@@ -140,12 +142,54 @@ export default function EventoDetalle() {
 
             <Text style={styles.descripcion}>{evento.descripcion}</Text>
 
+            {/* D-31: aviso de evento cancelado (con el motivo que dio el organizador) */}
+            {evento.cancelado && (
+              <View style={styles.cancelado} role="note">
+                <Icono name="close-circle" size={22} color={colores.error} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.canceladoTitulo}>Este evento fue cancelado</Text>
+                  <Text style={texto.secundario}>Motivo: {evento.motivoCancelacion}</Text>
+                </View>
+              </View>
+            )}
+
             {esMiEvento && (
-              <Boton
-                titulo="Ver compras de este evento"
-                icono="receipt-outline"
-                onPress={() => router.push(`/evento/${evento.id}/compras`)}
-                style={{ marginBottom: espacio.xl }}
+              <View style={styles.accionesOrganizador}>
+                <Boton
+                  titulo="Ver compras de este evento"
+                  icono="receipt-outline"
+                  onPress={() => router.push(`/evento/${evento.id}/compras`)}
+                />
+                {evento.puedeEditarse && (
+                  <View style={styles.filaAcciones}>
+                    <Boton
+                      titulo="Editar evento"
+                      icono="create-outline"
+                      variante="secundario"
+                      onPress={() => router.push(`/evento/${evento.id}/editar`)}
+                      style={{ flexGrow: 1, flexBasis: 150 }}
+                    />
+                    <Boton
+                      titulo="Cancelar evento"
+                      icono="close-circle-outline"
+                      variante="peligro"
+                      accessibilityHint="Pide el motivo y confirmación antes de cancelar"
+                      onPress={() => setCancelando(true)}
+                      style={{ flexGrow: 1, flexBasis: 150 }}
+                    />
+                  </View>
+                )}
+              </View>
+            )}
+            {esMiEvento && (
+              <CancelarEvento
+                evento={evento}
+                visible={cancelando}
+                onCerrar={() => setCancelando(false)}
+                onCancelado={(actualizado) => {
+                  setCancelando(false);
+                  setDatos({ ...evento, ...actualizado });
+                }}
               />
             )}
 
@@ -429,6 +473,20 @@ const crearEstilos = ({ colores, texto, estados }) => ({
     paddingTop: 10,
   },
   aviso: { ...texto.secundario, fontStyle: "italic", marginVertical: espacio.s },
+  cancelado: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+    backgroundColor: colores.errorFondo,
+    borderWidth: 1,
+    borderColor: colores.error,
+    borderRadius: radio.m,
+    padding: 14,
+    marginBottom: espacio.l,
+  },
+  canceladoTitulo: { fontFamily: fuentes.negrita, fontSize: 15, color: colores.error },
+  accionesOrganizador: { gap: espacio.s, marginBottom: espacio.xl },
+  filaAcciones: { flexDirection: "row", flexWrap: "wrap", gap: espacio.s },
   organizador: {
     flexDirection: "row",
     alignItems: "center",
