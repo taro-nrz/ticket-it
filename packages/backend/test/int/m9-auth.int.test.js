@@ -104,7 +104,9 @@ describe("M9 - Autenticación (D-29)", () => {
 
   describe("Tokens", () => {
     test("un token vencido responde 401 con un mensaje claro", async () => {
-      const res = await request(app).get("/auth/me").set(auth(3, { expiresIn: -10 }));
+      const res = await request(app)
+        .get("/auth/me")
+        .set(auth(3, { expiresIn: -10 }));
       expect(res.status).toBe(401);
       expect(res.body.message).toMatch(/venció/);
     });

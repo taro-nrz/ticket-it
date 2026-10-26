@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { espacio, fuentes } from "../theme.js";
 import { Avatar, Estrellas } from "./ui.js";
 import { useTema } from "../store/TemaContext.js";
@@ -29,7 +29,7 @@ export function ReseniaItem({ resenia, ultima = false }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores, texto }) => ({
   contenedor: {
     paddingVertical: espacio.m,
     borderBottomWidth: 1,

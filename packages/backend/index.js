@@ -8,9 +8,18 @@ const start = async () => {
   try {
     const config = obtenerConfig();
     const server = await crearApp({ config });
-    server.launch(config.host);
+    const http = server.launch(config.host);
+
+    // D-35: cierre ordenado (Docker manda SIGTERM): deja de aceptar conexiones y termina las requests en curso
+    const cerrar = (senial) => {
+      console.log(`${senial} recibido: cerrando el servidor...`);
+      http.close(() => process.exit(0));
+      setTimeout(() => process.exit(1), 10_000).unref();
+    };
+    process.on("SIGTERM", () => cerrar("SIGTERM"));
+    process.on("SIGINT", () => cerrar("SIGINT"));
   } catch (error) {
-    console.error("No se pudo iniciar el servidor", error);
+    console.error("No se pudo iniciar el servidor:", error.message);
     process.exit(1);
   }
 };

@@ -5,11 +5,7 @@ import { Resenia } from "../models/entities/resenia.js";
 import { RolUsuario } from "../models/entities/rolUsuario.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { Usuario } from "../models/entities/usuario.js";
-import {
-  EstadoNotificacion,
-  Notificacion,
-  TipoNotificacion,
-} from "../models/entities/notificacion.js";
+import { Notificacion, TipoNotificacion } from "../models/entities/notificacion.js";
 import { sumarDias, sumarHoras } from "../utils/reloj.js";
 
 // D-29: contraseña de todos los usuarios demo (documentada en el README)

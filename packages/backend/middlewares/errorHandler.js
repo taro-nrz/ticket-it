@@ -4,6 +4,9 @@ export const errorHandler = (err, _req, res, _next) => {
   if (err.type === "entity.parse.failed") {
     return res.status(400).json({ status: "fail", message: "El body no es un JSON válido" });
   }
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({ status: "fail", message: "El body es demasiado grande" });
+  }
 
   const statusCode = err.statusCode || 500;
 

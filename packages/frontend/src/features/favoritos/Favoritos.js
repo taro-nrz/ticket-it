@@ -8,7 +8,9 @@ import { useCarga } from "../../hooks/useCarga.js";
 
 export default function Favoritos() {
   const router = useRouter();
-  const { datos, cargando, error, recargar } = useCarga(getFavoritos, [], { alEnfocar: true });
+  const { datos, cargando, error, recargar, refrescando, refrescar } = useCarga(getFavoritos, [], {
+    alEnfocar: true,
+  });
 
   return (
     <View style={{ flex: 1 }}>
@@ -18,6 +20,8 @@ export default function Favoritos() {
       ) : (
         <FlatList
           data={datos?.data ?? []}
+          refreshing={refrescando}
+          onRefresh={refrescar}
           keyExtractor={(evento) => String(evento.id)}
           contentContainerStyle={[estilosPantalla.contenido, { paddingTop: 6 }]}
           renderItem={({ item }) => (

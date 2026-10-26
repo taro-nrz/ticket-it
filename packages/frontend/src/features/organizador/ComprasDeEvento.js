@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { getComprasDeEvento } from "../../api/api.js";
 import { CompraFila } from "../../components/CompraCard.js";
 import { BarraVolver, estilosPantalla } from "../../components/Pantalla.js";
@@ -26,7 +26,7 @@ export default function ComprasDeEvento() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [estado, setEstado] = useState(null);
-  const { datos, cargando, error, recargar } = useCarga(
+  const { datos, cargando, error, recargar, refrescando, refrescar } = useCarga(
     () => getComprasDeEvento(id, estado ?? undefined),
     [id, estado],
     { alEnfocar: true },
@@ -118,6 +118,8 @@ export default function ComprasDeEvento() {
       <BarraVolver subtitulo="Compras del evento" titulo={datos.evento.nombre} />
       <FlatList
         data={datos.data}
+        refreshing={refrescando}
+        onRefresh={refrescar}
         keyExtractor={(compra) => String(compra.id)}
         contentContainerStyle={estilosPantalla.contenido}
         ListHeaderComponent={encabezado}
@@ -132,7 +134,7 @@ export default function ComprasDeEvento() {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores }) => ({
   disponibilidad: {
     backgroundColor: colores.superficie,
     borderWidth: 1,

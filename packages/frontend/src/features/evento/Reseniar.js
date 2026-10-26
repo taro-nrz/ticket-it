@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { reseniarEvento } from "../../api/api.js";
 import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
 import { Boton, Campo, Estrellas, Titulo } from "../../components/ui.js";
@@ -75,7 +75,7 @@ export default function Reseniar() {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores, texto }) => ({
   tarjeta: {
     alignItems: "center",
     gap: espacio.m,

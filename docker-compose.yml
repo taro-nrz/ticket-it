@@ -1,0 +1,29 @@
+# D-35: levanta la API y la versión web juntas.
+#   cp .env.example .env   (y poné un JWT_SECRET propio)
+#   docker compose up --build
+# Web: http://localhost:8080 · API y Swagger: http://localhost:3000/api-docs
+# Si esos puertos están ocupados: API_PORT=3600 WEB_PORT=8600 docker compose up --build
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Definí JWT_SECRET en el .env (al menos 32 caracteres)}
+      ALLOWED_ORIGINS: http://localhost:${WEB_PORT:-8080}
+    ports:
+      - "${API_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: packages/frontend/Dockerfile
+      args:
+        EXPO_PUBLIC_API_URL: http://localhost:${API_PORT:-3000}
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped

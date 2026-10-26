@@ -53,3 +53,31 @@ describe("M0 - Núcleo", () => {
     expect(Object.keys(res.body.paths)).toContain("/evento");
   });
 });
+
+describe("M0 - Seguridad y trazabilidad (D-35)", () => {
+  let app;
+  beforeEach(async () => {
+    app = await buildTestServer();
+  });
+
+  test("responde con headers de seguridad y sin X-Powered-By", async () => {
+    const res = await request(app).get("/health");
+    expect(res.headers["x-powered-by"]).toBeUndefined();
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+  });
+
+  test("cada respuesta lleva un X-Request-Id (y respeta el que llega)", async () => {
+    const res = await request(app).get("/health");
+    expect(res.headers["x-request-id"]).toMatch(/^[0-9a-f-]{36}$/);
+    const propio = await request(app).get("/health").set("X-Request-Id", "abc-123");
+    expect(propio.headers["x-request-id"]).toBe("abc-123");
+  });
+
+  test("un body demasiado grande responde 413", async () => {
+    const res = await request(app)
+      .post("/auth/login")
+      .set("Content-Type", "application/json")
+      .send(JSON.stringify({ email: "a@b.com", password: "x".repeat(200_000) }));
+    expect(res.status).toBe(413);
+  });
+});

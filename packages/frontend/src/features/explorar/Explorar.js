@@ -1,7 +1,7 @@
 import { Icono } from "../../components/Icono.js";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { getCategorias, getEventos } from "../../api/api.js";
 import { EventoCard } from "../../components/EventoCard.js";
 import { Encabezado, estilosPantalla } from "../../components/Pantalla.js";
@@ -42,6 +42,8 @@ export default function Explorar() {
     cargando,
     error,
     recargar,
+    refrescando,
+    refrescar,
   } = useCarga(
     () =>
       getEventos({
@@ -155,6 +157,8 @@ export default function Explorar() {
       ) : (
         <FlatList
           data={resultado?.data ?? []}
+          refreshing={refrescando}
+          onRefresh={refrescar}
           keyExtractor={(evento) => String(evento.id)}
           contentContainerStyle={[estilosPantalla.contenido, { paddingTop: 4 }]}
           renderItem={({ item }) => (
@@ -182,7 +186,7 @@ export default function Explorar() {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores }) => ({
   filtros: { gap: espacio.m },
   buscador: {
     flexDirection: "row",

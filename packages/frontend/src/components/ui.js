@@ -1,14 +1,6 @@
 import { forwardRef, useId, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { espacio, estadosCompra, fuentes, radio } from "../theme.js";
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { espacio, fuentes, radio } from "../theme.js";
 import { estadoPresionado } from "../utils/accesibilidad.js";
 import { textoSinLeer } from "../utils/formato.js";
 import { Icono } from "./Icono.js";
@@ -499,7 +491,7 @@ export function Progreso({ valor, total, color, etiqueta = "Entradas vendidas" }
   );
 }
 
-export const crearEstilos = ({ colores, texto, estados }) => ({
+export const crearEstilos = ({ colores, texto }) => ({
   fila: { flexDirection: "row", alignItems: "center", gap: espacio.s },
   centro: {
     flex: 1,

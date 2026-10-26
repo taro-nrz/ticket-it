@@ -7,6 +7,12 @@ import { entrarComo, LUCIA, reiniciarDatos, SOFIA } from "./utils.mjs";
 const PANTALLAS = [
   { nombre: "Login", ruta: "/login", usuario: null, titulo: "Ingresar" },
   { nombre: "Crear cuenta", ruta: "/registro", usuario: null, titulo: "Crear cuenta" },
+  {
+    nombre: "Página no encontrada",
+    ruta: "/esto-no-existe",
+    usuario: null,
+    titulo: "Página no encontrada",
+  },
   { nombre: "Explorar", ruta: "/explorar", usuario: SOFIA, titulo: "¿Qué salimos a ver?" },
   {
     nombre: "Detalle de evento",

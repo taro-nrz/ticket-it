@@ -17,7 +17,7 @@ const FILTROS = [
 export default function MisCompras() {
   const router = useRouter();
   const [estado, setEstado] = useState(null);
-  const { datos, cargando, error, recargar } = useCarga(
+  const { datos, cargando, error, recargar, refrescando, refrescar } = useCarga(
     () => getMisCompras(estado ?? undefined),
     [estado],
     { alEnfocar: true },
@@ -38,6 +38,8 @@ export default function MisCompras() {
       ) : (
         <FlatList
           data={datos?.data ?? []}
+          refreshing={refrescando}
+          onRefresh={refrescar}
           keyExtractor={(compra) => String(compra.id)}
           contentContainerStyle={[estilosPantalla.contenido, { paddingTop: 10 }]}
           renderItem={({ item }) => (

@@ -26,9 +26,13 @@ const ICONOS = {
 export default function Notificaciones() {
   const router = useRouter();
   const { recargar: recargarContador } = useNotificaciones();
-  const { datos, cargando, error, recargar, setDatos } = useCarga(getNotificaciones, [], {
-    alEnfocar: true,
-  });
+  const { datos, cargando, error, recargar, refrescando, refrescar, setDatos } = useCarga(
+    getNotificaciones,
+    [],
+    {
+      alEnfocar: true,
+    },
+  );
 
   const abrir = async (notificacion) => {
     try {
@@ -72,6 +76,8 @@ export default function Notificaciones() {
       ) : (
         <FlatList
           data={datos.data}
+          refreshing={refrescando}
+          onRefresh={refrescar}
           keyExtractor={(n) => String(n.id)}
           contentContainerStyle={estilosPantalla.contenido}
           ListHeaderComponent={

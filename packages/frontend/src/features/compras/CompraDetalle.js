@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cancelarCompra, getCompra, pagarCompra, utilizarCompra } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
@@ -294,7 +294,7 @@ function Paso({ color, titulo, detalle, conLinea, pendiente }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores, estados }) => ({
   cancelado: {
     flexDirection: "row",
     gap: 10,

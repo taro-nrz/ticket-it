@@ -126,7 +126,7 @@ export function EventoCard({ evento, onPress, pie }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores }) => ({
   tarjeta: { padding: 0, overflow: "hidden", borderRadius: radio.l + 2 },
   imagenContenedor: { overflow: "hidden", justifyContent: "flex-end", padding: 14 },
   marcaAgua: {

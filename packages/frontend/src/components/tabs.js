@@ -21,17 +21,20 @@ export function opcionesTabs(colores) {
 }
 
 // Ícono con "píldora" coral detrás cuando la tab está activa
-export const iconoTab =
-  (nombre, colores) =>
-  ({ focused, color }) => (
-    <View
-      style={{
-        paddingHorizontal: 18,
-        paddingVertical: 3,
-        borderRadius: 999,
-        backgroundColor: focused ? colores.acentoSuave : "transparent",
-      }}
-    >
-      <Icono name={focused ? nombre : `${nombre}-outline`} color={color} size={22} />
-    </View>
-  );
+export function iconoTab(nombre, colores) {
+  function IconoTab({ focused, color }) {
+    return (
+      <View
+        style={{
+          paddingHorizontal: 18,
+          paddingVertical: 3,
+          borderRadius: 999,
+          backgroundColor: focused ? colores.acentoSuave : "transparent",
+        }}
+      >
+        <Icono name={focused ? nombre : `${nombre}-outline`} color={color} size={22} />
+      </View>
+    );
+  }
+  return IconoTab;
+}

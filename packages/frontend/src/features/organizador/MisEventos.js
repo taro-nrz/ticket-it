@@ -1,7 +1,7 @@
 import { etiquetaMobile } from "../../utils/accesibilidad.js";
 import { Icono } from "../../components/Icono.js";
 import { useRouter } from "expo-router";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 import { getMisEventos, getReseniasDeOrganizador } from "../../api/api.js";
 import { Encabezado, estilosPantalla } from "../../components/Pantalla.js";
 import {
@@ -34,7 +34,7 @@ export default function MisEventos() {
 
   const router = useRouter();
   const { usuario } = useSesion();
-  const { datos, cargando, error, recargar } = useCarga(
+  const { datos, cargando, error, recargar, refrescando, refrescar } = useCarga(
     async () => {
       const [eventos, reputacion] = await Promise.all([
         getMisEventos(),
@@ -95,6 +95,8 @@ export default function MisEventos() {
       ) : (
         <FlatList
           data={secciones}
+          refreshing={refrescando}
+          onRefresh={refrescar}
           keyExtractor={(item) => (item.tipo === "titulo" ? item.texto : String(item.id))}
           contentContainerStyle={estilosPantalla.contenido}
           renderItem={({ item }) =>
@@ -258,7 +260,7 @@ function Metrica({ valor, etiqueta, onPress }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores }) => ({
   publicar: {
     flexDirection: "row",
     alignItems: "center",

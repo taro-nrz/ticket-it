@@ -12,16 +12,21 @@
     "test:backend": "npm test --workspace=backend",
     "start:frontend": "npm start --workspace=frontend",
     "start:dev": "concurrently -n back,front -c blue,magenta \"npm run dev:backend\" \"npm run start:frontend\"",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "format": "prettier . --write",
     "web:frontend": "npm run web --workspace=frontend",
     "start:web": "concurrently -n back,web -c blue,magenta \"npm run dev:backend\" \"npm run web:frontend\"",
-    "test:e2e": "npm run test:e2e --workspace=frontend"
+    "test:e2e": "npm run test:e2e --workspace=frontend",
+    "format:check": "prettier . --check",
+    "verificar": "npm run lint && npm run format:check && npm run test:backend",
+    "test:coverage": "npm run test:coverage --workspace=backend"
   },
   "devDependencies": {
     "@eslint/js": "^9.31.0",
     "concurrently": "^9.2.0",
     "eslint": "^9.31.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^16.3.0",
     "prettier": "3.6.2"
   }

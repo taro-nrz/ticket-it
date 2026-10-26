@@ -42,7 +42,12 @@ export class Notificacion {
 
   // Se puede agrupar con una nueva si es del mismo tipo y destino y todavía no se leyó
   agrupaCon({ usuario, tipo, link }) {
-    return !this.estaLeida() && this.usuario.id === usuario.id && this.tipo === tipo && this.link === link;
+    return (
+      !this.estaLeida() &&
+      this.usuario.id === usuario.id &&
+      this.tipo === tipo &&
+      this.link === link
+    );
   }
 
   agrupar({ titulo, mensaje, fecha }) {

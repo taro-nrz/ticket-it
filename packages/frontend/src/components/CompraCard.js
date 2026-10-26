@@ -1,6 +1,6 @@
 import { etiquetaMobile } from "../utils/accesibilidad.js";
 import { Icono } from "./Icono.js";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { espacio, estadosCompra, fuentes, radio } from "../theme.js";
 import {
   fechaParaLector,
@@ -130,7 +130,7 @@ export function CompraFila({ compra, onPress }) {
   );
 }
 
-const crearEstilos = ({ colores, texto, estados }) => ({
+const crearEstilos = ({ colores, estados }) => ({
   ticket: {
     flexDirection: "row",
     backgroundColor: colores.superficie,
