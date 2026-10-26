@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { enviarMensaje, getCompra, getMensajes, marcarMensajesLeidos } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
-import { Cargando, ErrorVista, EstadoBadge, Vacio } from "../../components/ui.js";
+import { ErrorVista, EstadoBadge, Vacio } from "../../components/ui.js";
 import { useSesion } from "../../store/SesionContext.js";
 import { useNotificaciones } from "../../store/NotificacionesContext.js";
 import { anunciar, ocultoVisualmente } from "../../utils/accesibilidad.js";
@@ -22,6 +22,7 @@ import { avisarError } from "../../utils/confirmar.js";
 import { formatearHora, nombreCompleto } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { EsqueletoChat } from "../../components/Carga.js";
 
 const INTERVALO_POLLING_MS = 4000;
 
@@ -122,7 +123,14 @@ export default function Chat() {
   };
 
   if (error) return <ErrorVista error={error} />;
-  if (!mensajes || !compra) return <Cargando />;
+  if (!mensajes || !compra) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarraVolver subtitulo="Chat de la compra" titulo="Cargando…" />
+        <EsqueletoChat />
+      </View>
+    );
+  }
 
   const otro = esComprador ? compra.organizador : compra.comprador;
 

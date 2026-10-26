@@ -3,7 +3,8 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { getNotificaciones, marcarNotificacionLeida, marcarTodasLeidas } from "../../api/api.js";
 import { Icono } from "../../components/Icono.js";
 import { BarraVolver, estilosPantalla } from "../../components/Pantalla.js";
-import { Boton, Cargando, ErrorVista, Vacio } from "../../components/ui.js";
+import { Boton, ErrorVista, Vacio } from "../../components/ui.js";
+import { BarraCargando, EsqueletoFilas } from "../../components/Carga.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useNotificaciones } from "../../store/NotificacionesContext.js";
@@ -26,13 +27,19 @@ const ICONOS = {
 export default function Notificaciones() {
   const router = useRouter();
   const { recargar: recargarContador } = useNotificaciones();
-  const { datos, cargando, error, recargar, refrescando, refrescar, setDatos } = useCarga(
-    getNotificaciones,
-    [],
-    {
-      alEnfocar: true,
-    },
-  );
+  const {
+    datos,
+    cargandoInicial,
+    recargando,
+    demorado,
+    error,
+    recargar,
+    refrescando,
+    refrescar,
+    setDatos,
+  } = useCarga(getNotificaciones, [], {
+    alEnfocar: true,
+  });
 
   const abrir = async (notificacion) => {
     try {
@@ -69,36 +76,43 @@ export default function Notificaciones() {
         }
         titulo="Notificaciones"
       />
-      {cargando && !datos ? (
-        <Cargando />
+      {cargandoInicial ? (
+        <EsqueletoFilas
+          etiqueta="Cargando notificaciones"
+          demorado={demorado}
+          onReintentar={recargar}
+        />
       ) : error ? (
         <ErrorVista error={error} onReintentar={recargar} />
       ) : (
-        <FlatList
-          data={datos.data}
-          refreshing={refrescando}
-          onRefresh={refrescar}
-          keyExtractor={(n) => String(n.id)}
-          contentContainerStyle={estilosPantalla.contenido}
-          ListHeaderComponent={
-            datos.noLeidas > 0 ? (
-              <Boton
-                titulo="Marcar todas como leídas"
-                icono="checkmark-done-outline"
-                variante="secundario"
-                onPress={leerTodas}
-                style={{ marginBottom: espacio.l }}
+        <>
+          <BarraCargando activa={recargando} />
+          <FlatList
+            data={datos.data}
+            refreshing={refrescando}
+            onRefresh={refrescar}
+            keyExtractor={(n) => String(n.id)}
+            contentContainerStyle={estilosPantalla.contenido}
+            ListHeaderComponent={
+              datos.noLeidas > 0 ? (
+                <Boton
+                  titulo="Marcar todas como leídas"
+                  icono="checkmark-done-outline"
+                  variante="secundario"
+                  onPress={leerTodas}
+                  style={{ marginBottom: espacio.l }}
+                />
+              ) : null
+            }
+            renderItem={({ item }) => <ItemNotificacion notificacion={item} onPress={abrir} />}
+            ListEmptyComponent={
+              <Vacio
+                icono="notifications-off-outline"
+                mensaje="Todavía no tenés notificaciones. Te avisamos acá cuando pase algo con tus compras o eventos."
               />
-            ) : null
-          }
-          renderItem={({ item }) => <ItemNotificacion notificacion={item} onPress={abrir} />}
-          ListEmptyComponent={
-            <Vacio
-              icono="notifications-off-outline"
-              mensaje="Todavía no tenés notificaciones. Te avisamos acá cuando pase algo con tus compras o eventos."
-            />
-          }
-        />
+            }
+          />
+        </>
       )}
     </View>
   );

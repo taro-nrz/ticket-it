@@ -74,6 +74,14 @@ npm run start:dev   # backend + Expo (escaneá el QR con Expo Go)
 Para probar la API en Swagger: `POST /auth/login` con un usuario de prueba, copiar el `token` y pegarlo en
 **Authorize**.
 
+**Estados de carga y MSW** (D-39), dentro de `packages/frontend`:
+
+```bash
+npm run web:lento        # MSW demora cada llamada al backend real (ver esqueletos y barras de carga)
+npm run web:mock         # la app SIN backend, con datos generados desde la API real
+npm run mocks:generar    # regenera esos datos si cambia el backend
+```
+
 La app detecta sola la IP de la PC cuando corre en Expo Go. Si hiciera falta forzarla, crear
 `packages/frontend/.env` con `EXPO_PUBLIC_API_URL=http://<IP-de-la-PC>:3000`.
 

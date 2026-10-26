@@ -32,11 +32,20 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test:e2e": "playwright test",
-    "build:web": "expo export --platform web"
+    "build:web": "expo export --platform web",
+    "mocks:generar": "NODE_ENV=test node scripts/generarMocks.mjs",
+    "web:mock": "EXPO_PUBLIC_MSW=sin-backend expo start --web",
+    "web:lento": "EXPO_PUBLIC_MSW=latencia expo start --web"
   },
   "private": true,
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
-    "@playwright/test": "^1.64.1"
+    "@playwright/test": "^1.64.1",
+    "msw": "^2.15.0"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

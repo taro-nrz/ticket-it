@@ -15,15 +15,7 @@ import { ReseniaItem } from "../../components/ReseniaItem.js";
 import { CancelarEvento } from "../organizador/CancelarEvento.js";
 import { CampoCupon } from "./CampoCupon.js";
 import { TituloPagina } from "../../components/Pantalla.js";
-import {
-  Avatar,
-  Boton,
-  Cargando,
-  Contador,
-  ErrorVista,
-  Estrellas,
-  Titulo,
-} from "../../components/ui.js";
+import { Avatar, Boton, Contador, ErrorVista, Estrellas, Titulo } from "../../components/ui.js";
 import { estadoPresionado, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
@@ -32,6 +24,7 @@ import { avisarError } from "../../utils/confirmar.js";
 import { formatearFecha, formatearPrecio, nombreCompleto, plural } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { EsqueletoDetalleEvento } from "../../components/Carga.js";
 
 const MAX_POR_COMPRA = 10;
 const RESENIAS_VISIBLES = 3;
@@ -47,7 +40,8 @@ export default function EventoDetalle() {
   const { usuario, esComprador } = useSesion();
   const {
     datos: evento,
-    cargando,
+    cargandoInicial,
+    demorado,
     error,
     recargar,
     setDatos,
@@ -58,7 +52,23 @@ export default function EventoDetalle() {
   const [cancelando, setCancelando] = useState(false);
   const [cupon, setCupon] = useState(null);
 
-  if (cargando && !evento) return <Cargando />;
+  if (cargandoInicial) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colores.fondo }}>
+        <EsqueletoDetalleEvento demorado={demorado} onReintentar={recargar} />
+        <View style={[styles.botonesFlotantes, { top: top + 12 }]}>
+          <Pressable
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+            style={styles.botonRedondo}
+          >
+            <Icono name="chevron-back" size={22} color={colores.texto} />
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
 
   const esMiEvento = usuario?.id === evento.organizador.id;

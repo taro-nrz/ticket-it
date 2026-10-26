@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useEstilos } from "../hooks/useEstilos.js";
 import { useTema } from "../store/TemaContext.js";
 import { fuentes } from "../theme.js";
 import { Icono } from "./Icono.js";
+import { ImagenConCarga } from "./Carga.js";
 
 // D-27: carrusel con las fotos del evento (multimedia). Se desliza con el dedo y también tiene botones
 // "Foto anterior" / "Foto siguiente" para teclado y lector de pantalla; la posición se anuncia.
@@ -46,7 +47,7 @@ export function Galeria({ imagenes, margenInferior = 0 }) {
         importantForAccessibility="no-hide-descendants"
       >
         {imagenes.map((uri) => (
-          <Image key={uri} source={{ uri }} alt="" style={{ width: ancho, height: "100%" }} />
+          <ImagenConCarga key={uri} uri={uri} style={{ width: ancho, height: "100%" }} />
         ))}
       </ScrollView>
 

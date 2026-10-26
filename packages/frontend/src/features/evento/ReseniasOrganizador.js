@@ -3,21 +3,14 @@ import { Text, View } from "react-native";
 import { getReseniasDeOrganizador } from "../../api/api.js";
 import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
-import {
-  Avatar,
-  Cargando,
-  ErrorVista,
-  Estrellas,
-  Tarjeta,
-  Titulo,
-  Vacio,
-} from "../../components/ui.js";
+import { Avatar, ErrorVista, Estrellas, Tarjeta, Titulo, Vacio } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
 import { espacio, fuentes } from "../../theme.js";
 import { nombreCompleto, plural } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { EsqueletoReputacion } from "../../components/Carga.js";
 
 // HU-12: reseñas de los eventos anteriores del organizador
 export default function ReseniasOrganizador() {
@@ -28,7 +21,13 @@ export default function ReseniasOrganizador() {
   const { usuario } = useSesion();
   // El organizador también entra acá desde "Mis eventos" para leer sus propias reseñas
   const propias = String(usuario?.id) === String(id);
-  const { datos, cargando, error, recargar } = useCarga(() => getReseniasDeOrganizador(id), [id]);
+  const {
+    datos,
+    cargandoInicial: cargando,
+    demorado,
+    error,
+    recargar,
+  } = useCarga(() => getReseniasDeOrganizador(id), [id]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -37,7 +36,7 @@ export default function ReseniasOrganizador() {
         titulo={propias ? "Mis reseñas" : "Reseñas del organizador"}
       />
       {cargando ? (
-        <Cargando />
+        <EsqueletoReputacion demorado={demorado} onReintentar={recargar} />
       ) : error ? (
         <ErrorVista error={error} onReintentar={recargar} />
       ) : (

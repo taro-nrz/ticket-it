@@ -4,15 +4,7 @@ import { Pressable, Text, View } from "react-native";
 import { getCompra, pagarCompra } from "../../api/api.js";
 import { Icono } from "../../components/Icono.js";
 import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
-import {
-  Boton,
-  Campo,
-  Cargando,
-  ErrorVista,
-  ResumenErrores,
-  Seccion,
-  Tarjeta,
-} from "../../components/ui.js";
+import { Boton, Campo, ErrorVista, ResumenErrores, Seccion, Tarjeta } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useTema } from "../../store/TemaContext.js";
@@ -20,6 +12,7 @@ import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { avisarExito } from "../../utils/confirmar.js";
 import { formatearHora, formatearPrecio } from "../../utils/formato.js";
+import { EsqueletoFormulario } from "../../components/Carga.js";
 
 // Tarjetas de la pasarela simulada (backend: services/pasarelaPago.js)
 const TARJETAS_DE_PRUEBA = [
@@ -63,7 +56,7 @@ export default function Checkout() {
   const styles = useEstilos(crearEstilos);
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const { datos: compra, cargando, error, recargar } = useCarga(() => getCompra(id), [id]);
+  const { datos: compra, cargandoInicial, error, recargar } = useCarga(() => getCompra(id), [id]);
 
   const [valores, setValores] = useState({ numero: "", titular: "", vencimiento: "", cvv: "" });
   const [intentoEnviar, setIntentoEnviar] = useState(false);
@@ -72,7 +65,14 @@ export default function Checkout() {
   const [pagando, setPagando] = useState(false);
   const campos = useRef({});
 
-  if (cargando && !compra) return <Cargando />;
+  if (cargandoInicial) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarraVolver subtitulo="Tu compra" titulo="Pagar" />
+        <EsqueletoFormulario campos={4} etiqueta="Preparando el pago" />
+      </View>
+    );
+  }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
 
   const gratis = compra.total === 0;

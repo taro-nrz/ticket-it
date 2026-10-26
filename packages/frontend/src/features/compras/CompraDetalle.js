@@ -6,7 +6,7 @@ import { cancelarCompra, getCompra, utilizarCompra } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
 import { Icono } from "../../components/Icono.js";
 import { EntradaQR } from "../../components/EntradaQR.js";
-import { Boton, Cargando, ErrorVista, EstadoBadge, Titulo } from "../../components/ui.js";
+import { Boton, ErrorVista, EstadoBadge, Titulo } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
 import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
@@ -22,6 +22,7 @@ import {
 } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { EsqueletoDetalleCompra } from "../../components/Carga.js";
 
 // Detalle y ciclo de vida de una compra con forma de entrada.
 // Los botones salen de accionesDisponibles: las reglas las decide el backend.
@@ -35,14 +36,22 @@ export default function CompraDetalle() {
   const { esComprador } = useSesion();
   const {
     datos: compra,
-    cargando,
+    cargandoInicial,
+    demorado,
     error,
     recargar,
     setDatos,
   } = useCarga(() => getCompra(id), [id], { alEnfocar: true });
   const [accionEnCurso, setAccionEnCurso] = useState(null);
 
-  if (cargando && !compra) return <Cargando />;
+  if (cargandoInicial) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarraVolver titulo="Tu compra" oscuro />
+        <EsqueletoDetalleCompra demorado={demorado} onReintentar={recargar} />
+      </View>
+    );
+  }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
 
   const puede = (accion) => compra.accionesDisponibles.includes(accion);

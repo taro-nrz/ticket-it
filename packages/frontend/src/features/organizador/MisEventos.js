@@ -5,7 +5,6 @@ import { FlatList, Pressable, Text, View } from "react-native";
 import { getMisEventos, getReseniasDeOrganizador } from "../../api/api.js";
 import { Encabezado, estilosPantalla } from "../../components/Pantalla.js";
 import {
-  Cargando,
   ErrorVista,
   Estrellas,
   InsigniaSinLeer,
@@ -26,6 +25,7 @@ import {
 } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { BarraCargando, EsqueletoPanelEventos } from "../../components/Carga.js";
 
 // Panel del organizador: sus eventos con el resumen de ventas
 export default function MisEventos() {
@@ -34,17 +34,18 @@ export default function MisEventos() {
 
   const router = useRouter();
   const { usuario } = useSesion();
-  const { datos, cargando, error, recargar, refrescando, refrescar } = useCarga(
-    async () => {
-      const [eventos, reputacion] = await Promise.all([
-        getMisEventos(),
-        getReseniasDeOrganizador(usuario.id),
-      ]);
-      return { eventos, reputacion: reputacion.organizador };
-    },
-    [usuario.id],
-    { alEnfocar: true },
-  );
+  const { datos, cargandoInicial, recargando, demorado, error, recargar, refrescando, refrescar } =
+    useCarga(
+      async () => {
+        const [eventos, reputacion] = await Promise.all([
+          getMisEventos(),
+          getReseniasDeOrganizador(usuario.id),
+        ]);
+        return { eventos, reputacion: reputacion.organizador };
+      },
+      [usuario.id],
+      { alEnfocar: true },
+    );
 
   const eventos = datos?.eventos.data ?? [];
   const recaudado = eventos.reduce((total, evento) => total + evento.ventas.recaudacion, 0);
@@ -92,35 +93,39 @@ export default function MisEventos() {
       </Encabezado>
       {error ? (
         <ErrorVista error={error} onReintentar={recargar} />
+      ) : cargandoInicial ? (
+        // Fuera de la lista: una zona desplazable sin nada enfocable no es accesible con teclado
+        <View style={[estilosPantalla.contenido, { flex: 1 }]}>
+          <EsqueletoPanelEventos demorado={demorado} onReintentar={recargar} />
+        </View>
       ) : (
-        <FlatList
-          data={secciones}
-          refreshing={refrescando}
-          onRefresh={refrescar}
-          keyExtractor={(item) => (item.tipo === "titulo" ? item.texto : String(item.id))}
-          contentContainerStyle={estilosPantalla.contenido}
-          renderItem={({ item }) =>
-            item.tipo === "titulo" ? (
-              <Titulo nivel={2} style={[texto.etiqueta, { marginBottom: 10 }]}>
-                {item.texto}
-              </Titulo>
-            ) : (
-              <EventoVentas
-                evento={item}
-                onVer={() => router.push(`/evento/${item.id}`)}
-                onCompras={() => router.push(`/evento/${item.id}/compras`)}
-                onResenias={() => router.push(`/evento/${item.id}/resenias`)}
-              />
-            )
-          }
-          ListEmptyComponent={
-            cargando ? (
-              <Cargando />
-            ) : (
+        <>
+          <BarraCargando activa={recargando} />
+          <FlatList
+            data={secciones}
+            refreshing={refrescando}
+            onRefresh={refrescar}
+            keyExtractor={(item) => (item.tipo === "titulo" ? item.texto : String(item.id))}
+            contentContainerStyle={estilosPantalla.contenido}
+            renderItem={({ item }) =>
+              item.tipo === "titulo" ? (
+                <Titulo nivel={2} style={[texto.etiqueta, { marginBottom: 10 }]}>
+                  {item.texto}
+                </Titulo>
+              ) : (
+                <EventoVentas
+                  evento={item}
+                  onVer={() => router.push(`/evento/${item.id}`)}
+                  onCompras={() => router.push(`/evento/${item.id}/compras`)}
+                  onResenias={() => router.push(`/evento/${item.id}/resenias`)}
+                />
+              )
+            }
+            ListEmptyComponent={
               <Vacio icono="calendar-outline" mensaje="Todavía no publicaste eventos" />
-            )
-          }
-        />
+            }
+          />
+        </>
       )}
     </View>
   );

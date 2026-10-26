@@ -5,3 +5,4 @@ docs/capturas/
 packages/frontend/.expo/
 packages/frontend/dist/
 coverage/
+packages/frontend/public/mockServiceWorker.js

@@ -3,12 +3,13 @@ import { useState } from "react";
 import { Text, View } from "react-native";
 import { getEstadisticasEvento } from "../../api/api.js";
 import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
-import { Boton, Cargando, ErrorVista, EstadoBadge, Seccion, Tarjeta } from "../../components/ui.js";
+import { Boton, ErrorVista, EstadoBadge, Seccion, Tarjeta } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useTema } from "../../store/TemaContext.js";
 import { espacio, fuentes, radio } from "../../theme.js";
 import { formatearMonto, formatearMontoCompacto, plural } from "../../utils/formato.js";
+import { EsqueletoEstadisticas } from "../../components/Carga.js";
 
 const formatearDia = (texto) => {
   const [, mes, dia] = texto.split("-").map(Number);
@@ -21,9 +22,19 @@ const porcentaje = (valor) => `${String(valor).replace(".", ",")} %`;
 export default function Estadisticas() {
   const { texto } = useTema();
   const { id } = useLocalSearchParams();
-  const { datos, cargando, error, recargar } = useCarga(() => getEstadisticasEvento(id), [id]);
+  const { datos, cargandoInicial, demorado, error, recargar } = useCarga(
+    () => getEstadisticasEvento(id),
+    [id],
+  );
 
-  if (cargando && !datos) return <Cargando />;
+  if (cargandoInicial) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarraVolver subtitulo="Tu evento" titulo="Estadísticas" />
+        <EsqueletoEstadisticas demorado={demorado} onReintentar={recargar} />
+      </View>
+    );
+  }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
   const { totales } = datos;
 
