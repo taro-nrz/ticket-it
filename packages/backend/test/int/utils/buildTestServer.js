@@ -1,3 +1,5 @@
+import os from "node:os";
+import path from "node:path";
 import jwt from "jsonwebtoken";
 import { crearApp } from "../../../app.js";
 import { RelojFijo } from "../../../utils/reloj.js";
@@ -16,6 +18,8 @@ export const CONFIG_TEST = {
   bcryptRondas: 4, // rápido para los tests; en producción 10+
   loginMaxIntentos: 5,
   loginVentanaMs: 60 * 1000,
+  // Las imágenes de los tests van a una carpeta temporal
+  uploadsDir: path.join(os.tmpdir(), "ticket-it-test-uploads"),
 };
 
 // Header de autenticación de un usuario de la semilla (D-29): firma un JWT como lo haría el login

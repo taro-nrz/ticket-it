@@ -9,6 +9,7 @@ export class Server {
   #controllers = {};
   #auth = {};
   #middlewares = [];
+  #opcionesRutas = {};
   #app;
   #routes;
 
@@ -58,10 +59,15 @@ export class Server {
     this.#routes.push(route);
   }
 
+  // Opciones que algunas rutas necesitan (ej. la carpeta de imágenes subidas)
+  setOpcionesRutas(opciones) {
+    this.#opcionesRutas = opciones;
+  }
+
   configureRoutes() {
     this.#middlewares.forEach((middleware) => this.#app.use(middleware));
     this.#routes.forEach((route) =>
-      this.#app.use(route(this.getController.bind(this), this.#auth)),
+      this.#app.use(route(this.getController.bind(this), this.#auth, this.#opcionesRutas)),
     );
 
     // Middleware para rutas no encontradas

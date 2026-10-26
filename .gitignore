@@ -6,3 +6,4 @@ test-results
 playwright-report
 .expo
 dist
+packages/backend/uploads

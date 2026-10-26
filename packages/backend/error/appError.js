@@ -29,6 +29,12 @@ export class TooManyRequestsError extends AppError {
   }
 }
 
+export class PayloadTooLargeError extends AppError {
+  constructor(message = "El archivo es demasiado grande") {
+    super(message, 413);
+  }
+}
+
 export class ForbiddenError extends AppError {
   constructor(message = "No tenés permisos para realizar esta acción") {
     super(message, 403);

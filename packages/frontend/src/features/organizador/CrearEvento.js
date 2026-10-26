@@ -4,6 +4,7 @@ import { Pressable, Text, View } from "react-native";
 import { actualizarEvento, crearEvento, getCategorias } from "../../api/api.js";
 import { Icono } from "../../components/Icono.js";
 import { CampoFecha } from "../../components/CampoFecha.js";
+import { GestorFotos } from "./GestorFotos.js";
 import { BarraVolver, Encabezado, Pantalla } from "../../components/Pantalla.js";
 import {
   Boton,
@@ -36,7 +37,7 @@ const valoresDesdeEvento = (evento) => {
     hora: `${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`,
     lugar: evento.lugar,
     direccion: evento.direccion,
-    imagenes: evento.multimedia.join("\n"),
+    imagenes: evento.multimedia,
     tiposEntrada: evento.tiposEntrada.map((tipo) => ({
       id: tipo.id,
       nombre: tipo.nombre,
@@ -56,7 +57,7 @@ const valoresIniciales = () => ({
   hora: "21:00",
   lugar: "",
   direccion: "",
-  imagenes: "",
+  imagenes: [],
   tiposEntrada: [{ ...tipoVacio(), nombre: "General" }],
 });
 
@@ -182,10 +183,7 @@ export default function CrearEvento({ evento = null }) {
         fecha: fechaDelEvento(valores).toISOString(),
         lugar: valores.lugar.trim(),
         direccion: valores.direccion.trim(),
-        multimedia: valores.imagenes
-          .split("\n")
-          .map((url) => url.trim())
-          .filter(Boolean),
+        multimedia: valores.imagenes,
         tiposEntrada: valores.tiposEntrada.map((tipo) => ({
           ...(tipo.id !== undefined && { id: tipo.id }),
           nombre: tipo.nombre.trim(),
@@ -311,19 +309,7 @@ export default function CrearEvento({ evento = null }) {
             autoComplete="off"
             error={error("direccion")}
           />
-          <Campo
-            etiqueta="Imágenes (opcional)"
-            ayuda="Una dirección web (URL) por línea"
-            value={valores.imagenes}
-            onChangeText={cambiar("imagenes")}
-            placeholder="https://..."
-            multiline
-            inputMode="url"
-            keyboardType="url"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="off"
-          />
+          <GestorFotos fotos={valores.imagenes} onCambiar={cambiar("imagenes")} />
         </Seccion>
 
         <Seccion titulo="Tipos de entrada">

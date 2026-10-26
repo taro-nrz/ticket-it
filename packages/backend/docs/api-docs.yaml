@@ -45,6 +45,8 @@ tags:
     description: Cupones de descuento por evento (M17 — D-38)
   - name: Lista de espera
     description: Anotarse a un tipo de entrada agotado (M19 — D-40)
+  - name: Archivos
+    description: Subida de imágenes de eventos (M21 — D-42)
   - name: Notificaciones
     description: Avisos dentro de la app (M12 — D-32)
   - name: Reseñas
@@ -1531,6 +1533,40 @@ paths:
       responses:
         "204": { description: Salió de la lista }
         "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- ARCHIVOS
+  /archivos/imagenes:
+    post:
+      tags: [Archivos]
+      summary: Subir una imagen para un evento (sólo organizadores)
+      description: |-
+        JPG, PNG o WebP de hasta 5 MB. El tipo se verifica por el contenido del archivo (no por la extensión).
+        Devuelve la URL pública, que se usa en `multimedia` al publicar o editar el evento.
+      security: [{ usuario: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [imagen]
+              properties:
+                imagen: { type: string, format: binary }
+      responses:
+        "201":
+          description: Imagen guardada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, example: "http://localhost:3000/uploads/3f2a…c1.jpg" }
+                  tipo: { type: string, example: image/jpeg }
+                  bytes: { type: integer, example: 245731 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "413": { description: La imagen pesa más de 5 MB }
 
   # ---------------------------------------------------------------- NOTIFICACIONES
   /notificacion:
