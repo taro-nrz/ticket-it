@@ -14,6 +14,7 @@ import { ImagenEvento } from "../../components/EventoCard.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
 import { CancelarEvento } from "../organizador/CancelarEvento.js";
 import { CampoCupon } from "./CampoCupon.js";
+import { AvisoPrioridad, ListaEspera } from "./ListaEspera.js";
 import { TituloPagina } from "../../components/Pantalla.js";
 import { Avatar, Boton, Contador, ErrorVista, Estrellas, Titulo } from "../../components/ui.js";
 import { estadoPresionado, etiquetaMobile } from "../../utils/accesibilidad.js";
@@ -73,7 +74,15 @@ export default function EventoDetalle() {
 
   const esMiEvento = usuario?.id === evento.organizador.id;
   const tipo = evento.tiposEntrada.find((t) => t.id === tipoElegido);
-  const maximo = tipo ? Math.min(tipo.disponibles, MAX_POR_COMPRA) : 1;
+  // D-40: inscripciones de quien mira en la lista de espera (por tipo de entrada)
+  const esperaDe = (tipoId) => evento.listaEspera?.mias.find((i) => i.tipoEntradaId === tipoId);
+  const prioridadDe = (tipoId) => {
+    const inscripcion = esperaDe(tipoId);
+    return inscripcion?.estado === "AVISADA" ? inscripcion : null;
+  };
+  const maximo = tipo
+    ? Math.min(tipo.disponibles + (prioridadDe(tipo.id)?.cantidad ?? 0), MAX_POR_COMPRA)
+    : 1;
   const puedeComprar = esComprador && !evento.yaSeRealizo && !evento.cancelado;
   // Si el evento ya pasó, sus reseñas tienen su propia sección: acá van las de los otros eventos
   const otrasResenias = evento.ultimasResenias.filter((r) => r.evento.id !== evento.id);
@@ -225,29 +234,46 @@ export default function EventoDetalle() {
             </Titulo>
             {evento.tiposEntrada.map((t) => {
               const seleccionado = t.id === tipoElegido;
-              const seleccionable = puedeComprar && !t.agotado;
-              if (t.agotado) {
+              const prioridad = prioridadDe(t.id);
+              const seleccionable = puedeComprar && (!t.agotado || prioridad);
+              const enEspera = evento.listaEspera?.enEspera?.[t.id] ?? 0;
+              if (t.agotado && !prioridad) {
                 return (
-                  <View
-                    key={t.id}
-                    style={[styles.tipo, styles.tipoAgotado]}
-                    accessible
-                    accessibilityLabel={`${t.nombre}, ${formatearPrecio(t.precio)}, agotado`}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.tipoNombre, { color: colores.textoSecundario }]}>
-                        {t.nombre}
+                  <View key={t.id} style={[styles.tipo, styles.tipoAgotado]}>
+                    <View
+                      style={styles.tipoFilaAgotado}
+                      accessible
+                      accessibilityLabel={`${t.nombre}, ${formatearPrecio(t.precio)}, agotado${
+                        enEspera > 0 ? `, ${enEspera} en lista de espera` : ""
+                      }`}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.tipoNombre, { color: colores.textoSecundario }]}>
+                          {t.nombre}
+                        </Text>
+                        <Text style={texto.chico}>
+                          Agotado
+                          {enEspera > 0 ? ` · ${enEspera} en lista de espera` : ""}
+                        </Text>
+                      </View>
+                      <Text style={[styles.tipoPrecio, styles.tachado]}>
+                        {formatearPrecio(t.precio)}
                       </Text>
-                      <Text style={texto.chico}>Agotado</Text>
                     </View>
-                    <Text style={[styles.tipoPrecio, styles.tachado]}>
-                      {formatearPrecio(t.precio)}
-                    </Text>
+                    {puedeComprar && (
+                      <ListaEspera
+                        evento={evento}
+                        tipo={t}
+                        inscripcion={esperaDe(t.id)}
+                        onCambio={recargar}
+                      />
+                    )}
                   </View>
                 );
               }
               return (
                 <View key={t.id} style={[styles.tipo, seleccionado && styles.tipoSeleccionado]}>
+                  {prioridad && <AvisoPrioridad inscripcion={prioridad} />}
                   <Pressable
                     disabled={!seleccionable}
                     accessibilityRole="button"
@@ -501,11 +527,10 @@ const crearEstilos = ({ colores, texto }) => ({
   tipoFila: { flexDirection: "row", alignItems: "center", gap: espacio.m, minHeight: 44 },
   tipoSeleccionado: { borderWidth: 2, borderColor: colores.texto },
   tipoAgotado: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: colores.apagado,
     borderColor: colores.apagado,
   },
+  tipoFilaAgotado: { flexDirection: "row", alignItems: "center", gap: 10 },
   tipoNombre: { fontFamily: fuentes.negrita, fontSize: 16, color: colores.texto },
   disponibles: { fontFamily: fuentes.texto, fontSize: 13, color: colores.exito },
   tipoPrecio: { fontFamily: fuentes.negrita, fontSize: 16, color: colores.texto },

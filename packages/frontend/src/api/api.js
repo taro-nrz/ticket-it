@@ -36,6 +36,12 @@ export const cancelarEvento = (id, motivo) =>
 export const comprar = (eventoId, tipoEntradaId, cantidad, codigoCupon) =>
   datos(cliente.post("/compra", { eventoId, tipoEntradaId, cantidad, codigoCupon }));
 
+// ---------- LISTA DE ESPERA (D-40) ----------
+export const anotarseEnEspera = (eventoId, tipoEntradaId, cantidad) =>
+  datos(cliente.post(`/evento/${eventoId}/espera`, { tipoEntradaId, cantidad }));
+export const salirDeEspera = (eventoId, tipoEntradaId) =>
+  cliente.delete(`/evento/${eventoId}/espera/${tipoEntradaId}`);
+
 // ---------- CUPONES (D-38) ----------
 export const validarCupon = (eventoId, codigo, tipoEntradaId, cantidad) =>
   datos(

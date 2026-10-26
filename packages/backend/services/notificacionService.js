@@ -93,6 +93,31 @@ export class NotificacionService {
     });
   }
 
+  async lugarDisponible(inscripcion) {
+    const hora = inscripcion.prioridadHasta.toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    await this.notificar({
+      usuario: inscripcion.usuario,
+      tipo: TipoNotificacion.LUGAR_DISPONIBLE,
+      titulo: `¡Se liberaron entradas para ${inscripcion.evento.nombre}!`,
+      mensaje: `Te guardamos ${inscripcion.cantidad} × ${inscripcion.tipoEntrada.nombre} hasta las ${hora}. Comprálas antes de que pasen al siguiente de la lista.`,
+      link: `/evento/${inscripcion.evento.id}`,
+    });
+  }
+
+  async prioridadVencida(inscripcion) {
+    await this.notificar({
+      usuario: inscripcion.usuario,
+      tipo: TipoNotificacion.PRIORIDAD_VENCIDA,
+      titulo: `Se terminó tu prioridad para ${inscripcion.evento.nombre}`,
+      mensaje: "No compraste a tiempo y las entradas pasaron a la siguiente persona de la lista.",
+      link: `/evento/${inscripcion.evento.id}`,
+    });
+  }
+
   async entradaUtilizada(compra) {
     await this.notificar({
       usuario: compra.comprador,

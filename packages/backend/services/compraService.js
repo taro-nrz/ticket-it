@@ -13,6 +13,7 @@ import { paginar } from "../utils/paginacion.js";
 import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 import { generarCodigoEntrada, normalizarCodigoEntrada } from "../utils/codigo.js";
 import { PasarelaPagoSimulada } from "./pasarelaPago.js";
+import { SIN_LISTA_ESPERA } from "./listaEsperaService.js";
 
 export class CompraService {
   constructor(
@@ -21,9 +22,12 @@ export class CompraService {
     reseniaRepository,
     reloj,
     config,
-    notificaciones = SIN_NOTIFICACIONES,
-    pasarelaPago = new PasarelaPagoSimulada(),
-    cuponRepository = null,
+    {
+      notificaciones = SIN_NOTIFICACIONES,
+      pasarelaPago = new PasarelaPagoSimulada(),
+      cuponRepository = null,
+      listaEspera = SIN_LISTA_ESPERA,
+    } = {},
   ) {
     this.compraRepository = compraRepository;
     this.eventoRepository = eventoRepository;
@@ -34,6 +38,7 @@ export class CompraService {
     this.notificaciones = notificaciones;
     this.pasarelaPago = pasarelaPago;
     this.cuponRepository = cuponRepository;
+    this.listaEspera = listaEspera;
   }
 
   // HU-04: comprar un tipo de entrada sin superar el cupo
@@ -68,6 +73,11 @@ export class CompraService {
     const cupon = codigoCupon ? await this.buscarCupon(evento.id, codigoCupon) : null;
     cupon?.aplicar(tipoEntrada.precio, cantidad, ahora);
 
+    // D-40: si la persona tenía prioridad por la lista de espera, puede usar las entradas retenidas para ella
+    const prioridad = await this.listaEspera.prioridadDe(comprador, evento, tipoEntrada);
+    if (prioridad && cantidad <= tipoEntrada.disponibles() + prioridad.cantidad) {
+      await this.listaEspera.usarPrioridad(comprador, evento, tipoEntrada);
+    }
     tipoEntrada.reservar(cantidad);
     const compra = new Compra(comprador, evento, tipoEntrada, cantidad, ahora, {
       minutosReserva: this.minutosReserva,
@@ -91,8 +101,18 @@ export class CompraService {
       await this.eventoRepository.save(compra.evento);
       await this.compraRepository.save(compra);
       await this.notificaciones.reservaVencida(compra);
+      await this.listaEspera.cupoLiberado(compra.evento, compra.tipoEntrada);
     }
     return vencidas;
+  }
+
+  // D-40: el organizador ve cuántas personas esperan por cada tipo agotado
+  async disponibilidadConEspera(evento) {
+    const { enEspera } = (await this.listaEspera.resumen(evento, null)) ?? { enEspera: {} };
+    return evento.tiposEntrada.map((tipo) => ({
+      ...tipoEntradaDTO(tipo),
+      enEspera: enEspera[tipo.id] ?? 0,
+    }));
   }
 
   async buscarCupon(eventoId, codigo) {
@@ -141,7 +161,7 @@ export class CompraService {
 
     return {
       evento: eventoReferenciaDTO(evento),
-      disponibilidad: evento.tiposEntrada.map(tipoEntradaDTO),
+      disponibilidad: await this.disponibilidadConEspera(evento),
       resumenPorEstado,
       ...pagina,
       data: await Promise.all(pagina.data.map((compra) => this.aDTO(compra, organizador))),
@@ -208,6 +228,7 @@ export class CompraService {
     await this.eventoRepository.save(compra.evento);
     await this.compraRepository.save(compra);
     await this.notificaciones.compraCanceladaPorComprador(compra);
+    await this.listaEspera.cupoLiberado(compra.evento, compra.tipoEntrada);
     return this.aDTO(compra, usuario, { conDetalle: true });
   }
 

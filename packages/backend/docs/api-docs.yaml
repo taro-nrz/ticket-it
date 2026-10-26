@@ -43,6 +43,8 @@ tags:
     description: Chat de la compra (M5 — HU-07, HU-08)
   - name: Cupones
     description: Cupones de descuento por evento (M17 — D-38)
+  - name: Lista de espera
+    description: Anotarse a un tipo de entrada agotado (M19 — D-40)
   - name: Notificaciones
     description: Avisos dentro de la app (M12 — D-32)
   - name: Reseñas
@@ -248,6 +250,21 @@ components:
         usosMaximos: { type: [integer, "null"], example: 100 }
         vence: { type: [string, "null"], format: date-time }
 
+    InscripcionEspera:
+      type: object
+      properties:
+        id: { type: integer }
+        tipoEntradaId: { type: integer, example: 2 }
+        tipoEntrada: { type: string, example: Platea }
+        cantidad: { type: integer, example: 1 }
+        estado: { type: string, enum: [ESPERANDO, AVISADA, CONVERTIDA, EXPIRADA, RETIRADA] }
+        fecha: { type: string, format: date-time }
+        prioridadHasta:
+          type: [string, "null"]
+          format: date-time
+          description: Si está AVISADA, hasta cuándo tiene las entradas guardadas (30 min)
+        posicion: { type: [integer, "null"], description: Puesto en la cola si está ESPERANDO }
+
     Notificacion:
       type: object
       properties:
@@ -263,6 +280,8 @@ components:
               EVENTO_CANCELADO,
               NUEVA_RESENIA,
               RESERVA_VENCIDA,
+              LUGAR_DISPONIBLE,
+              PRIORIDAD_VENCIDA,
             ]
         titulo: { type: string, example: Mensaje de Sofía Pérez }
         mensaje: { type: string, example: "Noche Indie en Obras: “Genial, ¡gracias!”" }
@@ -1429,6 +1448,51 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Cupon" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  # ---------------------------------------------------------------- LISTA DE ESPERA
+  /evento/{id}/espera:
+    post:
+      tags: [Lista de espera]
+      summary: Anotarse en la lista de espera de un tipo de entrada agotado
+      description: |-
+        Sólo compradores. Cuando se libera cupo (cancelación, reserva vencida, más cupo), se avisa al primero de la
+        cola y se le guardan las entradas 30 minutos; si no compra, pasan al siguiente. Orden estricto de llegada.
+        El detalle del evento (`GET /evento/{id}`) informa `listaEspera.enEspera` por tipo y `listaEspera.mias`.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipoEntradaId]
+              properties:
+                tipoEntradaId: { type: integer, example: 2 }
+                cantidad: { type: integer, minimum: 1, maximum: 10, default: 1 }
+      responses:
+        "201":
+          description: Anotado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InscripcionEspera" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /evento/{id}/espera/{tipoEntradaId}:
+    delete:
+      tags: [Lista de espera]
+      summary: Salir de la lista de espera (si tenía prioridad, pasa al siguiente)
+      security: [{ usuario: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - { in: path, name: tipoEntradaId, required: true, schema: { type: integer } }
+      responses:
+        "204": { description: Salió de la lista }
         "404": { $ref: "#/components/responses/NotFound" }
 
   # ---------------------------------------------------------------- NOTIFICACIONES
