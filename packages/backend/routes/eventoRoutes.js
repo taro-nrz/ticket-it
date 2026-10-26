@@ -26,5 +26,13 @@ export default function eventoRoutes(getController, auth) {
     getController(EventoController).findById(req, res, next);
   });
 
+  router.put(pathEvento + "/:id", ...soloOrganizador, (req, res, next) => {
+    getController(EventoController).update(req, res, next);
+  });
+
+  router.post(pathEvento + "/:id/cancelar", ...soloOrganizador, (req, res, next) => {
+    getController(EventoController).cancelar(req, res, next);
+  });
+
   return router;
 }

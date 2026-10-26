@@ -69,11 +69,12 @@ export class Compra {
   }
 
   // HU-09: si estaba pagada se reembolsa automáticamente; en ambos casos se libera el cupo
-  cancelar(quien, ahora) {
+  // D-31: `porCancelacionDelEvento` la usa el organizador al cancelar el evento entero
+  cancelar(quien, ahora, { porCancelacionDelEvento = false } = {}) {
     if (this.estado === EstadoCompra.UTILIZADA) {
       throw new BusinessRuleError("No se puede cancelar una compra cuya entrada ya fue utilizada");
     }
-    if (this.evento.yaSeRealizo(ahora)) {
+    if (!porCancelacionDelEvento && this.evento.yaSeRealizo(ahora)) {
       throw new BusinessRuleError("No se puede cancelar una compra de un evento que ya se realizó");
     }
     const estabaPagada = this.estado === EstadoCompra.CONFIRMADA;

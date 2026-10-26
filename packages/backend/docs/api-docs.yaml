@@ -278,6 +278,7 @@ components:
         precioHasta: { type: number, example: 50000 }
         agotado: { type: boolean }
         yaSeRealizo: { type: boolean }
+        cancelado: { type: boolean, description: "D-31: los cancelados no aparecen en el catálogo" }
         esFavorito:
           type: boolean
           description: true si el comprador identificado lo tiene en favoritos
@@ -290,6 +291,11 @@ components:
           properties:
             descripcion: { type: string }
             direccion: { type: string, example: "Av. del Libertador 7395, CABA" }
+            motivoCancelacion: { type: [string, "null"] }
+            fechaCancelacion: { type: [string, "null"], format: date-time }
+            puedeEditarse:
+              type: boolean
+              description: true si quien consulta es el organizador y el evento sigue vigente (D-31)
             multimedia:
               type: array
               items: { type: string, format: uri }
@@ -845,6 +851,79 @@ paths:
               schema: { $ref: "#/components/schemas/EventoDetalle" }
         "400": { $ref: "#/components/responses/BadRequest" }
         "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      tags: [Eventos]
+      summary: Editar un evento propio (D-31)
+      description: |-
+        Sólo el organizador y mientras el evento no se haya realizado ni cancelado. Mismo body que al publicar;
+        los tipos de entrada existentes llevan su `id` (los nuevos no). No se puede bajar el cupo por debajo de
+        lo vendido ni quitar un tipo con ventas (422). Las compras ya hechas conservan su total.
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/EventoInput"
+                - type: object
+                  properties:
+                    tiposEntrada:
+                      type: array
+                      items:
+                        allOf:
+                          - $ref: "#/components/schemas/TipoEntradaInput"
+                          - type: object
+                            properties:
+                              id: { type: integer, description: Id del tipo existente }
+      responses:
+        "200":
+          description: Evento actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/EventoDetalle" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
+
+  /evento/{id}/cancelar:
+    post:
+      tags: [Eventos]
+      summary: Cancelar un evento propio (D-31)
+      description: |-
+        Cancela todas las compras activas del evento (las CONFIRMADAS quedan REEMBOLSADAS), libera el cupo y saca
+        el evento del catálogo. No se puede cancelar un evento realizado o ya cancelado (422).
+      security: [{ usuario: [] }]
+      parameters: [{ $ref: "#/components/parameters/Id" }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [motivo]
+              properties:
+                motivo: { type: string, minLength: 5, maxLength: 300, example: Problemas con el lugar }
+      responses:
+        "200":
+          description: Evento cancelado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  evento: { $ref: "#/components/schemas/EventoDetalle" }
+                  comprasCanceladas: { type: integer, example: 2 }
+                  comprasReembolsadas: { type: integer, example: 1 }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/BusinessRule" }
 
   # ---------------------------------------------------------------- COMPRAS
   /compra:

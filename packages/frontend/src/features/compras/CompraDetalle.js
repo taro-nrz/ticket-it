@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cancelarCompra, getCompra, pagarCompra, utilizarCompra } from "../../api/api.js";
 import { BarraVolver } from "../../components/Pantalla.js";
+import { Icono } from "../../components/Icono.js";
 import { Boton, Cargando, ErrorVista, EstadoBadge, Titulo } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
@@ -124,6 +125,18 @@ export default function CompraDetalle() {
 
         <View style={[styles.hoja, { paddingBottom: bottom + 28 }]}>
           <View style={styles.ancho}>
+            {/* D-31: si el organizador canceló el evento, se explica qué pasó con la compra */}
+            {compra.evento.cancelado && (
+              <View style={styles.cancelado} role="note">
+                <Icono name="information-circle" size={22} color={colores.error} />
+                <Text style={[texto.cuerpo, { flex: 1 }]}>
+                  El organizador canceló este evento.{" "}
+                  {compra.estado === "REEMBOLSADA"
+                    ? "Te devolvimos el dinero de la compra."
+                    : "La compra quedó cancelada y no se cobró nada."}
+                </Text>
+              </View>
+            )}
             <View style={styles.acciones}>
               {puede("PAGAR") && (
                 <Boton
@@ -278,6 +291,17 @@ function Paso({ color, titulo, detalle, conLinea, pendiente }) {
 }
 
 const crearEstilos = ({ colores, texto, estados }) => ({
+  cancelado: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+    backgroundColor: colores.errorFondo,
+    borderWidth: 1,
+    borderColor: colores.error,
+    borderRadius: radio.m,
+    padding: 14,
+    marginBottom: espacio.l,
+  },
   ancho: { width: "100%", maxWidth: 720, alignSelf: "center" },
   ticket: {
     marginHorizontal: espacio.xl,

@@ -31,6 +31,7 @@ export function eventoReferenciaDTO(evento) {
     nombre: evento.nombre,
     fecha: evento.fecha,
     lugar: evento.lugar,
+    cancelado: evento.cancelado,
     imagen: evento.multimedia[0] ?? null,
   };
 }
@@ -48,6 +49,7 @@ export function eventoResumenDTO(evento, { reputacion, ahora, usuario }) {
     precioHasta: evento.precioMaximo(),
     agotado: evento.estaAgotado(),
     yaSeRealizo: evento.yaSeRealizo(ahora),
+    cancelado: evento.cancelado,
     esFavorito: esFavoritoDe(usuario, evento),
     organizador: organizadorDTO(evento.organizador, reputacion),
   };
@@ -67,6 +69,11 @@ export function eventoDetalleDTO(evento, { reputacion, ahora, usuario, ultimasRe
     precioHasta: evento.precioMaximo(),
     agotado: evento.estaAgotado(),
     yaSeRealizo: evento.yaSeRealizo(ahora),
+    cancelado: evento.cancelado,
+    motivoCancelacion: evento.motivoCancelacion,
+    fechaCancelacion: evento.fechaCancelacion,
+    // Para el front: el organizador puede editar o cancelar mientras el evento siga vigente
+    puedeEditarse: Boolean(usuario && evento.esOrganizadoPor(usuario) && evento.puedeEditarse(ahora)),
     esFavorito: esFavoritoDe(usuario, evento),
     tiposEntrada: evento.tiposEntrada.map(tipoEntradaDTO),
     organizador: organizadorDTO(evento.organizador, reputacion),

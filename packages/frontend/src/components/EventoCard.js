@@ -12,7 +12,13 @@ const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "O
 
 // Bloque de imagen del evento: foto sobre el color de su categoría + talón con la fecha
 // Con `galeria`, si el evento tiene varias fotos se muestran en un carrusel (D-27)
-export function ImagenEvento({ evento, alto = 150, margenInferior = 14, galeria = false, children }) {
+export function ImagenEvento({
+  evento,
+  alto = 150,
+  margenInferior = 14,
+  galeria = false,
+  children,
+}) {
   const styles = useEstilos(crearEstilos);
 
   const { fondo, marca } = colorDeCategoria(evento.categoria.nombre);
@@ -32,7 +38,9 @@ export function ImagenEvento({ evento, alto = 150, margenInferior = 14, galeria 
       {conGaleria ? (
         <Galeria imagenes={evento.multimedia} margenInferior={margenInferior} />
       ) : (
-        imagen && <Image source={{ uri: imagen }} alt="" aria-hidden style={StyleSheet.absoluteFill} />
+        imagen && (
+          <Image source={{ uri: imagen }} alt="" aria-hidden style={StyleSheet.absoluteFill} />
+        )
       )}
       <View
         style={styles.fecha}

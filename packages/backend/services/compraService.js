@@ -35,6 +35,9 @@ export class CompraService {
     if (!evento) {
       throw new NotFoundError(`No existe el evento con id ${eventoId}`);
     }
+    if (evento.cancelado) {
+      throw new BusinessRuleError("El evento fue cancelado: ya no se venden entradas");
+    }
     if (evento.yaSeRealizo(ahora)) {
       throw new BusinessRuleError("No se pueden comprar entradas de un evento que ya se realizó");
     }

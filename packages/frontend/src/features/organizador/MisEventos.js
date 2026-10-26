@@ -48,11 +48,13 @@ export default function MisEventos() {
 
   const eventos = datos?.eventos.data ?? [];
   const recaudado = eventos.reduce((total, evento) => total + evento.ventas.recaudacion, 0);
-  const proximos = eventos.filter((evento) => !evento.yaSeRealizo);
-  const pasados = eventos.filter((evento) => evento.yaSeRealizo);
+  const proximos = eventos.filter((evento) => !evento.yaSeRealizo && !evento.cancelado);
+  const pasados = eventos.filter((evento) => evento.yaSeRealizo && !evento.cancelado);
+  const cancelados = eventos.filter((evento) => evento.cancelado);
   const secciones = [
     ...(proximos.length ? [{ tipo: "titulo", texto: "Próximos" }, ...proximos] : []),
     ...(pasados.length ? [{ tipo: "titulo", texto: "Realizados" }, ...pasados] : []),
+    ...(cancelados.length ? [{ tipo: "titulo", texto: "Cancelados" }, ...cancelados] : []),
   ];
 
   const publicar = (
@@ -128,19 +130,26 @@ function EventoVentas({ evento, onVer, onCompras, onResenias }) {
 
   const { ventas, resenias } = evento;
   return (
-    <View style={[styles.evento, evento.yaSeRealizo && { opacity: 0.8 }]}>
+    <View style={[styles.evento, (evento.yaSeRealizo || evento.cancelado) && { opacity: 0.8 }]}>
       <Pressable
         onPress={onVer}
         style={styles.eventoArriba}
         accessibilityRole="button"
         {...etiquetaMobile(
-          `${evento.nombre}. ${fechaParaLector(evento.fecha)}. ${evento.lugar}. Recaudado ${formatearMonto(ventas.recaudacion)}${ventas.comprasPendientes > 0 ? `. ${ventas.comprasPendientes} compras pendientes de pago` : ""}`,
+          `${evento.nombre}${evento.cancelado ? ", cancelado" : ""}. ${fechaParaLector(evento.fecha)}. ${evento.lugar}. Recaudado ${formatearMonto(ventas.recaudacion)}${ventas.comprasPendientes > 0 ? `. ${ventas.comprasPendientes} compras pendientes de pago` : ""}`,
         )}
         accessibilityHint="Abre el detalle del evento"
       >
         <View style={{ flex: 1, gap: 4 }}>
-          <View style={styles.fecha}>
-            <Text style={styles.fechaTexto}>{formatearFecha(evento.fecha)}</Text>
+          <View style={styles.filaEtiquetas}>
+            <View style={styles.fecha}>
+              <Text style={styles.fechaTexto}>{formatearFecha(evento.fecha)}</Text>
+            </View>
+            {evento.cancelado && (
+              <View style={styles.etiquetaCancelado}>
+                <Text style={styles.etiquetaCanceladoTexto}>Cancelado</Text>
+              </View>
+            )}
           </View>
           <Text style={texto.titulo}>{evento.nombre}</Text>
           <Text style={texto.chico}>
@@ -178,7 +187,8 @@ function EventoVentas({ evento, onVer, onCompras, onResenias }) {
       >
         <View style={styles.filaAccion}>
           <Text style={texto.cuerpoFuerte}>
-            Ver compras ({ventas.cantidadCompras}){evento.yaSeRealizo ? "" : " y controlar acceso"}
+            Ver compras ({ventas.cantidadCompras})
+            {evento.yaSeRealizo || evento.cancelado ? "" : " y controlar acceso"}
           </Text>
           <InsigniaSinLeer cantidad={ventas.mensajesSinLeer} />
         </View>
@@ -275,6 +285,14 @@ const crearEstilos = ({ colores, texto, estados }) => ({
     marginBottom: 14,
   },
   eventoArriba: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
+  filaEtiquetas: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  etiquetaCancelado: {
+    backgroundColor: colores.errorFondo,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  etiquetaCanceladoTexto: { fontFamily: fuentes.negrita, fontSize: 12, color: colores.error },
   fecha: {
     alignSelf: "flex-start",
     backgroundColor: colores.acentoSuave,
