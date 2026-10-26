@@ -4,6 +4,7 @@ import {
   buildTestServer,
   COMPRADORA_SOFIA,
   ORGANIZADORA_LUCIA,
+  auth,
 } from "./utils/buildTestServer.js";
 
 const eventoValido = () => ({
@@ -30,7 +31,7 @@ describe("M2 - Eventos", () => {
     test("CA-1: un organizador crea un evento con varios tipos de entrada", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
+        .set(auth(ORGANIZADORA_LUCIA))
         .send(eventoValido());
       expect(res.status).toBe(201);
       expect(res.body.id).toBe(10);
@@ -54,7 +55,7 @@ describe("M2 - Eventos", () => {
     test("CA-2: un comprador no puede crear eventos", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", COMPRADORA_SOFIA)
+        .set(auth(COMPRADORA_SOFIA))
         .send(eventoValido());
       expect(res.status).toBe(403);
     });
@@ -62,7 +63,7 @@ describe("M2 - Eventos", () => {
     test("CA-3: sin tipos de entrada responde 400", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
+        .set(auth(ORGANIZADORA_LUCIA))
         .send({ ...eventoValido(), tiposEntrada: [] });
       expect(res.status).toBe(400);
       expect(res.body.errores[0].campo).toBe("tiposEntrada");
@@ -71,7 +72,7 @@ describe("M2 - Eventos", () => {
     test("CA-4: precio negativo o cupo no entero responde 400", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
+        .set(auth(ORGANIZADORA_LUCIA))
         .send({
           ...eventoValido(),
           tiposEntrada: [{ nombre: "General", precio: -1, cupo: 1.5 }],
@@ -84,7 +85,7 @@ describe("M2 - Eventos", () => {
     test("CA-5: tipos de entrada con nombre repetido responden 400", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
+        .set(auth(ORGANIZADORA_LUCIA))
         .send({
           ...eventoValido(),
           tiposEntrada: [
@@ -98,7 +99,7 @@ describe("M2 - Eventos", () => {
     test("CA-6: una fecha pasada responde 400", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
+        .set(auth(ORGANIZADORA_LUCIA))
         .send({ ...eventoValido(), fecha: "2020-01-01T21:00:00.000Z" });
       expect(res.status).toBe(400);
       expect(res.body.errores[0].campo).toBe("fecha");
@@ -107,18 +108,15 @@ describe("M2 - Eventos", () => {
     test("CA-7: una categoría inexistente responde 404", async () => {
       const res = await request(app)
         .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
+        .set(auth(ORGANIZADORA_LUCIA))
         .send({ ...eventoValido(), categoriaId: 99 });
       expect(res.status).toBe(404);
     });
 
     test("CA-8: el mismo evento (nombre y fecha) dos veces responde 409", async () => {
       const evento = eventoValido();
-      await request(app).post("/evento").set("x-user-id", ORGANIZADORA_LUCIA).send(evento);
-      const res = await request(app)
-        .post("/evento")
-        .set("x-user-id", ORGANIZADORA_LUCIA)
-        .send(evento);
+      await request(app).post("/evento").set(auth(ORGANIZADORA_LUCIA)).send(evento);
+      const res = await request(app).post("/evento").set(auth(ORGANIZADORA_LUCIA)).send(evento);
       expect(res.status).toBe(409);
     });
   });
@@ -223,7 +221,7 @@ describe("M2 - Eventos", () => {
     });
 
     test("el organizador ve sus eventos con el resumen de ventas", async () => {
-      const res = await request(app).get("/evento/mios").set("x-user-id", ORGANIZADORA_LUCIA);
+      const res = await request(app).get("/evento/mios").set(auth(ORGANIZADORA_LUCIA));
       expect(res.status).toBe(200);
       expect(res.body.total).toBe(5);
       expect(res.body.data[0].nombre).toBe("Stand-up de los jueves");
@@ -239,7 +237,7 @@ describe("M2 - Eventos", () => {
     });
 
     test("un comprador no puede ver /evento/mios", async () => {
-      const res = await request(app).get("/evento/mios").set("x-user-id", COMPRADORA_SOFIA);
+      const res = await request(app).get("/evento/mios").set(auth(COMPRADORA_SOFIA));
       expect(res.status).toBe(403);
     });
   });

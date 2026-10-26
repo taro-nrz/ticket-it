@@ -14,15 +14,21 @@ export const API_URL = resolverUrlApi();
 
 export const cliente = axios.create({ baseURL: API_URL, timeout: 10000 });
 
-// D-03: el usuario de la sesión viaja en el header x-user-id
-let usuarioIdActual = null;
-export function setUsuarioId(id) {
-  usuarioIdActual = id;
+// D-29: el token de la sesión viaja en el header Authorization: Bearer <token>
+let tokenActual = null;
+export function setToken(token) {
+  tokenActual = token;
+}
+
+// Lo registra la sesión: se llama cuando el backend rechaza el token (venció o dejó de ser válido)
+let alRechazarSesion = null;
+export function registrarRechazoDeSesion(funcion) {
+  alRechazarSesion = funcion;
 }
 
 cliente.interceptors.request.use((config) => {
-  if (usuarioIdActual) {
-    config.headers["x-user-id"] = String(usuarioIdActual);
+  if (tokenActual) {
+    config.headers.Authorization = `Bearer ${tokenActual}`;
   }
   return config;
 });
@@ -38,6 +44,10 @@ cliente.interceptors.response.use(
     }
     if (!error.response) {
       mensaje = `No se pudo conectar con el servidor (${API_URL}). ¿Está corriendo el backend?`;
+    }
+    // Un 401 con token significa que la sesión ya no sirve (no aplica al login con credenciales incorrectas)
+    if (error.response?.status === 401 && error.config?.headers?.Authorization) {
+      alRechazarSesion?.(mensaje);
     }
     const errorApi = new Error(mensaje ?? "Ocurrió un error inesperado");
     errorApi.status = error.response?.status;

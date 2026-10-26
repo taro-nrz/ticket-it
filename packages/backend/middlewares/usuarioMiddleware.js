@@ -1,26 +1,21 @@
-import { ForbiddenError, NotFoundError, UnauthorizedError } from "../error/appError.js";
+import rateLimit from "express-rate-limit";
+import { ForbiddenError, TooManyRequestsError, UnauthorizedError } from "../error/appError.js";
 
-const HEADER_USUARIO = "x-user-id";
+const PREFIJO_BEARER = "Bearer ";
 
-// D-03: el usuario se identifica con el header x-user-id (sin login real).
-// Devuelve los middlewares que usan las rutas para exigir usuario y rol.
-export function crearMiddlewaresDeUsuario(usuarioRepository) {
+// D-29: el usuario se identifica con un JWT en el header Authorization: Bearer <token>.
+// Devuelve los middlewares que usan las rutas para exigir usuario y rol (las rutas no cambian).
+export function crearMiddlewaresDeUsuario(authService) {
   async function resolverUsuario(req) {
-    const valor = req.get(HEADER_USUARIO);
-    if (valor === undefined || valor.trim() === "") return null;
-
-    const id = Number(valor);
-    if (!Number.isInteger(id) || id <= 0) {
-      throw new UnauthorizedError(`El header ${HEADER_USUARIO} debe ser un id numérico`);
+    const header = req.get("authorization");
+    if (header === undefined || header.trim() === "") return null;
+    if (!header.startsWith(PREFIJO_BEARER)) {
+      throw new UnauthorizedError("El header Authorization debe tener el formato Bearer <token>");
     }
-    const usuario = await usuarioRepository.findById(id);
-    if (!usuario) {
-      throw new NotFoundError(`No existe el usuario con id ${id}`);
-    }
-    return usuario;
+    return authService.usuarioDelToken(header.slice(PREFIJO_BEARER.length).trim());
   }
 
-  // Endpoints públicos: si viene el header se usa (ej. para marcar favoritos), si no, sigue sin usuario
+  // Endpoints públicos: si viene el token se usa (ej. para marcar favoritos), si no, sigue sin usuario
   async function usuarioOpcional(req, _res, next) {
     try {
       req.usuario = await resolverUsuario(req);
@@ -34,9 +29,7 @@ export function crearMiddlewaresDeUsuario(usuarioRepository) {
     try {
       const usuario = await resolverUsuario(req);
       if (!usuario) {
-        throw new UnauthorizedError(
-          `Falta el header ${HEADER_USUARIO} para identificar al usuario`,
-        );
+        throw new UnauthorizedError("Tenés que iniciar sesión para realizar esta acción");
       }
       req.usuario = usuario;
       next();
@@ -58,4 +51,16 @@ export function crearMiddlewaresDeUsuario(usuarioRepository) {
   }
 
   return { usuarioOpcional, requiereUsuario, requiereRol };
+}
+
+// D-29: límite de intentos de login por IP (contra ataques de fuerza bruta). Responde con el formato de errores.
+export function crearLimiteDeLogin({ loginMaxIntentos, loginVentanaMs }) {
+  return rateLimit({
+    windowMs: loginVentanaMs,
+    limit: loginMaxIntentos,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+    handler: (_req, _res, next) => next(new TooManyRequestsError()),
+  });
 }

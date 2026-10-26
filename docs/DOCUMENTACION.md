@@ -352,6 +352,25 @@ Formato: **contexto → opciones → decisión → justificación**.
 - Tests M8: backend **133** (+9: `int/m8-mejoras`, unitario de `Compra`), E2E **90** (+ `e2e/mejoras.spec.mjs`
   y dos pantallas nuevas en el chequeo de axe). Capturas `docs/capturas/65-` a `70-`. Spec: `specs/M8-mejoras.md`.
 
+### D-29 — Autenticación real con JWT (M9, versión pro)
+- Contexto: el TP original identificaba al usuario con el header `x-user-id` (D-03), cómodo para probar pero sin
+  ninguna seguridad: cualquiera podía operar como cualquier usuario.
+- Decisión: **email + contraseña** con hash **bcrypt** y sesión con **JWT** (`Authorization: Bearer`, 8 h).
+  `POST /auth/registro`, `POST /auth/login`, `GET /auth/me`. El middleware conserva la misma interfaz
+  (`usuarioOpcional` / `requiereUsuario` / `requiereRol`), así que **ninguna ruta tuvo que cambiar**: sólo cambió
+  cómo se resuelve `req.usuario`. Es la ventaja de haber aislado la identificación en un middleware desde M1.
+- Seguridad: mensaje único ante credenciales inválidas, límite de 10 intentos fallidos por IP cada 15 min
+  (`express-rate-limit`, 429), contraseña 8–72 caracteres con letra y número (72 es el límite de bcrypt),
+  `JWT_SECRET` obligatorio en producción, el email no se expone en listados.
+- Frontend: formulario de login y de registro accesibles, token guardado cifrado en el celular
+  (`expo-secure-store`) y en `localStorage` en web; si el backend rechaza el token, se cierra la sesión y se avisa.
+  "Cuentas de prueba" en el login completan el formulario (agiliza la demo sin saltear el login real).
+- Tests: el helper `auth(usuarioId)` firma un JWT como el login; se reemplazaron los 63 `x-user-id` de los tests.
+- **Decisiones tomadas sin consultar** (para revisar):
+  - `bcryptjs` en lugar de `bcrypt`: mismo algoritmo, pero en JavaScript puro (no necesita compilar código nativo).
+  - `x-user-id` se eliminó por completo (no queda como "modo desarrollo") para no dejar una puerta trasera.
+  - Los usuarios demo comparten la contraseña `ticketit123` y el hash se calcula una sola vez al arrancar.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

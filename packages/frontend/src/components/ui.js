@@ -1,4 +1,4 @@
-import { forwardRef, useId } from "react";
+import { forwardRef, useId, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -372,6 +372,60 @@ export const Campo = forwardRef(function Campo({ etiqueta, error, ayuda, ...prop
   );
 });
 
+// Pauta 9: resumen de errores de un formulario, anunciado de inmediato (role="alert")
+export function ResumenErrores({ mensaje }) {
+  const { colores } = useTema();
+  const styles = useEstilos(crearEstilos);
+
+  if (!mensaje) return null;
+  return (
+    <View
+      style={styles.resumenErrores}
+      role="alert"
+      accessibilityRole="alert"
+      accessibilityLiveRegion="assertive"
+    >
+      <Icono name="alert-circle" size={20} color={colores.error} />
+      <Text style={styles.resumenErroresTexto}>{mensaje}</Text>
+    </View>
+  );
+}
+
+// D-29: campo de contraseña con botón para mostrarla (ayuda a no equivocarse al escribir, WCAG 3.3.7/3.3.8).
+// `visible` / `onCambiarVisible` permiten que un solo botón controle varios campos (ej. "repetir contraseña").
+export const CampoPassword = forwardRef(function CampoPassword(
+  { visible: visibleControlado, onCambiarVisible, conBoton = true, ...props },
+  ref,
+) {
+  const { colores } = useTema();
+  const styles = useEstilos(crearEstilos);
+  const [visibleInterno, setVisibleInterno] = useState(false);
+  const visible = visibleControlado ?? visibleInterno;
+  const setVisible = onCambiarVisible ?? setVisibleInterno;
+
+  return (
+    <View>
+      <Campo ref={ref} secureTextEntry={!visible} autoCapitalize="none" {...props} />
+      {conBoton && (
+        <Pressable
+          onPress={() => setVisible(!visible)}
+          accessibilityRole="button"
+          accessibilityLabel="Mostrar contraseña"
+          {...estadoPresionado(visible)}
+          style={styles.mostrarPassword}
+        >
+          <Icono
+            name={visible ? "eye-off-outline" : "eye-outline"}
+            size={18}
+            color={colores.texto}
+          />
+          <Text style={styles.mostrarPasswordTexto}>Mostrar contraseña</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+});
+
 export function Seccion({ titulo, children, accion }) {
   const { texto } = useTema();
   const styles = useEstilos(crearEstilos);
@@ -497,6 +551,28 @@ export const crearEstilos = ({ colores, texto, estados }) => ({
   chipTextoActiva: { color: colores.sobrePrimario, fontFamily: fuentes.negrita },
   badge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
   badgeTexto: { fontFamily: fuentes.negrita, fontSize: 12 },
+  resumenErrores: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    backgroundColor: colores.errorFondo,
+    borderWidth: 1,
+    borderColor: colores.error,
+    borderRadius: radio.m,
+    padding: 14,
+    marginBottom: espacio.l,
+  },
+  resumenErroresTexto: { flex: 1, fontFamily: fuentes.semi, fontSize: 14, color: colores.error },
+  mostrarPassword: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "flex-start",
+    minHeight: 44,
+    marginTop: -6,
+    marginBottom: espacio.s,
+  },
+  mostrarPasswordTexto: { fontFamily: fuentes.semi, fontSize: 14, color: colores.texto },
   insignia: {
     flexDirection: "row",
     alignItems: "center",

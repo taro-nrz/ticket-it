@@ -5,6 +5,7 @@ import {
   COMPRADORA_SOFIA,
   COMPRADORA_VALENTINA,
   ORGANIZADORA_LUCIA,
+  auth,
 } from "./utils/buildTestServer.js";
 
 describe("M6 - Reseñas y reputación", () => {
@@ -14,11 +15,11 @@ describe("M6 - Reseñas y reputación", () => {
   });
 
   const reseniar = (eventoId, usuario, body) =>
-    request(app).post(`/evento/${eventoId}/resenias`).set("x-user-id", usuario).send(body);
+    request(app).post(`/evento/${eventoId}/resenias`).set(auth(usuario)).send(body);
 
   describe("HU-11: puntuar y comentar con la entrada utilizada", () => {
     test("CA-1: un comprador con la entrada utilizada reseña el evento", async () => {
-      const antes = await request(app).get("/compra/6").set("x-user-id", COMPRADOR_JUAN);
+      const antes = await request(app).get("/compra/6").set(auth(COMPRADOR_JUAN));
       expect(antes.body.accionesDisponibles).toContain("RESENIAR");
 
       const res = await reseniar(7, COMPRADOR_JUAN, { puntuacion: 3, detalle: "Estuvo bien." });
@@ -30,7 +31,7 @@ describe("M6 - Reseñas y reputación", () => {
         evento: { id: 7 },
       });
 
-      const despues = await request(app).get("/compra/6").set("x-user-id", COMPRADOR_JUAN);
+      const despues = await request(app).get("/compra/6").set(auth(COMPRADOR_JUAN));
       expect(despues.body.accionesDisponibles).not.toContain("RESENIAR");
     });
 

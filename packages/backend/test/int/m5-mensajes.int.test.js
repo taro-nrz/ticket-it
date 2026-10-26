@@ -6,6 +6,7 @@ import {
   COMPRADORA_SOFIA,
   ORGANIZADOR_MARTIN,
   ORGANIZADORA_LUCIA,
+  auth,
 } from "./utils/buildTestServer.js";
 
 describe("M5 - Mensajería de la compra", () => {
@@ -15,7 +16,7 @@ describe("M5 - Mensajería de la compra", () => {
   });
 
   const enviar = (compraId, usuario, mensaje) =>
-    request(app).post(`/compra/${compraId}/mensajes`).set("x-user-id", usuario).send({ mensaje });
+    request(app).post(`/compra/${compraId}/mensajes`).set(auth(usuario)).send({ mensaje });
 
   test("HU-07: el comprador envía un mensaje", async () => {
     const res = await enviar(1, COMPRADORA_SOFIA, "¿Hay estacionamiento cerca?");
@@ -31,7 +32,7 @@ describe("M5 - Mensajería de la compra", () => {
     await enviar(1, COMPRADORA_SOFIA, "¿Hay estacionamiento cerca?");
     await enviar(1, ORGANIZADORA_LUCIA, "Sí, sobre Av. del Libertador.");
 
-    const res = await request(app).get("/compra/1/mensajes").set("x-user-id", COMPRADORA_SOFIA);
+    const res = await request(app).get("/compra/1/mensajes").set(auth(COMPRADORA_SOFIA));
     expect(res.status).toBe(200);
     expect(res.body.map((mensaje) => mensaje.usuario.nombre)).toEqual([
       "Sofía",
@@ -53,7 +54,7 @@ describe("M5 - Mensajería de la compra", () => {
     const res = await request(app)
       .get("/compra/1/mensajes")
       .query({ desde: new Date(AHORA.getTime() - 60 * 1000).toISOString() })
-      .set("x-user-id", ORGANIZADORA_LUCIA);
+      .set(auth(ORGANIZADORA_LUCIA));
     expect(res.body.map((mensaje) => mensaje.mensaje)).toEqual(["Mensaje nuevo"]);
   });
 
@@ -64,7 +65,7 @@ describe("M5 - Mensajería de la compra", () => {
 
   test("un usuario que no participa de la compra no puede leer ni escribir", async () => {
     expect((await enviar(1, COMPRADOR_JUAN, "Hola")).status).toBe(403);
-    const leer = await request(app).get("/compra/1/mensajes").set("x-user-id", ORGANIZADOR_MARTIN);
+    const leer = await request(app).get("/compra/1/mensajes").set(auth(ORGANIZADOR_MARTIN));
     expect(leer.status).toBe(403);
   });
 
@@ -73,7 +74,7 @@ describe("M5 - Mensajería de la compra", () => {
   });
 
   test("la compra informa la cantidad de mensajes", async () => {
-    const res = await request(app).get("/compra/1").set("x-user-id", COMPRADORA_SOFIA);
+    const res = await request(app).get("/compra/1").set(auth(COMPRADORA_SOFIA));
     expect(res.body.cantidadMensajes).toBe(3);
   });
 });

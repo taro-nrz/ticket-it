@@ -4,10 +4,17 @@ export class Usuario {
   id;
   favoritos = [];
 
-  constructor(nombre, apellido, rol) {
+  // D-29: el hash de la contraseña lo calcula el AuthService (la entidad nunca ve la contraseña en claro)
+  constructor(nombre, apellido, rol, email, passwordHash) {
     this.nombre = nombre;
     this.apellido = apellido;
     this.rol = rol;
+    this.email = Usuario.normalizarEmail(email);
+    this.passwordHash = passwordHash;
+  }
+
+  static normalizarEmail(email) {
+    return email?.trim().toLowerCase();
   }
 
   esOrganizador() {

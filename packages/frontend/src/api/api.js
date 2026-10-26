@@ -4,8 +4,10 @@ import { cliente } from "./cliente.js";
 const datos = (promesa) => promesa.then((response) => response.data);
 
 // ---------- USUARIOS Y CATEGORÍAS ----------
-export const getUsuarios = () => datos(cliente.get("/usuario"));
-export const getUsuarioActual = () => datos(cliente.get("/usuario/me"));
+// ---------- AUTENTICACIÓN (D-29) ----------
+export const login = (email, password) => datos(cliente.post("/auth/login", { email, password }));
+export const registrarse = (datosRegistro) => datos(cliente.post("/auth/registro", datosRegistro));
+export const getUsuarioActual = () => datos(cliente.get("/auth/me"));
 export const getCategorias = () => datos(cliente.get("/categoria"));
 
 // ---------- FAVORITOS ----------
