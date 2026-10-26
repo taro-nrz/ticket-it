@@ -14,6 +14,7 @@ import { ImagenEvento } from "../../components/EventoCard.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
 import { CancelarEvento } from "../organizador/CancelarEvento.js";
 import { CampoCupon } from "./CampoCupon.js";
+import { agregarAlCalendario, compartirEvento } from "../../utils/compartir.js";
 import { AvisoPrioridad, ListaEspera } from "./ListaEspera.js";
 import { TituloPagina } from "../../components/Pantalla.js";
 import { Avatar, Boton, Contador, ErrorVista, Estrellas, Titulo } from "../../components/ui.js";
@@ -21,7 +22,7 @@ import { estadoPresionado, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
 import { espacio, fuentes, radio } from "../../theme.js";
-import { avisarError } from "../../utils/confirmar.js";
+import { avisarError, avisarExito } from "../../utils/confirmar.js";
 import { formatearFecha, formatearPrecio, nombreCompleto, plural } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
@@ -104,6 +105,16 @@ export default function EventoDetalle() {
     }
   };
 
+  const compartir = async () => {
+    try {
+      const resultado = await compartirEvento(evento);
+      if (resultado === "copiado")
+        avisarExito("Copiamos el enlace del evento para que lo compartas");
+    } catch (e) {
+      avisarError("No se pudo compartir el evento", e.message);
+    }
+  };
+
   const confirmarCompra = async () => {
     setComprando(true);
     try {
@@ -134,21 +145,32 @@ export default function EventoDetalle() {
             >
               <Icono name="chevron-back" size={22} color={colores.texto} />
             </Pressable>
-            {esComprador && (
+            <View style={styles.flotantesDerecha}>
+              {/* D-43: compartir el evento */}
               <Pressable
-                onPress={alternarFavorito}
+                onPress={compartir}
                 accessibilityRole="button"
-                accessibilityLabel="Guardar en favoritos"
-                {...estadoPresionado(!!evento.esFavorito)}
+                accessibilityLabel="Compartir el evento"
                 style={styles.botonRedondo}
               >
-                <Icono
-                  name={evento.esFavorito ? "heart" : "heart-outline"}
-                  size={21}
-                  color={colores.acento}
-                />
+                <Icono name="share-social-outline" size={21} color={colores.texto} />
               </Pressable>
-            )}
+              {esComprador && (
+                <Pressable
+                  onPress={alternarFavorito}
+                  accessibilityRole="button"
+                  accessibilityLabel="Guardar en favoritos"
+                  {...estadoPresionado(!!evento.esFavorito)}
+                  style={styles.botonRedondo}
+                >
+                  <Icono
+                    name={evento.esFavorito ? "heart" : "heart-outline"}
+                    size={21}
+                    color={colores.acento}
+                  />
+                </Pressable>
+              )}
+            </View>
           </View>
         </ImagenEvento>
 
@@ -163,6 +185,16 @@ export default function EventoDetalle() {
               <Dato etiqueta="Cuándo" valor={formatearFecha(evento.fecha)} />
               <Dato etiqueta="Dónde" valor={evento.lugar} detalle={evento.direccion} />
             </View>
+            {!evento.yaSeRealizo && !evento.cancelado && (
+              <Boton
+                titulo="Agregar al calendario"
+                icono="calendar-outline"
+                variante="secundario"
+                accessibilityHint="Descarga el evento para agregarlo a tu calendario"
+                onPress={() => agregarAlCalendario(evento)}
+                style={{ marginBottom: espacio.l }}
+              />
+            )}
 
             <Text style={styles.descripcion}>{evento.descripcion}</Text>
 
@@ -473,6 +505,7 @@ const crearEstilos = ({ colores, texto }) => ({
     flexDirection: "row",
     justifyContent: "space-between",
   },
+  flotantesDerecha: { flexDirection: "row", gap: espacio.s },
   botonRedondo: {
     width: 44,
     height: 44,

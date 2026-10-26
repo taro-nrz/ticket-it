@@ -21,6 +21,7 @@ const esquemaEntorno = z
     LOGIN_VENTANA_MS: entero(15 * 60 * 1000),
     UPLOADS_DIR: z.string().default(fileURLToPath(new URL("../uploads", import.meta.url))),
     PUBLIC_URL: z.string().optional(),
+    WEB_URL: z.string().default("http://localhost:8081"),
   })
   .refine((entorno) => entorno.NODE_ENV !== "production" || entorno.JWT_SECRET?.length >= 32, {
     message: "En producción JWT_SECRET es obligatorio y debe tener al menos 32 caracteres",
@@ -54,5 +55,7 @@ export function obtenerConfig(entorno = process.env) {
     // D-42: carpeta donde se guardan las imágenes subidas y URL pública del backend (si hay un proxy delante)
     uploadsDir: e.UPLOADS_DIR,
     publicUrl: e.PUBLIC_URL,
+    // D-43: dirección de la app web (para los links a eventos que salen del backend, ej. el .ics)
+    webUrl: e.WEB_URL,
   };
 }

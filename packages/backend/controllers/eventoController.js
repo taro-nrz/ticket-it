@@ -60,8 +60,9 @@ const listarEventosSchema = z
   );
 
 export class EventoController {
-  constructor(eventoService) {
+  constructor(eventoService, { webUrl = "http://localhost:8081" } = {}) {
     this.eventoService = eventoService;
+    this.webUrl = webUrl;
   }
 
   async create(req, res, next) {
@@ -131,6 +132,22 @@ export class EventoController {
         req.usuario,
       );
       res.json(estadisticas);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async calendario(req, res, next) {
+    try {
+      const id = parsearId(req.params.id);
+      // El link del evento en la app web (WEB_URL), para que el calendario lleve de vuelta al evento
+      const urlEvento = `${this.webUrl}/evento/${id}`;
+      const { contenido, archivo } = await this.eventoService.calendario(id, urlEvento);
+      res
+        .type("text/calendar; charset=utf-8")
+        .set("Content-Disposition", `attachment; filename="${archivo}"`)
+        .set("Cross-Origin-Resource-Policy", "cross-origin")
+        .send(contenido);
     } catch (error) {
       next(error);
     }

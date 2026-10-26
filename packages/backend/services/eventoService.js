@@ -12,6 +12,7 @@ import { Evento } from "../models/entities/evento.js";
 import { TipoEntrada } from "../models/entities/tipoEntrada.js";
 import { ordenarProximosPrimero } from "../utils/orden.js";
 import { sumarDias } from "../utils/reloj.js";
+import { eventoAIcs, nombreDeArchivo } from "../utils/ics.js";
 import { paginar } from "../utils/paginacion.js";
 import { SIN_NOTIFICACIONES } from "./notificacionService.js";
 import { SIN_LISTA_ESPERA } from "./listaEsperaService.js";
@@ -152,6 +153,15 @@ export class EventoService {
         ]),
       ),
       ventasPorDia: ventasPorDia(pagadas, ahora < evento.fecha ? ahora : evento.fecha),
+    };
+  }
+
+  // D-43: el evento en formato iCalendar (.ics)
+  async calendario(id, urlEvento) {
+    const evento = await this.obtenerEntidad(id);
+    return {
+      contenido: eventoAIcs(evento, { ahora: this.reloj.ahora(), urlEvento }),
+      archivo: `${nombreDeArchivo(evento.nombre)}.ics`,
     };
   }
 
