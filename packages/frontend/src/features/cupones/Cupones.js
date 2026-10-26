@@ -7,7 +7,6 @@ import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
 import {
   Boton,
   Campo,
-  Cargando,
   Chips,
   ErrorVista,
   ResumenErrores,
@@ -22,6 +21,7 @@ import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar } from "../../utils/accesibilidad.js";
 import { avisarError, avisarExito, confirmar } from "../../utils/confirmar.js";
 import { formatearFecha } from "../../utils/formato.js";
+import { BarraCargando, EsqueletoFilas } from "../../components/Carga.js";
 
 const TIPOS = [
   { valor: "PORCENTAJE", etiqueta: "Porcentaje" },
@@ -54,9 +54,24 @@ export default function Cupones() {
   const { texto } = useTema();
   const { id } = useLocalSearchParams();
   const { datos: evento } = useCarga(() => getEvento(id), [id]);
-  const { datos: cupones, cargando, error, recargar } = useCarga(() => getCupones(id), [id]);
+  const {
+    datos: cupones,
+    cargandoInicial,
+    recargando,
+    error,
+    recargar,
+  } = useCarga(() => getCupones(id), [id]);
 
-  if (cargando && !cupones) return <Cargando />;
+  if (cargandoInicial) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarraVolver subtitulo="Tu evento" titulo="Cupones" />
+        <View style={{ padding: espacio.xl }}>
+          <EsqueletoFilas etiqueta="Cargando los cupones" cantidad={3} conAvatar={false} />
+        </View>
+      </View>
+    );
+  }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
 
   const desactivar = async (cupon) => {
@@ -80,6 +95,7 @@ export default function Cupones() {
   return (
     <View style={{ flex: 1 }}>
       <BarraVolver subtitulo={evento?.nombre ?? "Evento"} titulo="Cupones" />
+      <BarraCargando activa={recargando} />
       <Pantalla>
         <Text style={[texto.secundario, { marginBottom: espacio.l }]}>
           Los compradores escriben el código al comprar y ven el descuento antes de pagar.

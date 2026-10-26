@@ -7,7 +7,9 @@ import { DMSans_700Bold } from "@expo-google-fonts/dm-sans/700Bold";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Cargando } from "../src/components/ui.js";
+import { useEffect, useState } from "react";
+import { PantallaInicio } from "../src/components/Carga.js";
+import { iniciarMocks } from "../src/mocks/iniciar.js";
 import { SesionProvider, useSesion } from "../src/store/SesionContext.js";
 import { DialogosProvider } from "../src/store/DialogosContext.js";
 import { NotificacionesProvider } from "../src/store/NotificacionesContext.js";
@@ -18,6 +20,14 @@ import { configurarAccesibilidadWeb } from "../src/utils/accesibilidad.js";
 configurarAccesibilidadWeb();
 
 export default function RootLayout() {
+  // D-39: si se pidió MSW, se arranca antes de la primera llamada a la API
+  const [mocksListos, setMocksListos] = useState(false);
+  useEffect(() => {
+    iniciarMocks()
+      .catch((error) => console.error("[MSW] no se pudo iniciar", error))
+      .finally(() => setMocksListos(true));
+  }, []);
+
   const [fuentesListas] = useFonts({
     BricolageGrotesque_700Bold,
     BricolageGrotesque_800ExtraBold,
@@ -27,13 +37,21 @@ export default function RootLayout() {
     DMSans_700Bold,
   });
 
+  if (!mocksListos) {
+    return (
+      <TemaProvider>
+        <PantallaInicio />
+      </TemaProvider>
+    );
+  }
+
   return (
     <TemaProvider>
       <SesionProvider>
         <DialogosProvider>
           <NotificacionesProvider>
             <BarraDeEstado />
-            {fuentesListas ? <Navegador /> : <Cargando />}
+            {fuentesListas ? <Navegador /> : <PantallaInicio />}
           </NotificacionesProvider>
         </DialogosProvider>
       </SesionProvider>
@@ -46,7 +64,7 @@ export default function RootLayout() {
 function Navegador() {
   const { colores } = useTema();
   const { cargando } = useSesion();
-  if (cargando) return <Cargando />;
+  if (cargando) return <PantallaInicio />;
 
   return (
     <Stack

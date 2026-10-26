@@ -3,12 +3,13 @@ import { Text, View } from "react-native";
 import { getReseniasDeEvento } from "../../api/api.js";
 import { BarraVolver, Pantalla } from "../../components/Pantalla.js";
 import { ReseniaItem } from "../../components/ReseniaItem.js";
-import { Cargando, ErrorVista, Estrellas, Tarjeta, Titulo, Vacio } from "../../components/ui.js";
+import { ErrorVista, Estrellas, Tarjeta, Titulo, Vacio } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { espacio, fuentes } from "../../theme.js";
 import { formatearFecha, plural } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { EsqueletoReputacion } from "../../components/Carga.js";
 
 // D-28: reseñas de un evento en particular (se abre desde "Mis eventos" > Realizados y desde el detalle)
 export default function ReseniasEvento() {
@@ -16,13 +17,19 @@ export default function ReseniasEvento() {
   const styles = useEstilos(crearEstilos);
 
   const { id } = useLocalSearchParams();
-  const { datos, cargando, error, recargar } = useCarga(() => getReseniasDeEvento(id), [id]);
+  const {
+    datos,
+    cargandoInicial: cargando,
+    demorado,
+    error,
+    recargar,
+  } = useCarga(() => getReseniasDeEvento(id), [id]);
 
   return (
     <View style={{ flex: 1 }}>
       <BarraVolver subtitulo={datos?.evento.nombre ?? "Evento"} titulo="Reseñas del evento" />
       {cargando ? (
-        <Cargando />
+        <EsqueletoReputacion demorado={demorado} onReintentar={recargar} />
       ) : error ? (
         <ErrorVista error={error} onReintentar={recargar} />
       ) : (

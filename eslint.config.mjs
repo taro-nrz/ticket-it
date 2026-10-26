@@ -14,6 +14,8 @@ export default defineConfig([
       "packages/frontend/test-results/**",
       "packages/frontend/playwright-report/**",
       "packages/frontend/expo-env.d.ts",
+      // Generado por MSW (npx msw init)
+      "packages/frontend/public/mockServiceWorker.js",
     ],
   },
   {

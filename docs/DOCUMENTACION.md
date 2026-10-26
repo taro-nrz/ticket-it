@@ -473,6 +473,23 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: el descuento se fija al comprar (si después se desactiva el cupón, la compra no cambia);
   el uso se devuelve si la compra se cancela o vence; el cupón se valida antes de reservar el cupo.
 
+### D-39 — Estados de carga y MSW (M18)
+- Pedido: que la integración front–back no se pruebe sólo con mocks, sino con **indicadores de carga reales**
+  ("según la ocasión") y **MSW** simulando la latencia de las llamadas, componentes e imágenes.
+- Decisión (consultada): cada situación tiene su indicador. **Esqueleto** con la forma de la pantalla en la
+  primera carga (no hay "salto" cuando llegan los datos); **barra fina** en recargas con datos a la vista (los
+  resultados anteriores quedan atenuados); **imágenes** que laten y aparecen con fundido; **spinner en el botón**
+  para acciones; **pantalla de marca** al arrancar; **aviso de demora** a los 8 s con reintentar.
+  `useCarga` distingue `cargandoInicial` de `recargando` y expone `demorado`.
+- MSW (`src/mocks/`): modo **latencia** (passthrough al backend real con demora variable) y modo **sin backend**
+  con datos **generados desde la API real** (`scripts/generarMocks.mjs` levanta el backend en memoria y guarda
+  sus respuestas), así los mocks no se desactualizan. Las fechas se corren a "hoy" al cargar.
+- Accesibilidad: un solo anuncio por esqueleto, formas ocultas al lector, movimiento reducido. axe encontró que
+  un esqueleto dentro de la lista dejaba una zona desplazable sin nada enfocable: se renderiza fuera.
+- **Sin consultar**: MSW sólo en web (en el celular requiere polyfills extra y no se pudo probar en un
+  dispositivo); en modo sin backend no se puede comprar ni publicar (503 explicado), para no duplicar las reglas
+  del backend en el front.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

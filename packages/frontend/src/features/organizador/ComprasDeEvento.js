@@ -4,19 +4,12 @@ import { FlatList, Text, View } from "react-native";
 import { getComprasDeEvento } from "../../api/api.js";
 import { CompraFila } from "../../components/CompraCard.js";
 import { BarraVolver, estilosPantalla } from "../../components/Pantalla.js";
-import {
-  Boton,
-  Cargando,
-  Chips,
-  ErrorVista,
-  Progreso,
-  Titulo,
-  Vacio,
-} from "../../components/ui.js";
+import { Boton, Chips, ErrorVista, Progreso, Titulo, Vacio } from "../../components/ui.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { EsqueletoFilas } from "../../components/Carga.js";
 
 // HU-06: compras de un evento con su estado y las entradas disponibles de cada tipo
 export default function ComprasDeEvento() {
@@ -26,13 +19,26 @@ export default function ComprasDeEvento() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const [estado, setEstado] = useState(null);
-  const { datos, cargando, error, recargar, refrescando, refrescar } = useCarga(
+  const { datos, cargandoInicial, demorado, error, recargar, refrescando, refrescar } = useCarga(
     () => getComprasDeEvento(id, estado ?? undefined),
     [id, estado],
     { alEnfocar: true },
   );
 
-  if (cargando && !datos) return <Cargando />;
+  if (cargandoInicial) {
+    return (
+      <View style={{ flex: 1 }}>
+        <BarraVolver subtitulo="Compras del evento" titulo="Cargando…" />
+        <View style={estilosPantalla.contenido}>
+          <EsqueletoFilas
+            etiqueta="Cargando las compras"
+            demorado={demorado}
+            onReintentar={recargar}
+          />
+        </View>
+      </View>
+    );
+  }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
 
   const totalCompras = Object.values(datos.resumenPorEstado).reduce((a, b) => a + b, 0);

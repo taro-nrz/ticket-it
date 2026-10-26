@@ -5,7 +5,8 @@ import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { getCategorias, getEventos } from "../../api/api.js";
 import { EventoCard } from "../../components/EventoCard.js";
 import { Encabezado, estilosPantalla } from "../../components/Pantalla.js";
-import { Boton, Cargando, Chips, ErrorVista, Vacio } from "../../components/ui.js";
+import { Boton, Chips, ErrorVista, Vacio } from "../../components/ui.js";
+import { BarraCargando, EsqueletoListaEventos } from "../../components/Carga.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../store/SesionContext.js";
 import { espacio, fuentes } from "../../theme.js";
@@ -39,7 +40,9 @@ export default function Explorar() {
   const [orden, dir] = ordenElegido.split(":");
   const {
     datos: resultado,
-    cargando,
+    cargandoInicial,
+    recargando,
+    demorado,
     error,
     recargar,
     refrescando,
@@ -154,33 +157,39 @@ export default function Explorar() {
       </Encabezado>
       {error ? (
         <ErrorVista error={error} onReintentar={recargar} />
+      ) : cargandoInicial ? (
+        // Fuera de la lista: una zona desplazable sin nada enfocable no es accesible con teclado
+        <View style={[estilosPantalla.contenido, { flex: 1 }]}>
+          <EsqueletoListaEventos demorado={demorado} onReintentar={recargar} />
+        </View>
       ) : (
-        <FlatList
-          data={resultado?.data ?? []}
-          refreshing={refrescando}
-          onRefresh={refrescar}
-          keyExtractor={(evento) => String(evento.id)}
-          contentContainerStyle={[estilosPantalla.contenido, { paddingTop: 4 }]}
-          renderItem={({ item }) => (
-            <EventoCard evento={item} onPress={() => router.push(`/evento/${item.id}`)} />
-          )}
-          ListEmptyComponent={
-            cargando ? (
-              <Cargando />
-            ) : (
+        <>
+          <BarraCargando activa={recargando} etiqueta="Buscando eventos" />
+          <FlatList
+            data={resultado?.data ?? []}
+            style={recargando && { opacity: 0.6 }}
+            refreshing={refrescando}
+            onRefresh={refrescar}
+            keyExtractor={(evento) => String(evento.id)}
+            contentContainerStyle={[estilosPantalla.contenido, { paddingTop: 4 }]}
+            renderItem={({ item }) => (
+              <EventoCard evento={item} onPress={() => router.push(`/evento/${item.id}`)} />
+            )}
+            ListEmptyComponent={
               <Vacio icono="search-outline" mensaje="No encontramos eventos con esos filtros" />
-            )
-          }
-          ListFooterComponent={
-            resultado && resultado.data.length < resultado.total ? (
-              <Boton
-                titulo="Ver más eventos"
-                variante="secundario"
-                onPress={() => setLimite(limite + POR_PAGINA)}
-              />
-            ) : null
-          }
-        />
+            }
+            ListFooterComponent={
+              resultado && resultado.data.length < resultado.total ? (
+                <Boton
+                  titulo="Ver más eventos"
+                  variante="secundario"
+                  onPress={() => setLimite(limite + POR_PAGINA)}
+                  cargando={recargando}
+                />
+              ) : null
+            }
+          />
+        </>
       )}
     </View>
   );

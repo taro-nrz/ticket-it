@@ -1,9 +1,10 @@
 import { etiquetaMobile } from "../utils/accesibilidad.js";
 import { Icono } from "./Icono.js";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { colorDeCategoria, espacio, fuentes, radio } from "../theme.js";
 import { fechaParaLector, formatearPrecio } from "../utils/formato.js";
 import { Galeria } from "./Galeria.js";
+import { ImagenConCarga } from "./Carga.js";
 import { Tarjeta } from "./ui.js";
 import { useTema } from "../store/TemaContext.js";
 import { useEstilos } from "../hooks/useEstilos.js";
@@ -39,7 +40,7 @@ export function ImagenEvento({
         <Galeria imagenes={evento.multimedia} margenInferior={margenInferior} />
       ) : (
         imagen && (
-          <Image source={{ uri: imagen }} alt="" aria-hidden style={StyleSheet.absoluteFill} />
+          <ImagenConCarga uri={imagen} style={StyleSheet.absoluteFill} />
         )
       )}
       <View
