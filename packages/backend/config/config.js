@@ -12,6 +12,7 @@ const esquemaEntorno = z
     ALLOWED_ORIGINS: z.string().default("*"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     MAX_ENTRADAS_POR_COMPRA: entero(10),
+    MINUTOS_RESERVA: entero(15),
     JWT_SECRET: z.string().optional(),
     JWT_EXPIRACION: z.string().default("8h"),
     BCRYPT_RONDAS: entero(10),
@@ -39,6 +40,8 @@ export function obtenerConfig(entorno = process.env) {
     allowedOrigins: e.ALLOWED_ORIGINS,
     nodeEnv: e.NODE_ENV,
     maxEntradasPorCompra: e.MAX_ENTRADAS_POR_COMPRA,
+    // D-36: plazo para pagar una compra pendiente antes de que venza
+    minutosReserva: e.MINUTOS_RESERVA,
     // D-29: autenticación con JWT
     jwtSecret: e.JWT_SECRET || SECRETO_DESARROLLO,
     jwtExpiracion: e.JWT_EXPIRACION,

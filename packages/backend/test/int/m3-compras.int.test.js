@@ -153,6 +153,7 @@ describe("M3 - Compras", () => {
         UTILIZADA: 0,
         CANCELADA: 0,
         REEMBOLSADA: 0,
+        VENCIDA: 0,
       });
       expect(res.body.disponibilidad.map((tipo) => [tipo.nombre, tipo.disponibles])).toEqual([
         ["General", 498],

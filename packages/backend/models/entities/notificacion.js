@@ -11,6 +11,7 @@ export const TipoNotificacion = Object.freeze({
   ENTRADA_UTILIZADA: "ENTRADA_UTILIZADA",
   EVENTO_CANCELADO: "EVENTO_CANCELADO",
   NUEVA_RESENIA: "NUEVA_RESENIA",
+  RESERVA_VENCIDA: "RESERVA_VENCIDA",
 });
 
 export class Notificacion {

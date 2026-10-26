@@ -5,6 +5,7 @@ import { espacio, estadosCompra, fuentes, radio } from "../theme.js";
 import {
   fechaParaLector,
   formatearDiasRestantes,
+  formatearHora,
   formatearPrecio,
   nombreCompleto,
   plural,
@@ -27,7 +28,7 @@ export function CompraCard({ compra, onPress }) {
   const estado = estados[compra.estado];
   const confirmada = compra.estado === "CONFIRMADA";
   const accion = compra.accionesDisponibles.find((a) => ACCION_DESTACADA[a]);
-  const apagada = ["CANCELADA", "REEMBOLSADA"].includes(compra.estado);
+  const apagada = ["CANCELADA", "REEMBOLSADA", "VENCIDA"].includes(compra.estado);
 
   const resumen = [
     compra.evento.nombre,
@@ -37,7 +38,10 @@ export function CompraCard({ compra, onPress }) {
     `${compra.cantidad} ${compra.tipoEntrada.nombre}, total ${formatearPrecio(compra.total)}`,
     compra.cantidadMensajes > 0 && plural(compra.cantidadMensajes, "mensaje"),
     compra.mensajesSinLeer > 0 && textoSinLeer(compra.mensajesSinLeer),
-    accion && `Acción pendiente: ${ACCION_DESTACADA[accion]}`,
+    accion &&
+      `Acción pendiente: ${ACCION_DESTACADA[accion]}${
+        accion === "PAGAR" && compra.venceEn ? ` antes de las ${formatearHora(compra.venceEn)}` : ""
+      }`,
   ]
     .filter(Boolean)
     .join(". ");
@@ -69,7 +73,14 @@ export function CompraCard({ compra, onPress }) {
           {confirmada && compra.diasRestantes !== null ? (
             <Text style={styles.dias}>{formatearDiasRestantes(compra.diasRestantes)}</Text>
           ) : (
-            accion && <Text style={styles.accion}>{ACCION_DESTACADA[accion]}</Text>
+            accion && (
+              <Text style={styles.accion}>
+                {ACCION_DESTACADA[accion]}
+                {accion === "PAGAR" && compra.venceEn
+                  ? ` antes de las ${formatearHora(compra.venceEn)}`
+                  : ""}
+              </Text>
+            )
           )}
         </View>
         <Text style={[texto.titulo, { fontSize: 18 }]} numberOfLines={2}>

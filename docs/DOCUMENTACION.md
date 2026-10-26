@@ -445,6 +445,16 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Frontend**: pantalla 404 propia, "deslizar para recargar" en todas las listas, colores de marca en `app.json`.
 - **Sin consultar**: `ALLOWED_ORIGINS` en compose apunta sólo a la web; `/dev/reset` responde 403 en producción.
 
+### D-36 — Reserva con vencimiento (M15)
+- Contexto: una compra PENDIENTE retenía el cupo para siempre; en una ticketera real hay un plazo para pagar.
+- Decisión (consultada): nuevo estado **VENCIDA** a los **15 minutos** sin pago; libera el cupo y avisa al
+  comprador. Se distingue de CANCELADA para saber si la terminó el comprador o el paso del tiempo.
+- Implementación: `Compra.reservaVencida(ahora)` / `Compra.vencer(ahora)` en la entidad, y un middleware de
+  mantenimiento que antes de cada request vence las reservas cumplidas (con persistencia en memoria es barato y
+  no requiere un cron). El reloj inyectable permite testearlo "adelantando el tiempo".
+- **Sin consultar**: el plazo se configura con `MINUTOS_RESERVA`; las compras pendientes de la semilla se
+  crearon hace pocos minutos para que la demo no las encuentre vencidas.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

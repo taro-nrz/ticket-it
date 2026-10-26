@@ -8,6 +8,7 @@ import { loggerMiddleware } from "./middlewares/loggerMiddleware.js";
 export class Server {
   #controllers = {};
   #auth = {};
+  #middlewares = [];
   #app;
   #routes;
 
@@ -48,11 +49,17 @@ export class Server {
     this.#auth = auth;
   }
 
+  // Middlewares que corren antes de todas las rutas (ej. el mantenimiento de D-36)
+  addMiddleware(middleware) {
+    this.#middlewares.push(middleware);
+  }
+
   addRoute(route) {
     this.#routes.push(route);
   }
 
   configureRoutes() {
+    this.#middlewares.forEach((middleware) => this.#app.use(middleware));
     this.#routes.forEach((route) =>
       this.#app.use(route(this.getController.bind(this), this.#auth)),
     );

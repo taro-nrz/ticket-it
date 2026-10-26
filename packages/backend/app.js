@@ -6,6 +6,7 @@ import { obtenerConfig } from "./config/config.js";
 import { RelojSistema } from "./utils/reloj.js";
 import { crearLimiteDeLogin, crearMiddlewaresDeUsuario } from "./middlewares/usuarioMiddleware.js";
 import { cargarDatosSemilla, PASSWORD_DEMO } from "./data/seed.js";
+import { crearMantenimientoMiddleware } from "./middlewares/mantenimientoMiddleware.js";
 
 import { UsuarioRepository } from "./models/repositories/usuarioRepository.js";
 import { CategoriaRepository } from "./models/repositories/categoriaRepository.js";
@@ -123,6 +124,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     ...crearMiddlewaresDeUsuario(authService),
     limitarLogin: crearLimiteDeLogin(config),
   });
+  server.addMiddleware(crearMantenimientoMiddleware([() => compraService.vencerReservas()]));
   routes.forEach((route) => server.addRoute(route));
   server.configureRoutes();
 
