@@ -38,6 +38,13 @@
           "microphonePermission": false,
           "recordAudioAndroid": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "AI Ticket It usa tus fotos para agregar imágenes a los eventos que publicás.",
+          "cameraPermission": "AI Ticket It usa la cámara para sacar fotos de tus eventos y escanear entradas."
+        }
       ]
     ],
     "scheme": "ticketit",

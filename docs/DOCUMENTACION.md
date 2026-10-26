@@ -508,6 +508,16 @@ Formato: **contexto → opciones → decisión → justificación**.
   de cero por privacidad del titular anterior; no hay "aceptar" la transferencia (llega directo, como pasar la
   entrada en mano); no se puede deshacer.
 
+### D-42 — Subida de fotos (M21)
+- Decisión (consultada): las imágenes se guardan **en una carpeta del backend** (`uploads/`, configurable con
+  `UPLOADS_DIR`) y se sirven en `/uploads`; con Docker van a un volumen para no perderse al recrear el contenedor.
+- Seguridad: `multer` en memoria con límite de 5 MB, y el tipo se reconoce por los **primeros bytes** (firma) y no
+  por la extensión ni el Content-Type que manda el cliente; el nombre en disco es un UUID (nunca el del usuario).
+- Carga (D-39): la subida muestra el **progreso real** del envío (`onUploadProgress` de axios); las miniaturas usan
+  la imagen con carga progresiva.
+- **Sin consultar**: también se puede pegar un enlace (para no perder lo que ya existía); no se redimensionan las
+  imágenes en el servidor (el selector las comprime al 80 %).
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)

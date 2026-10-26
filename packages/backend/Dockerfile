@@ -10,6 +10,8 @@ COPY packages/frontend/package.json packages/frontend/
 RUN npm ci --workspace=backend --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY packages/backend packages/backend
+# Carpeta de imágenes subidas (D-42), con permiso para el usuario sin privilegios
+RUN mkdir -p packages/backend/uploads && chown node:node packages/backend/uploads
 
 ENV NODE_ENV=production \
     PORT=3000 \

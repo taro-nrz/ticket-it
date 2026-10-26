@@ -18,6 +18,8 @@ import { CuponRepository } from "./models/repositories/cuponRepository.js";
 import { InscripcionEsperaRepository } from "./models/repositories/inscripcionEsperaRepository.js";
 import { ListaEsperaService } from "./services/listaEsperaService.js";
 import { ListaEsperaController } from "./controllers/listaEsperaController.js";
+import { ArchivoService } from "./services/archivoService.js";
+import { ArchivoController } from "./controllers/archivoController.js";
 import { PasarelaPagoSimulada } from "./services/pasarelaPago.js";
 
 import { AuthService } from "./services/authService.js";
@@ -143,6 +145,10 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   server.setController(ReseniaController, new ReseniaController(reseniaService));
   server.setController(CuponController, new CuponController(cuponService));
   server.setController(ListaEsperaController, new ListaEsperaController(listaEsperaService));
+  server.setController(
+    ArchivoController,
+    new ArchivoController(new ArchivoService(config.uploadsDir), config),
+  );
   server.setController(NotificacionController, new NotificacionController(notificacionService));
   server.setController(DevController, new DevController(recargarDatos));
 
@@ -157,6 +163,7 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
       () => listaEsperaService.expirarPrioridades(),
     ]),
   );
+  server.setOpcionesRutas({ uploadsDir: config.uploadsDir });
   routes.forEach((route) => server.addRoute(route));
   server.configureRoutes();
 

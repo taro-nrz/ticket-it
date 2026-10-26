@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
 const SECRETO_DESARROLLO = "secreto-solo-para-desarrollo";
@@ -18,6 +19,8 @@ const esquemaEntorno = z
     BCRYPT_RONDAS: entero(10),
     LOGIN_MAX_INTENTOS: entero(10),
     LOGIN_VENTANA_MS: entero(15 * 60 * 1000),
+    UPLOADS_DIR: z.string().default(fileURLToPath(new URL("../uploads", import.meta.url))),
+    PUBLIC_URL: z.string().optional(),
   })
   .refine((entorno) => entorno.NODE_ENV !== "production" || entorno.JWT_SECRET?.length >= 32, {
     message: "En producción JWT_SECRET es obligatorio y debe tener al menos 32 caracteres",
@@ -48,5 +51,8 @@ export function obtenerConfig(entorno = process.env) {
     bcryptRondas: e.BCRYPT_RONDAS,
     loginMaxIntentos: e.LOGIN_MAX_INTENTOS,
     loginVentanaMs: e.LOGIN_VENTANA_MS,
+    // D-42: carpeta donde se guardan las imágenes subidas y URL pública del backend (si hay un proxy delante)
+    uploadsDir: e.UPLOADS_DIR,
+    publicUrl: e.PUBLIC_URL,
   };
 }
