@@ -30,18 +30,19 @@ Copia del TP en `ticket-it-pro/`, con repo git propio y un commit por fase (`git
 | M21 | Subida de fotos con validación por firma y progreso real |
 | M22 | Compartir el evento y agregarlo al calendario (.ics) |
 | M23 | Recuperar la contraseña con código por email simulado |
+| M24 | Chat y notificaciones en tiempo real con WebSockets (el sondeo queda de respaldo) |
 
 ## Cómo verificarlo
 
 ```bash
 cd ticket-it-pro
 npm install
-npm run verificar                                  # lint + formato + 245 tests del backend
-CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e   # 250 E2E + accesibilidad (incluye el modo sin backend)
+npm run verificar                                  # lint + formato + 251 tests del backend
+CHROMIUM_PATH=/usr/bin/chromium npm run test:e2e   # 262 E2E + accesibilidad (incluye el modo sin backend)
 npm run start:web                                  # y entrar con sofia@ticketit.com / ticketit123
 ```
 
-Estado al terminar: **245** tests de backend (cobertura 95 % líneas), **250** E2E en web, celular, modo oscuro y sin backend
+Estado al terminar: **251** tests de backend (cobertura 95 % líneas), **262** E2E en web, celular, modo oscuro y sin backend
 (axe sin violaciones), ESLint y Prettier sin avisos, `expo-doctor` 20/20 y `docker compose up` probado con un
 navegador sobre la build de producción.
 
@@ -54,7 +55,8 @@ navegador sobre la build de producción.
 4. **El email no se puede cambiar** desde el perfil. Cambiar la contraseña no invalida los tokens ya emitidos
    (haría falta una lista de revocación).
 5. **Cancelar un evento exige un motivo** que ven los compradores; los eventos cancelados no se borran (baja lógica).
-6. **Notificaciones por sondeo** cada 15 s, sin WebSockets ni push.
+6. **Notificaciones por sondeo** cada 15 s (después, a pedido, pasaron a WebSockets en M24; el sondeo quedó de
+   respaldo).
 7. **Un código QR por compra** (vale para todas sus entradas), no uno por entrada. El QR sólo contiene el código.
 8. **El encabezado se reorganizó** en dos filas para que entre la campana.
 9. **No se hizo MongoDB (F9 opcional)**: el enunciado y la decisión D-02 piden persistencia en memoria, y migrar

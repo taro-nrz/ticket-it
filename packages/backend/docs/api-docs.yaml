@@ -16,6 +16,12 @@ info:
        - `valentina@ticketit.com` (id 5) Valentina López — COMPRADOR (compras 10 a 13)
     4. `POST /dev/reset` vuelve a cargar los datos semilla.
 
+    **Tiempo real (D-45)**: además de la API REST hay un servidor Socket.IO en la misma dirección. Se conecta con
+    `io(URL, { auth: { token } })` (el mismo JWT). Eventos que llegan: `chat:mensaje` `{ compraId, mensaje }`,
+    `chat:escribiendo` `{ compraId, usuario }`, `notificaciones:nueva` y `notificaciones:resumen` `{ noLeidas }`.
+    Eventos que se envían: `chat:unirse` `{ compraId }` (con confirmación `{ ok }`; sólo participantes de la compra),
+    `chat:salir` y `chat:escribiendo` `{ compraId }`. Los mensajes se siguen enviando con `POST /compra/{id}/mensajes`.
+
     **Convenciones**
     - Persistencia en memoria: los datos se reinician al reiniciar el servidor.
     - Fechas en ISO 8601. Listados paginados con `page` y `limit` (máx. 100).

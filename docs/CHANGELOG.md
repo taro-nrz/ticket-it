@@ -30,6 +30,8 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
 - **Fotos (M21)** — subida con validación por firma del archivo y progreso real (D-42).
 - **Compartir y calendario (M22)** — hoja de compartir del sistema y archivo .ics (D-43).
 - **Recuperar contraseña (M23)** — código de 6 números por email simulado (D-44).
+- **Tiempo real (M24)** — chat, "escribiendo…" y notificaciones por WebSocket (Socket.IO), con el sondeo como
+  respaldo si no hay conexión (D-45).
 
 ## Cambiado
 - El encabezado de las pantallas principales: saludo + campana + Cuenta arriba, título + acción abajo.
@@ -44,6 +46,6 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
 ## Verificación
 | | TP original | Versión pro |
 |---|---|---|
-| Tests del backend | 133 | 245 (cobertura 95 %) |
-| Tests E2E + axe | 90 | 250 |
+| Tests del backend | 133 | 251 (cobertura 95 %) |
+| Tests E2E + axe | 90 | 262 |
 | Lint del frontend | no se revisaba | 0 errores, 0 avisos |

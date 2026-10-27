@@ -49,6 +49,21 @@ export async function buildTestServer() {
   return app;
 }
 
+// D-45: servidor HTTP real escuchando en un puerto libre, con WebSockets (para los tests de tiempo real)
+export async function buildTestServerConSockets() {
+  const reloj = new RelojFijo(AHORA);
+  const server = await crearApp({ reloj, config: CONFIG_TEST });
+  const servidorHttp = server.crearServidorHttp();
+  await new Promise((resolve) => servidorHttp.listen(0, "127.0.0.1", resolve));
+  const url = `http://127.0.0.1:${servidorHttp.address().port}`;
+  const cerrar = () =>
+    new Promise((resolve) => {
+      server.cerrar();
+      servidorHttp.close(resolve);
+    });
+  return { app: server.app, url, cerrar };
+}
+
 // Variante que expone el reloj para poder "adelantar el tiempo" dentro de un test
 export async function buildTestServerConReloj(cambiosConfig = {}) {
   const reloj = new RelojFijo(AHORA);

@@ -1,3 +1,4 @@
+import http from "node:http";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -10,6 +11,8 @@ export class Server {
   #auth = {};
   #middlewares = [];
   #opcionesRutas = {};
+  #alCrearHttp = [];
+  #alCerrar = [];
   #app;
   #routes;
 
@@ -79,10 +82,33 @@ export class Server {
     this.#app.use(errorHandler);
   }
 
+  // D-45: lo que hay que conectar al servidor HTTP al crearlo (los WebSockets)
+  alCrearServidorHttp(funcion) {
+    this.#alCrearHttp.push(funcion);
+  }
+
+  // Lo que hay que cerrar antes de apagar el servidor (los sockets abiertos no dejan terminar al HTTP)
+  alCerrar(funcion) {
+    this.#alCerrar.push(funcion);
+  }
+
+  cerrar() {
+    this.#alCerrar.forEach((funcion) => funcion());
+  }
+
+  // Servidor HTTP con la app y los sockets (lo usan launch y los tests de tiempo real)
+  crearServidorHttp() {
+    const servidor = http.createServer(this.#app);
+    this.#alCrearHttp.forEach((funcion) => funcion(servidor));
+    return servidor;
+  }
+
   // Devuelve el servidor HTTP para poder cerrarlo de forma ordenada (index.js)
   launch(host = "0.0.0.0") {
-    return this.#app.listen(this.port, host, () => {
+    const servidor = this.crearServidorHttp();
+    servidor.listen(this.port, host, () => {
       console.log(`Server running on http://${host}:${this.port} (docs en /api-docs)`);
     });
+    return servidor;
   }
 }

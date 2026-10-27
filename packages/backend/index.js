@@ -13,6 +13,7 @@ const start = async () => {
     // D-35: cierre ordenado (Docker manda SIGTERM): deja de aceptar conexiones y termina las requests en curso
     const cerrar = (senial) => {
       console.log(`${senial} recibido: cerrando el servidor...`);
+      server.cerrar(); // primero los WebSockets
       http.close(() => process.exit(0));
       setTimeout(() => process.exit(1), 10_000).unref();
     };
