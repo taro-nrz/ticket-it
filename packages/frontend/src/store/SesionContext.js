@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { getUsuarioActual, login, registrarse } from "../api/api.js";
 import { registrarRechazoDeSesion, setToken } from "../api/cliente.js";
+import { conectarTiempoReal, desconectarTiempoReal } from "../api/tiempoReal.js";
 import { avisarError } from "../utils/confirmar.js";
 import { borrarToken, guardarToken, leerToken } from "./almacenSesion.js";
 
@@ -16,6 +17,7 @@ export const SesionProvider = ({ children }) => {
   const [cargando, setCargando] = useState(true);
 
   const limpiar = useCallback(async () => {
+    desconectarTiempoReal();
     setToken(null);
     setUsuario(null);
     await borrarToken().catch(() => {});
@@ -29,6 +31,7 @@ export const SesionProvider = ({ children }) => {
         if (token) {
           setToken(token);
           setUsuario(await getUsuarioActual());
+          conectarTiempoReal(token);
         }
       } catch (_error) {
         await limpiar();
@@ -52,6 +55,7 @@ export const SesionProvider = ({ children }) => {
     setToken(token);
     await guardarToken(token);
     setUsuario(usuarioDeLaSesion);
+    conectarTiempoReal(token);
     return usuarioDeLaSesion;
   };
 

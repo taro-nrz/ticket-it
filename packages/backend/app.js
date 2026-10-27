@@ -21,6 +21,7 @@ import { ListaEsperaController } from "./controllers/listaEsperaController.js";
 import { ArchivoService } from "./services/archivoService.js";
 import { ArchivoController } from "./controllers/archivoController.js";
 import { EmailSimulado } from "./services/emailService.js";
+import { TiempoRealService } from "./services/tiempoRealService.js";
 import { CodigoRecuperacionRepository } from "./models/repositories/codigoRecuperacionRepository.js";
 import { PasarelaPagoSimulada } from "./services/pasarelaPago.js";
 
@@ -78,7 +79,9 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
 
   // ---------- SERVICES ----------
   // D-32: los services avisan al de notificaciones lo que pasó (compras, mensajes, cancelaciones, reseñas)
-  const notificacionService = new NotificacionService(notificacionRepository, reloj);
+  // D-45: WebSockets. Se conectan al servidor HTTP cuando se crea (al arrancar o en los tests de tiempo real)
+  const tiempoReal = new TiempoRealService();
+  const notificacionService = new NotificacionService(notificacionRepository, reloj, tiempoReal);
   const listaEsperaService = new ListaEsperaService(
     inscripcionEsperaRepository,
     eventoRepository,
@@ -123,6 +126,15 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     compraRepository,
     reloj,
     notificacionService,
+    tiempoReal,
+  );
+  server.alCerrar(() => tiempoReal.cerrar());
+  server.alCrearServidorHttp((servidorHttp) =>
+    tiempoReal.adjuntar(servidorHttp, {
+      authService,
+      compraService,
+      allowedOrigins: config.allowedOrigins,
+    }),
   );
   const reseniaService = new ReseniaService(
     reseniaRepository,

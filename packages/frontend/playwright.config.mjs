@@ -35,7 +35,7 @@ export default defineConfig({
       name: "mobile-oscuro",
       use: { ...devices["Pixel 7"], colorScheme: "dark" },
       testMatch:
-        /accesibilidad|tema|cuenta|calendario|mejoras|auth|notificaciones|entrada|checkout|cupones|carga|lista-espera|transferir|fotos|compartir|recuperar/,
+        /accesibilidad|tema|cuenta|calendario|mejoras|auth|notificaciones|entrada|checkout|cupones|carga|lista-espera|transferir|fotos|compartir|recuperar|tiempo-real/,
     },
     {
       name: "sin-backend",

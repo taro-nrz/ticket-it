@@ -67,6 +67,7 @@ El backend se divide en **7 módulos** que se desarrollan en orden de dependenci
 | M21 — Fotos (pro) | Subida de imágenes con validación por firma | HU-F1 | M2, M11 | Implementado |
 | M22 — Compartir (pro) | Compartir el evento y exportarlo a .ics | HU-S1, HU-S2 | M2 | Implementado |
 | M23 — Recuperar contraseña (pro) | Código por email simulado | HU-R1 | M9 | Implementado |
+| M24 — Tiempo real (pro) | Chat, "escribiendo…" y notificaciones por WebSocket | HU-RT1, HU-RT2 | M5, M12 | Implementado |
 
 Historias de usuario del enunciado y su módulo:
 
@@ -546,6 +547,23 @@ Formato: **contexto → opciones → decisión → justificación**.
   lugar de un link con token; restablecer no cierra las sesiones abiertas (mismo límite que el cambio de
   contraseña de D-30).
 
+### D-45 — Chat y notificaciones en tiempo real con WebSockets (M24)
+- Contexto: el chat y la campana funcionaban por sondeo (D-32): hasta 4 s de demora en un mensaje y consultas
+  aunque no hubiera nada nuevo.
+- Decisión (pedida por el usuario): **Socket.IO** sobre el mismo servidor Express. Los mensajes se siguen
+  **enviando por REST** (validación con Zod, permisos y persistencia en un solo lugar) y el socket sólo **empuja**
+  lo nuevo: mensajes, "escribiendo…", notificaciones y el contador. `TiempoRealService` se inyecta en los services
+  como las notificaciones (con un valor por defecto que no hace nada, así los tests unitarios no cambiaron).
+- Seguridad: el handshake exige el mismo JWT; cada socket entra a su sala `usuario:<id>` y sólo puede unirse a
+  `compra:<id>` si participa de esa compra (reutiliza `obtenerParaParticipante`); "escribiendo…" sólo se reenvía
+  desde un socket que ya está en la sala.
+- Resiliencia: si el WebSocket no conecta o se corta, el chat y la campana vuelven al sondeo y lo dicen ("Sin
+  conexión en vivo…"); al reconectar se trae lo que faltó. En el modo sin backend de MSW no se intenta conectar.
+- Un E2E encontró un bug: en la primera conexión, la puesta al día anunciaba al lector un mensaje viejo como
+  nuevo. Ahora sólo se pone al día en las reconexiones (hay un test de regresión).
+- **Sin consultar**: sólo transporte WebSocket (sin long-polling de Socket.IO, porque el sondeo propio ya es el
+  respaldo); "escribiendo…" se anuncia al lector una vez por ráfaga, no en cada tecla.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)
@@ -601,8 +619,8 @@ seguridad del backend, Docker, CI y lint del frontend.
 
 | Verificación | Resultado |
 |---|---|
-| Tests del backend (`npm run test:backend`) | **245** pasando (umbral de cobertura 90 % líneas / 80 % ramas) |
-| E2E + accesibilidad (`npm run test:e2e`) | **250** pasando en web, mobile, mobile en modo oscuro y sin backend (MSW), axe sin violaciones |
+| Tests del backend (`npm run test:backend`) | **251** pasando (umbral de cobertura 90 % líneas / 80 % ramas) |
+| E2E + accesibilidad (`npm run test:e2e`) | **262** pasando en web, mobile, mobile en modo oscuro y sin backend (MSW), axe sin violaciones |
 | `npm run lint` / `npm run format:check` | 0 errores, 0 avisos (backend **y frontend**) |
 | `expo-doctor` | 20/20 |
 | `docker compose up --build` | backend *healthy* + web; login y catálogo probados en un navegador sobre la build |

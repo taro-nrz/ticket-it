@@ -23,10 +23,14 @@ import { formatearHora, nombreCompleto } from "../../utils/formato.js";
 import { useTema } from "../../store/TemaContext.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { EsqueletoChat } from "../../components/Carga.js";
+import { emitir, escuchar, estaConectado, useConexionEnVivo } from "../../api/tiempoReal.js";
 
 const INTERVALO_POLLING_MS = 4000;
+const MS_ESCRIBIENDO = 3000; // cuánto dura el "escribiendo…" sin novedades
+const MS_ENTRE_AVISOS = 2000; // cada cuánto se avisa que se está escribiendo
 
-// HU-07 / HU-08: chat de la compra. Se actualiza con polling pidiendo sólo los mensajes nuevos (?desde=)
+// HU-07 / HU-08: chat de la compra.
+// D-45: los mensajes llegan en vivo por WebSocket; si no hay conexión, se piden por polling (?desde=).
 export default function Chat() {
   const { colores, texto } = useTema();
   const styles = useEstilos(crearEstilos);
@@ -43,6 +47,12 @@ export default function Chat() {
   const [anuncio, setAnuncio] = useState("");
   const lista = useRef(null);
   const ultimoEnviado = useRef(null);
+  const enVivo = useConexionEnVivo();
+  const [escribiendo, setEscribiendo] = useState(null);
+  const finEscribiendo = useRef(null);
+  const ultimoAvisoEscribiendo = useRef(0);
+  // Si ya se cargó la conversación (para saber si una conexión nueva es una REconexión)
+  const cargado = useRef(false);
 
   // Pauta 9: los mensajes que llegan de la otra persona se anuncian al lector de pantalla
   const anunciarRecibidos = (nuevos) => {
@@ -80,6 +90,7 @@ export default function Chat() {
         setCompra(datosCompra);
         setMensajes([]);
         agregar(iniciales);
+        cargado.current = true;
         marcarLeidos();
       } catch (e) {
         if (activo) setError(e);
@@ -87,8 +98,9 @@ export default function Chat() {
     };
     cargarIniciales();
 
-    // Polling (como el popup de promociones de clase, con setInterval y cleanup)
+    // Polling de respaldo (como el popup de promociones de clase): sólo si no hay conexión en vivo
     const intervalo = setInterval(async () => {
+      if (estaConectado()) return;
       try {
         const nuevos = await getMensajes(id, ultimoEnviado.current ?? undefined);
         if (activo) {
@@ -100,13 +112,57 @@ export default function Chat() {
       }
     }, INTERVALO_POLLING_MS);
 
+    // D-45: mensajes y "escribiendo…" en vivo
+    const dejarMensajes = escuchar("chat:mensaje", ({ compraId, mensaje }) => {
+      if (!activo || String(compraId) !== String(id)) return;
+      agregar([mensaje]);
+      if (mensaje.usuario.id !== usuario.id) setEscribiendo(null);
+      anunciarRecibidos([mensaje]);
+    });
+    const dejarEscribiendo = escuchar("chat:escribiendo", ({ compraId, usuario: quien }) => {
+      if (!activo || String(compraId) !== String(id)) return;
+      setEscribiendo(quien.nombre);
+      clearTimeout(finEscribiendo.current);
+      finEscribiendo.current = setTimeout(() => setEscribiendo(null), MS_ESCRIBIENDO);
+    });
+
     return () => {
       activo = false;
+      cargado.current = false;
       clearInterval(intervalo);
+      clearTimeout(finEscribiendo.current);
+      dejarMensajes();
+      dejarEscribiendo();
+      emitir("chat:salir", { compraId: id });
     };
     // El sondeo se reinicia sólo al cambiar de chat; las funciones que usa leen refs y setters estables
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Unirse a la sala del chat cada vez que hay conexión (al entrar y después de una reconexión), y traer
+  // lo que haya llegado mientras no había conexión
+  useEffect(() => {
+    if (!enVivo) return;
+    emitir("chat:unirse", { compraId: id });
+    // En la primera conexión la carga inicial ya trae todo; en una reconexión se trae lo que faltó
+    if (!cargado.current) return;
+    getMensajes(id, ultimoEnviado.current ?? undefined)
+      .then((nuevos) => {
+        agregar(nuevos);
+        anunciarRecibidos(nuevos);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enVivo, id]);
+
+  const cambiarTexto = (valor) => {
+    setTexto(valor);
+    const ahora = Date.now();
+    if (valor && ahora - ultimoAvisoEscribiendo.current > MS_ENTRE_AVISOS) {
+      ultimoAvisoEscribiendo.current = ahora;
+      emitir("chat:escribiendo", { compraId: id });
+    }
+  };
 
   const enviar = async () => {
     const contenido = texto_.trim();
@@ -115,6 +171,7 @@ export default function Chat() {
     try {
       agregar([await enviarMensaje(id, contenido)]);
       setTexto("");
+      ultimoAvisoEscribiendo.current = 0;
     } catch (e) {
       avisarError("No se pudo enviar el mensaje", e.message);
     } finally {
@@ -157,6 +214,20 @@ export default function Chat() {
       <Text style={ocultoVisualmente} aria-live="polite" accessibilityLiveRegion="polite">
         {anuncio}
       </Text>
+      {/* D-45: estado de la conexión (texto + punto: no depende sólo del color) */}
+      <View style={[styles.ancho, styles.estado]}>
+        <View
+          style={[
+            styles.punto,
+            { backgroundColor: enVivo ? colores.exito : colores.textoSecundario },
+          ]}
+        />
+        <Text style={texto.chico}>
+          {enVivo
+            ? "En vivo"
+            : `Sin conexión en vivo: se actualiza cada ${INTERVALO_POLLING_MS / 1000} s`}
+        </Text>
+      </View>
       <FlatList
         ref={lista}
         data={mensajes}
@@ -188,11 +259,15 @@ export default function Chat() {
           );
         }}
       />
+      {/* Se anuncia una vez por cada vez que empieza a escribir (no en cada tecla) */}
+      <View style={styles.ancho} aria-live="polite" accessibilityLiveRegion="polite">
+        {escribiendo && <Text style={styles.escribiendo}>{escribiendo} está escribiendo…</Text>}
+      </View>
       <View style={[styles.barra, { paddingBottom: bottom + 14 }]}>
         <View style={[styles.ancho, styles.barraContenido]}>
           <TextInput
             value={texto_}
-            onChangeText={setTexto}
+            onChangeText={cambiarTexto}
             onSubmitEditing={enviar}
             placeholder="Escribí un mensaje…"
             placeholderTextColor={colores.textoSecundario}
@@ -232,6 +307,22 @@ const crearEstilos = ({ colores }) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+  },
+  estado: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: espacio.xl,
+    marginTop: 8,
+  },
+  punto: { width: 8, height: 8, borderRadius: 4 },
+  escribiendo: {
+    fontFamily: fuentes.texto,
+    fontStyle: "italic",
+    fontSize: 13,
+    color: colores.textoSecundario,
+    paddingHorizontal: espacio.xl,
+    paddingBottom: 6,
   },
   lista: {
     padding: espacio.xl,

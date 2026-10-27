@@ -3,6 +3,7 @@ import { ForbiddenError, NotFoundError } from "../error/appError.js";
 import { Notificacion, TipoNotificacion } from "../models/entities/notificacion.js";
 import { paginar } from "../utils/paginacion.js";
 import { formatearMonto } from "../utils/texto.js";
+import { SIN_TIEMPO_REAL } from "./tiempoRealService.js";
 
 const LARGO_VISTA_PREVIA = 80;
 
@@ -12,9 +13,17 @@ const recortar = (texto) =>
 
 // D-32: crea y consulta las notificaciones. Los demás services le avisan qué pasó y este arma el texto.
 export class NotificacionService {
-  constructor(notificacionRepository, reloj) {
+  constructor(notificacionRepository, reloj, tiempoReal = SIN_TIEMPO_REAL) {
     this.notificacionRepository = notificacionRepository;
     this.reloj = reloj;
+    this.tiempoReal = tiempoReal;
+  }
+
+  // D-45: avisa por el socket la cantidad sin leer actualizada (la campana se actualiza al instante)
+  async publicarResumen(usuarioId) {
+    this.tiempoReal.resumenNotificaciones(usuarioId, {
+      noLeidas: await this.notificacionRepository.contarNoLeidas(usuarioId),
+    });
   }
 
   // ---------- Consultas del usuario ----------
@@ -42,6 +51,7 @@ export class NotificacionService {
     }
     notificacion.marcarComoLeida();
     await this.notificacionRepository.save(notificacion);
+    await this.publicarResumen(usuario.id);
     return notificacionDTO(notificacion);
   }
 
@@ -51,6 +61,7 @@ export class NotificacionService {
       notificacion.marcarComoLeida();
       await this.notificacionRepository.save(notificacion);
     }
+    await this.publicarResumen(usuario.id);
   }
 
   // Al abrir un chat, sus avisos de mensajes nuevos dejan de estar pendientes
@@ -60,6 +71,7 @@ export class NotificacionService {
       notificacion.marcarComoLeida();
       await this.notificacionRepository.save(notificacion);
     }
+    await this.publicarResumen(usuario.id);
   }
 
   // ---------- Avisos desde los demás services ----------
@@ -181,11 +193,16 @@ export class NotificacionService {
     const fecha = this.reloj.ahora();
     const pendientes = await this.notificacionRepository.findByUsuario(datos.usuario.id);
     const agrupable = pendientes.find((notificacion) => notificacion.agrupaCon(datos));
+    let notificacion;
     if (agrupable) {
       agrupable.agrupar({ ...datos, fecha });
-      return this.notificacionRepository.save(agrupable);
+      notificacion = await this.notificacionRepository.save(agrupable);
+    } else {
+      notificacion = await this.notificacionRepository.save(new Notificacion({ ...datos, fecha }));
     }
-    return this.notificacionRepository.save(new Notificacion({ ...datos, fecha }));
+    this.tiempoReal.notificacion(datos.usuario.id, notificacionDTO(notificacion));
+    await this.publicarResumen(datos.usuario.id);
+    return notificacion;
   }
 }
 
