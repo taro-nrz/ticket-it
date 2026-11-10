@@ -1,1 +1,1 @@
-export { default } from "../src/features/login/Registro.js";
+export { default } from "../src/features/login/Registro.jsx";

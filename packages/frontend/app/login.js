@@ -1,1 +1,1 @@
-export { default } from "../src/features/login/Login.js";
+export { default } from "../src/features/login/Login.jsx";

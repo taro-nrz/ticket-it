@@ -1,0 +1,83 @@
+import { BricolageGrotesque_700Bold } from "@expo-google-fonts/bricolage-grotesque/700Bold";
+import { BricolageGrotesque_800ExtraBold } from "@expo-google-fonts/bricolage-grotesque/800ExtraBold";
+import { DMSans_400Regular } from "@expo-google-fonts/dm-sans/400Regular";
+import { DMSans_500Medium } from "@expo-google-fonts/dm-sans/500Medium";
+import { DMSans_600SemiBold } from "@expo-google-fonts/dm-sans/600SemiBold";
+import { DMSans_700Bold } from "@expo-google-fonts/dm-sans/700Bold";
+import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { PantallaInicio } from "../src/components/carga/PantallaInicio.jsx";
+import { iniciarMocks } from "../src/mocks/iniciar.js";
+import { SesionProvider, useSesion } from "../src/context/SesionContext.jsx";
+import { DialogosProvider } from "../src/context/DialogosContext.jsx";
+import { NotificacionesProvider } from "../src/context/NotificacionesContext.jsx";
+import { TemaProvider, useTema } from "../src/context/TemaContext.jsx";
+import { configurarAccesibilidadWeb } from "../src/utils/accesibilidad.js";
+
+// Idioma, foco visible y movimiento reducido en web (D-21)
+configurarAccesibilidadWeb();
+
+export default function RootLayout() {
+  // D-39: si se pidió MSW, se arranca antes de la primera llamada a la API
+  const [mocksListos, setMocksListos] = useState(false);
+  useEffect(() => {
+    iniciarMocks()
+      .catch((error) => console.error("[MSW] no se pudo iniciar", error))
+      .finally(() => setMocksListos(true));
+  }, []);
+
+  const [fuentesListas] = useFonts({
+    BricolageGrotesque_700Bold,
+    BricolageGrotesque_800ExtraBold,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_600SemiBold,
+    DMSans_700Bold,
+  });
+
+  if (!mocksListos) {
+    return (
+      <TemaProvider>
+        <PantallaInicio />
+      </TemaProvider>
+    );
+  }
+
+  return (
+    <TemaProvider>
+      <SesionProvider>
+        <DialogosProvider>
+          <NotificacionesProvider>
+            <BarraDeEstado />
+            {fuentesListas ? <Navegador /> : <PantallaInicio />}
+          </NotificacionesProvider>
+        </DialogosProvider>
+      </SesionProvider>
+    </TemaProvider>
+  );
+}
+
+// Hasta recuperar la sesión guardada no se muestra ninguna pantalla (evita requests sin token).
+// Cada pantalla dibuja su propia cabecera (Encabezado / BarraVolver), por eso el Stack no muestra la suya.
+function Navegador() {
+  const { colores } = useTema();
+  const { cargando } = useSesion();
+  if (cargando) return <PantallaInicio />;
+
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colores.fondo },
+      }}
+    />
+  );
+}
+
+// Íconos de la barra de estado del celular legibles en ambos temas
+function BarraDeEstado() {
+  const { esOscuro } = useTema();
+  return <StatusBar style={esOscuro ? "light" : "dark"} />;
+}

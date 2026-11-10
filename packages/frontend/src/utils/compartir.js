@@ -1,6 +1,6 @@
 import * as Linking from "expo-linking";
 import { Platform, Share } from "react-native";
-import { API_URL } from "../api/cliente.js";
+import { API_URL } from "../service/api.js";
 import { formatearFecha } from "./formato.js";
 
 // D-43: link a un evento. En web, la dirección de la app; en el celular, el link de la app (ticketit://…)

@@ -1,1 +1,1 @@
-export { default } from "../../src/features/explorar/Explorar.js";
+export { default } from "../../src/features/explorar/Explorar.jsx";

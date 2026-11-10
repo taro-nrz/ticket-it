@@ -1,1 +1,1 @@
-export { default } from "../../src/features/compras/MisCompras.js";
+export { default } from "../../src/features/compras/MisCompras.jsx";

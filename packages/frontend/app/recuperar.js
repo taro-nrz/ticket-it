@@ -1,1 +1,1 @@
-export { default } from "../src/features/login/Recuperar.js";
+export { default } from "../src/features/login/Recuperar.jsx";

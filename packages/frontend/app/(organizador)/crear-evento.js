@@ -1,1 +1,1 @@
-export { default } from "../../src/features/organizador/CrearEvento.js";
+export { default } from "../../src/features/organizador/CrearEvento.jsx";

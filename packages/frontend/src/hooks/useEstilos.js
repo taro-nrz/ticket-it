@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { StyleSheet } from "react-native";
-import { useTema } from "../store/TemaContext.js";
+import { useTema } from "../context/TemaContext.jsx";
 
 // Custom hook: crea los estilos de un componente a partir del tema actual
 // y los vuelve a crear sólo cuando cambia el tema (claro / oscuro).

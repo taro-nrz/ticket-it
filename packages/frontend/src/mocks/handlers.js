@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse, passthrough } from "msw";
-import { API_URL } from "../api/cliente.js";
+import { API_URL } from "../service/api.js";
 import datosGenerados from "./datos.json";
 
 // D-39: handlers de MSW. Dos modos (EXPO_PUBLIC_MSW):
