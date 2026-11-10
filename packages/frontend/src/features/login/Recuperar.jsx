@@ -1,5 +1,5 @@
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { pedirRecuperacion, restablecerPassword } from "../../service/authService.js";
 import { Boton } from "../../components/boton/Boton.jsx";
@@ -7,6 +7,7 @@ import { Campo } from "../../components/formulario/Campo.jsx";
 import { CampoPassword } from "../../components/formulario/CampoPassword.jsx";
 import { ResumenErrores } from "../../components/formulario/ResumenErrores.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar } from "../../utils/accesibilidad.js";
@@ -15,6 +16,23 @@ import { MarcoAcceso } from "./MarcoAcceso.jsx";
 
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const NOMBRES = {
+  codigo: "código",
+  passwordNueva: "contraseña nueva",
+  confirmacion: "repetir contraseña",
+};
+
+// Mismas reglas que el backend para la contraseña nueva
+function validarCambio({ codigo, passwordNueva, confirmacion }) {
+  const errores = {};
+  if (!/^\d{6}$/.test(codigo.trim())) errores.codigo = "El código tiene 6 números";
+  if (passwordNueva.length < 8) errores.passwordNueva = "Al menos 8 caracteres";
+  else if (!/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(passwordNueva) || !/\d/.test(passwordNueva))
+    errores.passwordNueva = "Tiene que tener al menos una letra y un número";
+  if (confirmacion !== passwordNueva) errores.confirmacion = "Las contraseñas no coinciden";
+  return errores;
+}
+
 // D-44: recuperar la contraseña en dos pasos: pedir el código por email y elegir una contraseña nueva
 export default function Recuperar() {
   const { texto } = useTema();
@@ -22,72 +40,34 @@ export default function Recuperar() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [paso, setPaso] = useState("email");
-  const [email, setEmail] = useState(typeof params.email === "string" ? params.email : "");
-  const [codigo, setCodigo] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmacion, setConfirmacion] = useState("");
   const [visible, setVisible] = useState(false);
-  const [errores, setErrores] = useState({});
-  const [enviando, setEnviando] = useState(false);
-  const campos = useRef({});
 
-  const enfocarPrimero = (nuevos) => campos.current[Object.keys(nuevos)[0]]?.focus();
-
-  const pedir = async () => {
-    if (!EMAIL_VALIDO.test(email.trim())) {
-      const nuevos = { email: "Ingresá el email de tu cuenta" };
-      setErrores(nuevos);
-      enfocarPrimero(nuevos);
-      return;
-    }
-    setEnviando(true);
-    try {
+  // Dos formularios, uno por paso (cada uno con su useFormulario)
+  const pedido = useFormulario({
+    inicial: { email: typeof params.email === "string" ? params.email : "" },
+    validar: ({ email }) =>
+      EMAIL_VALIDO.test(email.trim()) ? {} : { email: "Ingresá el email de tu cuenta" },
+    alEnviar: async ({ email }) => {
       await pedirRecuperacion(email.trim());
-      setErrores({});
       setPaso("codigo");
       anunciar("Te enviamos un código de 6 números. Escribilo para seguir.");
-    } catch (e) {
-      setErrores({ general: e.message });
-    } finally {
-      setEnviando(false);
-    }
-  };
+    },
+  });
+  const email = pedido.valores.email.trim();
 
-  const restablecer = async () => {
-    const nuevos = {};
-    if (!/^\d{6}$/.test(codigo.trim())) nuevos.codigo = "El código tiene 6 números";
-    if (password.length < 8) nuevos.password = "Al menos 8 caracteres";
-    else if (!/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(password) || !/\d/.test(password))
-      nuevos.password = "Tiene que tener al menos una letra y un número";
-    if (confirmacion !== password) nuevos.confirmacion = "Las contraseñas no coinciden";
-    setErrores(nuevos);
-    if (Object.keys(nuevos).length) {
-      enfocarPrimero(nuevos);
-      return;
-    }
-    setEnviando(true);
-    try {
-      await restablecerPassword(email.trim(), codigo.trim(), password);
+  const cambio = useFormulario({
+    inicial: { codigo: "", passwordNueva: "", confirmacion: "" },
+    validar: validarCambio,
+    palabra: "dato",
+    nombres: NOMBRES,
+    alEnviar: async ({ codigo, passwordNueva }) => {
+      await restablecerPassword(email, codigo.trim(), passwordNueva);
       avisarExito("Listo: ya podés ingresar con tu contraseña nueva");
       router.replace("/login");
-    } catch (e) {
-      const porCampo = e.errores?.length
-        ? Object.fromEntries(
-            e.errores.map((err) => [
-              err.campo === "passwordNueva" ? "password" : err.campo,
-              err.mensaje,
-            ]),
-          )
-        : { general: e.message };
-      setErrores(porCampo);
-      enfocarPrimero(porCampo);
-    } finally {
-      setEnviando(false);
-    }
-  };
+    },
+  });
 
-  const cantidad = Object.keys(errores).filter((c) => c !== "general").length;
-  const resumen = errores.general ?? (cantidad > 1 ? `Revisá ${cantidad} datos.` : null);
+  const resumen = paso === "email" ? pedido.errorGeneral : (cambio.resumen ?? pedido.errorGeneral);
 
   return (
     <MarcoAcceso
@@ -107,26 +87,23 @@ export default function Recuperar() {
       {paso === "email" ? (
         <>
           <Campo
-            ref={(el) => (campos.current.email = el)}
+            ref={pedido.registrar("email")}
             etiqueta="Email"
-            value={email}
-            onChangeText={(valor) => {
-              setEmail(valor);
-              setErrores({});
-            }}
-            error={errores.email}
+            value={pedido.valores.email}
+            onChangeText={pedido.cambiar("email")}
+            error={pedido.error("email")}
             placeholder="tu@email.com"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
             returnKeyType="send"
-            onSubmitEditing={pedir}
+            onSubmitEditing={pedido.enviar}
           />
           <Boton
             titulo="Enviarme el código"
             variante="acento"
-            onPress={pedir}
-            cargando={enviando}
+            onPress={pedido.enviar}
+            cargando={pedido.enviando}
           />
         </>
       ) : (
@@ -138,11 +115,11 @@ export default function Recuperar() {
             </Text>
           </View>
           <Campo
-            ref={(el) => (campos.current.codigo = el)}
+            ref={cambio.registrar("codigo")}
             etiqueta="Código de 6 números"
-            value={codigo}
-            onChangeText={(valor) => setCodigo(valor.replace(/\D/g, "").slice(0, 6))}
-            error={errores.codigo}
+            value={cambio.valores.codigo}
+            onChangeText={cambio.cambiar("codigo", (valor) => valor.replace(/\D/g, "").slice(0, 6))}
+            error={cambio.error("codigo")}
             inputMode="numeric"
             keyboardType="number-pad"
             autoComplete="one-time-code"
@@ -150,22 +127,22 @@ export default function Recuperar() {
             maxLength={6}
           />
           <CampoPassword
-            ref={(el) => (campos.current.password = el)}
+            ref={cambio.registrar("passwordNueva")}
             etiqueta="Contraseña nueva"
-            value={password}
-            onChangeText={setPassword}
-            error={errores.password}
+            value={cambio.valores.passwordNueva}
+            onChangeText={cambio.cambiar("passwordNueva")}
+            error={cambio.error("passwordNueva")}
             ayuda="Al menos 8 caracteres, con letras y números."
             visible={visible}
             conBoton={false}
             autoComplete="new-password"
           />
           <CampoPassword
-            ref={(el) => (campos.current.confirmacion = el)}
+            ref={cambio.registrar("confirmacion")}
             etiqueta="Repetir contraseña nueva"
-            value={confirmacion}
-            onChangeText={setConfirmacion}
-            error={errores.confirmacion}
+            value={cambio.valores.confirmacion}
+            onChangeText={cambio.cambiar("confirmacion")}
+            error={cambio.error("confirmacion")}
             visible={visible}
             onCambiarVisible={setVisible}
             autoComplete="new-password"
@@ -173,13 +150,14 @@ export default function Recuperar() {
           <Boton
             titulo="Cambiar la contraseña"
             variante="acento"
-            onPress={restablecer}
-            cargando={enviando}
+            onPress={cambio.enviar}
+            cargando={cambio.enviando}
           />
           <Boton
             titulo="No me llegó: enviar otro código"
             variante="secundario"
-            onPress={pedir}
+            onPress={pedido.enviar}
+            cargando={pedido.enviando}
             style={{ marginTop: espacio.s }}
           />
         </>

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import { actualizarPerfil } from "../../service/usuariosService.js";
 import { cambiarPassword } from "../../service/authService.js";
@@ -12,11 +12,36 @@ import { ResumenErrores } from "../../components/formulario/ResumenErrores.jsx";
 import { Seccion } from "../../components/seccion/Seccion.jsx";
 import { Tarjeta } from "../../components/tarjeta/Tarjeta.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes } from "../../theme.js";
 import { avisarExito } from "../../utils/confirmar.js";
 import { nombreCompleto } from "../../utils/formato.js";
+
+// Las mismas reglas que valida el backend, para avisar antes de enviar
+function validarDatos({ nombre, apellido }) {
+  const errores = {};
+  if (nombre.trim().length < 2) errores.nombre = "Al menos 2 letras";
+  if (apellido.trim().length < 2) errores.apellido = "Al menos 2 letras";
+  return errores;
+}
+
+function validarPassword({ passwordActual, passwordNueva, confirmacion }) {
+  const errores = {};
+  if (!passwordActual) errores.passwordActual = "Ingresá tu contraseña actual";
+  if (passwordNueva.length < 8) errores.passwordNueva = "Al menos 8 caracteres";
+  else if (!/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(passwordNueva) || !/\d/.test(passwordNueva))
+    errores.passwordNueva = "Tiene que tener al menos una letra y un número";
+  if (confirmacion !== passwordNueva) errores.confirmacion = "Las contraseñas no coinciden";
+  return errores;
+}
+
+const NOMBRES_PASSWORD = {
+  passwordActual: "contraseña actual",
+  passwordNueva: "contraseña nueva",
+  confirmacion: "repetir contraseña",
+};
 
 const NOMBRE_ROL = { COMPRADOR: "Comprador", ORGANIZADOR: "Organizador" };
 
@@ -48,73 +73,49 @@ export default function Perfil() {
 function FormularioDatos() {
   const { usuario, actualizarUsuario } = useSesion();
   const { texto } = useTema();
-  const [valores, setValores] = useState({ nombre: usuario.nombre, apellido: usuario.apellido });
-  const [errores, setErrores] = useState({});
-  const [guardando, setGuardando] = useState(false);
-  const campos = useRef({});
-
+  const { valores, cambiar, error, registrar, enviar, enviando, errorGeneral, reiniciar } =
+    useFormulario({
+      inicial: { nombre: usuario.nombre, apellido: usuario.apellido },
+      validar: validarDatos,
+      alEnviar: async ({ nombre, apellido }) => {
+        const actualizado = await actualizarPerfil({
+          nombre: nombre.trim(),
+          apellido: apellido.trim(),
+        });
+        actualizarUsuario(actualizado);
+        reiniciar({ nombre: actualizado.nombre, apellido: actualizado.apellido });
+        avisarExito("Guardamos tus datos");
+      },
+    });
   const sinCambios = valores.nombre === usuario.nombre && valores.apellido === usuario.apellido;
-  const cambiar = (campo) => (valor) => {
-    setValores((actuales) => ({ ...actuales, [campo]: valor }));
-    setErrores(({ [campo]: _quitado, ...resto }) => resto);
-  };
-
-  const guardar = async () => {
-    const nuevos = {};
-    if (valores.nombre.trim().length < 2) nuevos.nombre = "Al menos 2 letras";
-    if (valores.apellido.trim().length < 2) nuevos.apellido = "Al menos 2 letras";
-    setErrores(nuevos);
-    if (Object.keys(nuevos).length) {
-      campos.current[Object.keys(nuevos)[0]]?.focus();
-      return;
-    }
-    setGuardando(true);
-    try {
-      const actualizado = await actualizarPerfil({
-        nombre: valores.nombre.trim(),
-        apellido: valores.apellido.trim(),
-      });
-      actualizarUsuario(actualizado);
-      setValores({ nombre: actualizado.nombre, apellido: actualizado.apellido });
-      avisarExito("Guardamos tus datos");
-    } catch (e) {
-      setErrores(
-        e.errores?.length
-          ? Object.fromEntries(e.errores.map((err) => [err.campo, err.mensaje]))
-          : { general: e.message },
-      );
-    } finally {
-      setGuardando(false);
-    }
-  };
 
   return (
     <Seccion titulo="Tus datos">
       <Tarjeta>
         <Campo
-          ref={(el) => (campos.current.nombre = el)}
+          ref={registrar("nombre")}
           etiqueta="Nombre"
           value={valores.nombre}
           onChangeText={cambiar("nombre")}
-          error={errores.nombre}
+          error={error("nombre")}
           autoComplete="given-name"
         />
         <Campo
-          ref={(el) => (campos.current.apellido = el)}
+          ref={registrar("apellido")}
           etiqueta="Apellido"
           value={valores.apellido}
           onChangeText={cambiar("apellido")}
-          error={errores.apellido}
+          error={error("apellido")}
           autoComplete="family-name"
         />
         <Text style={[texto.chico, { marginBottom: espacio.m }]}>
           El email identifica tu cuenta y no se puede cambiar.
         </Text>
-        <ResumenErrores mensaje={errores.general} />
+        <ResumenErrores mensaje={errorGeneral} />
         <Boton
           titulo="Guardar cambios"
-          onPress={guardar}
-          cargando={guardando}
+          onPress={enviar}
+          cargando={enviando}
           deshabilitado={sinCambios}
         />
       </Tarjeta>
@@ -123,54 +124,18 @@ function FormularioDatos() {
 }
 
 function FormularioPassword() {
-  const vacio = { passwordActual: "", passwordNueva: "", confirmacion: "" };
-  const [valores, setValores] = useState(vacio);
-  const [errores, setErrores] = useState({});
   const [visible, setVisible] = useState(false);
-  const [guardando, setGuardando] = useState(false);
-  const campos = useRef({});
-
-  const cambiar = (campo) => (valor) => {
-    setValores((actuales) => ({ ...actuales, [campo]: valor }));
-    setErrores(({ [campo]: _quitado, ...resto }) => resto);
-  };
-  const registrar = (campo) => (el) => {
-    campos.current[campo] = el;
-  };
-
-  const guardar = async () => {
-    const nuevos = {};
-    if (!valores.passwordActual) nuevos.passwordActual = "Ingresá tu contraseña actual";
-    if (valores.passwordNueva.length < 8) nuevos.passwordNueva = "Al menos 8 caracteres";
-    else if (
-      !/[A-Za-zÁÉÍÓÚáéíóúÑñ]/.test(valores.passwordNueva) ||
-      !/\d/.test(valores.passwordNueva)
-    )
-      nuevos.passwordNueva = "Tiene que tener al menos una letra y un número";
-    if (valores.confirmacion !== valores.passwordNueva)
-      nuevos.confirmacion = "Las contraseñas no coinciden";
-    setErrores(nuevos);
-    if (Object.keys(nuevos).length) {
-      campos.current[Object.keys(nuevos)[0]]?.focus();
-      return;
-    }
-    setGuardando(true);
-    try {
-      await cambiarPassword(valores.passwordActual, valores.passwordNueva);
-      setValores(vacio);
-      avisarExito("Cambiaste tu contraseña");
-    } catch (e) {
-      const porCampo = e.errores?.length
-        ? Object.fromEntries(e.errores.map((err) => [err.campo, err.mensaje]))
-        : { general: e.message };
-      setErrores(porCampo);
-      campos.current[Object.keys(porCampo)[0]]?.focus();
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const cantidad = Object.keys(errores).filter((campo) => campo !== "general").length;
+  const { valores, cambiar, error, registrar, enviar, enviando, resumen, reiniciar } =
+    useFormulario({
+      inicial: { passwordActual: "", passwordNueva: "", confirmacion: "" },
+      validar: validarPassword,
+      nombres: NOMBRES_PASSWORD,
+      alEnviar: async ({ passwordActual, passwordNueva }) => {
+        await cambiarPassword(passwordActual, passwordNueva);
+        reiniciar();
+        avisarExito("Cambiaste tu contraseña");
+      },
+    });
 
   return (
     <Seccion titulo="Contraseña">
@@ -180,7 +145,7 @@ function FormularioPassword() {
           etiqueta="Contraseña actual"
           value={valores.passwordActual}
           onChangeText={cambiar("passwordActual")}
-          error={errores.passwordActual}
+          error={error("passwordActual")}
           visible={visible}
           conBoton={false}
           autoComplete="current-password"
@@ -190,7 +155,7 @@ function FormularioPassword() {
           etiqueta="Contraseña nueva"
           value={valores.passwordNueva}
           onChangeText={cambiar("passwordNueva")}
-          error={errores.passwordNueva}
+          error={error("passwordNueva")}
           ayuda="Al menos 8 caracteres, con letras y números."
           visible={visible}
           conBoton={false}
@@ -201,23 +166,18 @@ function FormularioPassword() {
           etiqueta="Repetir contraseña nueva"
           value={valores.confirmacion}
           onChangeText={cambiar("confirmacion")}
-          error={errores.confirmacion}
+          error={error("confirmacion")}
           visible={visible}
           onCambiarVisible={setVisible}
           autoComplete="new-password"
         />
-        <ResumenErrores
-          mensaje={
-            errores.general ??
-            (cantidad ? `Revisá ${cantidad === 1 ? "1 campo" : `${cantidad} campos`}.` : null)
-          }
-        />
+        <ResumenErrores mensaje={resumen} />
         <Boton
           titulo="Cambiar contraseña"
           variante="secundario"
           icono="key-outline"
-          onPress={guardar}
-          cargando={guardando}
+          onPress={enviar}
+          cargando={enviando}
         />
       </Tarjeta>
     </Seccion>

@@ -1,5 +1,4 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { getCompra, pagarCompra } from "../../service/comprasService.js";
 import { Icono } from "../../components/icono/Icono.jsx";
@@ -13,6 +12,7 @@ import { Seccion } from "../../components/seccion/Seccion.jsx";
 import { Tarjeta } from "../../components/tarjeta/Tarjeta.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
@@ -64,12 +64,32 @@ export default function Checkout() {
   const router = useRouter();
   const { datos: compra, cargandoInicial, error, recargar } = useCarga(() => getCompra(id), [id]);
 
-  const [valores, setValores] = useState({ numero: "", titular: "", vencimiento: "", cvv: "" });
-  const [intentoEnviar, setIntentoEnviar] = useState(false);
-  const [erroresServidor, setErroresServidor] = useState({});
-  const [rechazo, setRechazo] = useState(null);
-  const [pagando, setPagando] = useState(false);
-  const campos = useRef({});
+  const gratis = compra?.total === 0;
+  const {
+    valores,
+    cambiar,
+    error: errorDe,
+    registrar,
+    enviar,
+    enviando,
+    resumen,
+    reiniciar,
+  } = useFormulario({
+    inicial: { numero: "", titular: "", vencimiento: "", cvv: "" },
+    // Si la entrada es gratis no se pide tarjeta
+    validar: (valores) => (gratis ? {} : validar(valores)),
+    palabra: "dato",
+    nombres: NOMBRES,
+    alEnviar: async (tarjeta) => {
+      await pagarCompra(compra.id, gratis ? undefined : tarjeta);
+      avisarExito(
+        gratis
+          ? "¡Listo! Tu entrada está confirmada."
+          : "¡Pago aprobado! Tu entrada ya está lista.",
+      );
+      router.replace(`/compra/${compra.id}`);
+    },
+  });
 
   if (cargandoInicial) {
     return (
@@ -80,63 +100,6 @@ export default function Checkout() {
     );
   }
   if (error) return <ErrorVista error={error} onReintentar={recargar} />;
-
-  const gratis = compra.total === 0;
-  const errores = { ...validar(valores), ...erroresServidor };
-  const conError = Object.keys(errores);
-  const error_ = (campo) => (intentoEnviar ? errores[campo] : undefined);
-  const cambiar =
-    (campo, formato = (v) => v) =>
-    (valor) => {
-      setValores((actuales) => ({ ...actuales, [campo]: formato(valor) }));
-      setErroresServidor(({ [campo]: _quitado, ...resto }) => resto);
-      setRechazo(null);
-    };
-  const registrar = (campo) => (el) => {
-    campos.current[campo] = el;
-  };
-
-  const pagar = async () => {
-    if (!gratis) {
-      setIntentoEnviar(true);
-      if (conError.length) {
-        campos.current[conError[0]]?.focus();
-        anunciar(`Hay ${conError.length} datos para corregir`);
-        return;
-      }
-    }
-    setPagando(true);
-    try {
-      await pagarCompra(compra.id, gratis ? undefined : valores);
-      avisarExito(
-        gratis
-          ? "¡Listo! Tu entrada está confirmada."
-          : "¡Pago aprobado! Tu entrada ya está lista.",
-      );
-      router.replace(`/compra/${compra.id}`);
-    } catch (e) {
-      if (e.errores?.length) {
-        // "tarjeta.numero" → "numero"
-        setErroresServidor(
-          Object.fromEntries(
-            e.errores.map((err) => [err.campo.replace("tarjeta.", ""), err.mensaje]),
-          ),
-        );
-      } else {
-        setRechazo(e.message);
-      }
-    } finally {
-      setPagando(false);
-    }
-  };
-
-  const resumen =
-    rechazo ??
-    (intentoEnviar && conError.length
-      ? `Revisá ${conError.length === 1 ? "1 dato" : `${conError.length} datos`}: ${conError
-          .map((campo) => NOMBRES[campo] ?? campo)
-          .join(", ")}.`
-      : null);
 
   return (
     <View style={{ flex: 1 }}>
@@ -168,7 +131,7 @@ export default function Checkout() {
                 etiqueta="Número de tarjeta"
                 value={valores.numero}
                 onChangeText={cambiar("numero", formatearNumero)}
-                error={error_("numero")}
+                error={errorDe("numero")}
                 placeholder="0000 0000 0000 0000"
                 inputMode="numeric"
                 keyboardType="number-pad"
@@ -180,7 +143,7 @@ export default function Checkout() {
                 etiqueta="Nombre del titular"
                 value={valores.titular}
                 onChangeText={cambiar("titular")}
-                error={error_("titular")}
+                error={errorDe("titular")}
                 placeholder="Como figura en la tarjeta"
                 autoCapitalize="characters"
                 autoComplete="cc-name"
@@ -194,7 +157,7 @@ export default function Checkout() {
                     ayuda="MM/AA"
                     value={valores.vencimiento}
                     onChangeText={cambiar("vencimiento", formatearVencimiento)}
-                    error={error_("vencimiento")}
+                    error={errorDe("vencimiento")}
                     placeholder="08/29"
                     inputMode="numeric"
                     keyboardType="number-pad"
@@ -208,7 +171,7 @@ export default function Checkout() {
                     ayuda="3 o 4 números del dorso"
                     value={valores.cvv}
                     onChangeText={cambiar("cvv", (v) => v.replace(/\D/g, "").slice(0, 4))}
-                    error={error_("cvv")}
+                    error={errorDe("cvv")}
                     placeholder="123"
                     inputMode="numeric"
                     keyboardType="number-pad"
@@ -231,14 +194,12 @@ export default function Checkout() {
                 <Pressable
                   key={tarjeta.numero}
                   onPress={() => {
-                    setValores({
+                    reiniciar({
                       numero: tarjeta.numero,
                       titular: valores.titular || "TITULAR DE PRUEBA",
                       vencimiento: "12/30",
                       cvv: "123",
                     });
-                    setErroresServidor({});
-                    setRechazo(null);
                     anunciar(`Se cargó la tarjeta de prueba ${tarjeta.resultado.toLowerCase()}`);
                   }}
                   accessibilityRole="button"
@@ -258,8 +219,8 @@ export default function Checkout() {
           titulo={gratis ? "Confirmar entrada gratis" : `Pagar ${formatearPrecio(compra.total)}`}
           icono={gratis ? "checkmark-circle-outline" : "lock-closed-outline"}
           variante="acento"
-          onPress={pagar}
-          cargando={pagando}
+          onPress={enviar}
+          cargando={enviando}
         />
         <View style={styles.seguro}>
           <Icono name="shield-checkmark-outline" size={16} color={styles.pruebaTexto.color} />

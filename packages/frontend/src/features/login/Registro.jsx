@@ -1,5 +1,5 @@
 import { Link, useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Icono } from "../../components/icono/Icono.jsx";
 import { Boton } from "../../components/boton/Boton.jsx";
@@ -7,10 +7,10 @@ import { Campo } from "../../components/formulario/Campo.jsx";
 import { CampoPassword } from "../../components/formulario/CampoPassword.jsx";
 import { ResumenErrores } from "../../components/formulario/ResumenErrores.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
-import { anunciar } from "../../utils/accesibilidad.js";
 import { avisarExito } from "../../utils/confirmar.js";
 import { MarcoAcceso } from "./MarcoAcceso.jsx";
 
@@ -63,73 +63,28 @@ export default function Registro() {
   const { crearCuenta } = useSesion();
   const router = useRouter();
 
-  const [valores, setValores] = useState({
-    nombre: "",
-    apellido: "",
-    email: "",
-    password: "",
-    confirmacion: "",
-    rol: null,
-  });
-  const [intentoEnviar, setIntentoEnviar] = useState(false);
-  const [erroresServidor, setErroresServidor] = useState({});
-  const [errorGeneral, setErrorGeneral] = useState(null);
-  const [enviando, setEnviando] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const campos = useRef({});
-
-  const errores = { ...validarRegistro(valores), ...erroresServidor };
-  const camposConError = Object.keys(errores);
-  const error = (campo) => (intentoEnviar ? errores[campo] : undefined);
-  const cambiar = (campo) => (valor) => {
-    setValores((actuales) => ({ ...actuales, [campo]: valor }));
-    setErroresServidor(({ [campo]: _quitado, ...resto }) => resto);
-    setErrorGeneral(null);
-  };
-  const registrar = (campo) => (elemento) => {
-    campos.current[campo] = elemento;
-  };
-
-  const enviar = async () => {
-    setIntentoEnviar(true);
-    if (camposConError.length > 0) {
-      campos.current[camposConError.find((campo) => campos.current[campo])]?.focus();
-      anunciar(`Hay ${camposConError.length} campos para corregir`);
-      return;
-    }
-    setEnviando(true);
-    try {
-      const { confirmacion: _confirmacion, ...datos } = valores;
-      const usuario = await crearCuenta({
-        ...datos,
-        nombre: datos.nombre.trim(),
-        apellido: datos.apellido.trim(),
-        email: datos.email.trim(),
-      });
-      avisarExito(`¡Bienvenido/a, ${usuario.nombre}! Tu cuenta está lista`);
-      router.replace("/");
-    } catch (e) {
-      // Los errores por campo del backend se muestran junto a cada campo
-      if (e.errores?.length) {
-        setErroresServidor(Object.fromEntries(e.errores.map((err) => [err.campo, err.mensaje])));
-      } else if (e.status === 409) {
-        setErroresServidor({ email: e.message });
-        campos.current.email?.focus();
-      } else {
-        setErrorGeneral(e.message);
+  const { valores, cambiar, error, registrar, enviar, enviando, resumen } = useFormulario({
+    inicial: { nombre: "", apellido: "", email: "", password: "", confirmacion: "", rol: null },
+    validar: validarRegistro,
+    nombres: NOMBRES,
+    alEnviar: async ({ confirmacion: _confirmacion, ...datos }) => {
+      try {
+        const usuario = await crearCuenta({
+          ...datos,
+          nombre: datos.nombre.trim(),
+          apellido: datos.apellido.trim(),
+          email: datos.email.trim(),
+        });
+        avisarExito(`¡Bienvenido/a, ${usuario.nombre}! Tu cuenta está lista`);
+        router.replace("/");
+      } catch (e) {
+        // 409: el email ya está registrado → el error se muestra junto al campo email
+        if (e.status === 409) e.errores = [{ campo: "email", mensaje: e.message }];
+        throw e;
       }
-    } finally {
-      setEnviando(false);
-    }
-  };
-
-  const resumen =
-    errorGeneral ??
-    (intentoEnviar && camposConError.length > 0
-      ? `Revisá ${camposConError.length === 1 ? "1 campo" : `${camposConError.length} campos`}: ${camposConError
-          .map((campo) => NOMBRES[campo] ?? campo)
-          .join(", ")}.`
-      : null);
+    },
+  });
 
   return (
     <MarcoAcceso

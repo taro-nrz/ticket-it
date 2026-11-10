@@ -1,5 +1,4 @@
 import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { actualizarEvento, crearEvento, getCategorias } from "../../service/eventosService.js";
 import { Icono } from "../../components/icono/Icono.jsx";
@@ -23,6 +22,7 @@ import { anunciar } from "../../utils/accesibilidad.js";
 import { avisarError, avisarExito } from "../../utils/confirmar.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 
 const tipoVacio = () => ({ nombre: "", descripcion: "", precio: "", cupo: "", vendidas: 0 });
 
@@ -129,20 +129,45 @@ export default function CrearEvento({ evento = null }) {
 
   const router = useRouter();
   const { datos: categorias } = useCarga(getCategorias);
-  const [valores, setValores] = useState(() =>
-    editando ? valoresDesdeEvento(evento) : valoresIniciales(),
-  );
-  const [intentoEnviar, setIntentoEnviar] = useState(false);
-  const [enviando, setEnviando] = useState(false);
-  const campos = useRef({});
-
-  const errores = validar(valores);
-  const camposConError = Object.keys(errores);
-  const error = (campo) => (intentoEnviar ? errores[campo] : undefined);
-  const cambiar = (campo) => (valor) => setValores({ ...valores, [campo]: valor });
-  const registrar = (campo) => (elemento) => {
-    campos.current[campo] = elemento;
-  };
+  const { valores, setValores, cambiar, error, registrar, enviar, enviando, resumen, reiniciar } =
+    useFormulario({
+      inicial: () => (editando ? valoresDesdeEvento(evento) : valoresIniciales()),
+      validar,
+      nombres: nombreDelCampo,
+      alEnviar: async (valores) => {
+        const datos = {
+          nombre: valores.nombre.trim(),
+          descripcion: valores.descripcion.trim(),
+          categoriaId: valores.categoriaId,
+          fecha: fechaDelEvento(valores).toISOString(),
+          lugar: valores.lugar.trim(),
+          direccion: valores.direccion.trim(),
+          multimedia: valores.imagenes,
+          tiposEntrada: valores.tiposEntrada.map((tipo) => ({
+            ...(tipo.id !== undefined && { id: tipo.id }),
+            nombre: tipo.nombre.trim(),
+            descripcion: tipo.descripcion.trim(),
+            precio: Number(tipo.precio),
+            cupo: Number(tipo.cupo),
+          })),
+        };
+        if (editando) {
+          await actualizarEvento(evento.id, datos);
+          avisarExito("Guardamos los cambios del evento");
+          router.back();
+          return;
+        }
+        const publicado = await crearEvento(datos);
+        reiniciar(valoresIniciales());
+        avisarExito("¡Evento publicado! Ya está visible en el catálogo.");
+        router.push(`/evento/${publicado.id}`);
+      },
+      alFallar: (e) =>
+        avisarError(
+          editando ? "No se pudieron guardar los cambios" : "No se pudo publicar el evento",
+          e.message,
+        ),
+    });
 
   const cambiarTipo = (indice, campo, valor) =>
     setValores({
@@ -163,54 +188,6 @@ export default function CrearEvento({ evento = null }) {
       tiposEntrada: valores.tiposEntrada.filter((_, i) => i !== indice),
     });
     anunciar(`Se quitó la entrada ${indice + 1}`);
-  };
-
-  const publicar = async () => {
-    setIntentoEnviar(true);
-    if (camposConError.length > 0) {
-      // Pauta 9: hay que corregir algo, así que se mueve el foco al primer campo con error
-      const primero = camposConError.find((campo) => campos.current[campo]);
-      campos.current[primero]?.focus();
-      anunciar(`Hay ${camposConError.length} campos para corregir`);
-      return;
-    }
-    setEnviando(true);
-    try {
-      const datos = {
-        nombre: valores.nombre.trim(),
-        descripcion: valores.descripcion.trim(),
-        categoriaId: valores.categoriaId,
-        fecha: fechaDelEvento(valores).toISOString(),
-        lugar: valores.lugar.trim(),
-        direccion: valores.direccion.trim(),
-        multimedia: valores.imagenes,
-        tiposEntrada: valores.tiposEntrada.map((tipo) => ({
-          ...(tipo.id !== undefined && { id: tipo.id }),
-          nombre: tipo.nombre.trim(),
-          descripcion: tipo.descripcion.trim(),
-          precio: Number(tipo.precio),
-          cupo: Number(tipo.cupo),
-        })),
-      };
-      if (editando) {
-        await actualizarEvento(evento.id, datos);
-        avisarExito("Guardamos los cambios del evento");
-        router.back();
-        return;
-      }
-      const publicado = await crearEvento(datos);
-      setValores(valoresIniciales());
-      setIntentoEnviar(false);
-      avisarExito("¡Evento publicado! Ya está visible en el catálogo.");
-      router.push(`/evento/${publicado.id}`);
-    } catch (e) {
-      avisarError(
-        editando ? "No se pudieron guardar los cambios" : "No se pudo publicar el evento",
-        e.message,
-      );
-    } finally {
-      setEnviando(false);
-    }
   };
 
   return (
@@ -389,21 +366,13 @@ export default function CrearEvento({ evento = null }) {
         </Seccion>
 
         {/* Pauta 9: resumen de errores anunciado de inmediato (role="alert") */}
-        <ResumenErrores
-          mensaje={
-            intentoEnviar && camposConError.length > 0
-              ? camposConError.length === 1
-                ? `Revisá 1 campo: ${nombreDelCampo(camposConError[0])}.`
-                : `Revisá ${camposConError.length} campos: ${camposConError.map(nombreDelCampo).join(", ")}.`
-              : null
-          }
-        />
+        <ResumenErrores mensaje={resumen} />
 
         <Boton
           titulo={editando ? "Guardar cambios" : "Publicar evento"}
           icono={editando ? "save-outline" : "megaphone-outline"}
           variante="acento"
-          onPress={publicar}
+          onPress={enviar}
           cargando={enviando}
         />
         <View style={{ height: espacio.xl }} />

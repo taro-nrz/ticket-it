@@ -1,5 +1,4 @@
 import { useLocalSearchParams } from "expo-router";
-import { useRef, useState } from "react";
 import { Text, View } from "react-native";
 import { crearCupon, desactivarCupon, getCupones } from "../../service/cuponesService.js";
 import { getEvento } from "../../service/eventosService.js";
@@ -16,9 +15,9 @@ import { Tarjeta } from "../../components/tarjeta/Tarjeta.jsx";
 import { Vacio } from "../../components/estados/Vacio.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
-import { anunciar } from "../../utils/accesibilidad.js";
 import { avisarError, avisarExito, confirmar } from "../../utils/confirmar.js";
 import { formatearFecha } from "../../utils/formato.js";
 import { BarraCargando } from "../../components/carga/BarraCargando.jsx";
@@ -157,29 +156,21 @@ function ItemCupon({ cupon, onDesactivar }) {
 }
 
 function NuevoCupon({ eventoId, onCreado }) {
-  const [valores, setValores] = useState(vacio);
-  const [intentoEnviar, setIntentoEnviar] = useState(false);
-  const [errorGeneral, setErrorGeneral] = useState(null);
-  const [guardando, setGuardando] = useState(false);
-  const campos = useRef({});
-
-  const errores = validar(valores);
-  const error = (campo) => (intentoEnviar ? errores[campo] : undefined);
-  const cambiar = (campo) => (valor) => {
-    setValores((actuales) => ({ ...actuales, [campo]: valor }));
-    setErrorGeneral(null);
-  };
-
-  const crear = async () => {
-    setIntentoEnviar(true);
-    const conError = Object.keys(errores);
-    if (conError.length) {
-      campos.current[conError[0]]?.focus();
-      anunciar(`Hay ${conError.length} datos para corregir`);
-      return;
-    }
-    setGuardando(true);
-    try {
+  const {
+    valores,
+    setValores,
+    cambiar,
+    error,
+    registrar,
+    enviar,
+    enviando,
+    errorGeneral,
+    reiniciar,
+  } = useFormulario({
+    inicial: vacio,
+    validar,
+    palabra: "dato",
+    alEnviar: async (valores) => {
       const cupon = await crearCupon(eventoId, {
         tipo: valores.tipo,
         codigo: valores.codigo,
@@ -188,16 +179,11 @@ function NuevoCupon({ eventoId, onCreado }) {
         usosMaximos: valores.usosMaximos ? Number(valores.usosMaximos) : null,
         vence: valores.vence ? new Date(`${valores.vence}T23:59:59`).toISOString() : null,
       });
-      setValores(vacio);
-      setIntentoEnviar(false);
+      reiniciar();
       avisarExito(`Creaste el cupón ${cupon.codigo}`);
       onCreado();
-    } catch (e) {
-      setErrorGeneral(e.message);
-    } finally {
-      setGuardando(false);
-    }
-  };
+    },
+  });
 
   return (
     <Seccion titulo="Nuevo cupón">
@@ -210,10 +196,10 @@ function NuevoCupon({ eventoId, onCreado }) {
         />
         <View style={{ height: espacio.m }} />
         <Campo
-          ref={(el) => (campos.current.codigo = el)}
+          ref={registrar("codigo")}
           etiqueta="Código"
           value={valores.codigo}
-          onChangeText={(valor) => cambiar("codigo")(valor.toUpperCase())}
+          onChangeText={cambiar("codigo", (valor) => valor.toUpperCase())}
           error={error("codigo")}
           placeholder="Ej: PROMO20"
           autoCapitalize="characters"
@@ -222,7 +208,7 @@ function NuevoCupon({ eventoId, onCreado }) {
         />
         {valores.tipo !== "DOS_POR_UNO" && (
           <Campo
-            ref={(el) => (campos.current.valor = el)}
+            ref={registrar("valor")}
             etiqueta={
               valores.tipo === "PORCENTAJE"
                 ? "Porcentaje de descuento (%)"
@@ -236,7 +222,7 @@ function NuevoCupon({ eventoId, onCreado }) {
           />
         )}
         <Campo
-          ref={(el) => (campos.current.usosMaximos = el)}
+          ref={registrar("usosMaximos")}
           etiqueta="Cantidad de usos (opcional)"
           ayuda="Vacío: sin límite"
           value={valores.usosMaximos}
@@ -260,7 +246,7 @@ function NuevoCupon({ eventoId, onCreado }) {
           />
         ) : null}
         <ResumenErrores mensaje={errorGeneral} />
-        <Boton titulo="Crear cupón" icono="add" onPress={crear} cargando={guardando} />
+        <Boton titulo="Crear cupón" icono="add" onPress={enviar} cargando={enviando} />
       </Tarjeta>
     </Seccion>
   );

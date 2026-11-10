@@ -1,5 +1,4 @@
 import { Link, useRouter } from "expo-router";
-import { useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Icono } from "../../components/icono/Icono.jsx";
 import { Avatar } from "../../components/avatar/Avatar.jsx";
@@ -9,6 +8,7 @@ import { CampoPassword } from "../../components/formulario/CampoPassword.jsx";
 import { ResumenErrores } from "../../components/formulario/ResumenErrores.jsx";
 import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useFormulario } from "../../hooks/useFormulario.js";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes } from "../../theme.js";
@@ -41,47 +41,38 @@ export default function Login() {
   const { ingresar } = useSesion();
   const router = useRouter();
 
-  const [valores, setValores] = useState({ email: "", password: "" });
-  const [intentoEnviar, setIntentoEnviar] = useState(false);
-  const [errorServidor, setErrorServidor] = useState(null);
-  const [enviando, setEnviando] = useState(false);
-  const campos = useRef({});
-
-  const errores = validar(valores);
-  const error = (campo) => (intentoEnviar ? errores[campo] : undefined);
-  const cambiar = (campo) => (valor) => {
-    setValores((actuales) => ({ ...actuales, [campo]: valor }));
-    setErrorServidor(null);
-  };
-
-  const enviar = async () => {
-    setIntentoEnviar(true);
-    const conError = Object.keys(errores);
-    if (conError.length > 0) {
-      campos.current[conError[0]]?.focus();
-      return;
-    }
-    setEnviando(true);
-    try {
-      const usuario = await ingresar(valores.email.trim(), valores.password);
+  const {
+    valores,
+    setValores,
+    cambiar,
+    error,
+    camposConError,
+    intentoEnviar,
+    registrar,
+    enfocar,
+    enviar,
+    enviando,
+    errorGeneral,
+    setErrorGeneral,
+  } = useFormulario({
+    inicial: { email: "", password: "" },
+    validar,
+    alEnviar: async ({ email, password }) => {
+      const usuario = await ingresar(email.trim(), password);
       anunciar(`Hola, ${usuario.nombre}`);
       router.replace("/");
-    } catch (e) {
-      setErrorServidor(e.message);
-    } finally {
-      setEnviando(false);
-    }
-  };
+    },
+  });
 
   const usarCuentaDemo = (cuenta) => {
     setValores({ email: cuenta.email, password: PASSWORD_DEMO });
-    setErrorServidor(null);
+    setErrorGeneral(null);
     anunciar(`Se cargaron los datos de ${cuenta.nombre}. Tocá Ingresar.`);
   };
 
   const mensajeResumen =
-    errorServidor ??
-    (intentoEnviar && Object.keys(errores).length > 0
+    errorGeneral ??
+    (intentoEnviar && camposConError.length > 0
       ? "Revisá los datos marcados para poder ingresar."
       : null);
 
@@ -93,7 +84,7 @@ export default function Login() {
     >
       <ResumenErrores mensaje={mensajeResumen} />
       <Campo
-        ref={(el) => (campos.current.email = el)}
+        ref={registrar("email")}
         etiqueta="Email"
         value={valores.email}
         onChangeText={cambiar("email")}
@@ -104,10 +95,10 @@ export default function Login() {
         autoComplete="email"
         textContentType="emailAddress"
         returnKeyType="next"
-        onSubmitEditing={() => campos.current.password?.focus()}
+        onSubmitEditing={() => enfocar("password")}
       />
       <CampoPassword
-        ref={(el) => (campos.current.password = el)}
+        ref={registrar("password")}
         etiqueta="Contraseña"
         value={valores.password}
         onChangeText={cambiar("password")}
