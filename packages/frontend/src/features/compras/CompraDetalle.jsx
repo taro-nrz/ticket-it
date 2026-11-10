@@ -14,7 +14,7 @@ import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
-import { avisarError, avisarExito, confirmar } from "../../utils/confirmar.js";
+import { confirmar } from "../../utils/confirmar.js";
 import {
   formatearDiasRestantes,
   formatearFecha,
@@ -27,6 +27,7 @@ import {
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { EsqueletoDetalleCompra } from "../../components/carga/Esqueletos.jsx";
+import { useAccion } from "../../hooks/useAccion.js";
 
 // Detalle y ciclo de vida de una compra con forma de entrada.
 // Los botones salen de accionesDisponibles: las reglas las decide el backend.
@@ -46,7 +47,7 @@ export default function CompraDetalle() {
     recargar,
     setDatos,
   } = useCarga(() => getCompra(id), [id], { alEnfocar: true });
-  const [accionEnCurso, setAccionEnCurso] = useState(null);
+  const { ejecutar: ejecutarAccion, enCurso: accionEnCurso } = useAccion();
   const [transfiriendo, setTransfiriendo] = useState(false);
 
   if (cargandoInicial) {
@@ -61,18 +62,12 @@ export default function CompraDetalle() {
 
   const puede = (accion) => compra.accionesDisponibles.includes(accion);
 
-  const ejecutar = async (accion, llamada, mensajeExito) => {
-    setAccionEnCurso(accion);
-    try {
-      setDatos(await llamada(compra.id));
-      avisarExito(mensajeExito);
-    } catch (e) {
-      avisarError("No se pudo completar la acción", e.message);
-      recargar();
-    } finally {
-      setAccionEnCurso(null);
-    }
-  };
+  // Si falla, se recarga la compra (puede haber cambiado de estado mientras tanto)
+  const ejecutar = (accion, llamada, mensajeExito) =>
+    ejecutarAccion(accion, async () => setDatos(await llamada(compra.id)), {
+      exito: mensajeExito,
+      alFallar: recargar,
+    });
 
   // HU-09 / HU-10
   const cancelar = async () => {

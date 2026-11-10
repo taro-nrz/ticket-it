@@ -11,7 +11,7 @@ import { useEstilos } from "../../hooks/useEstilos.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar } from "../../utils/accesibilidad.js";
-import { avisarError } from "../../utils/confirmar.js";
+import { useAccion } from "../../hooks/useAccion.js";
 
 const MAX_FOTOS = 10;
 const URL_VALIDA = /^https?:\/\/\S+$/i;
@@ -22,6 +22,7 @@ export function GestorFotos({ fotos, onCambiar }) {
   const { colores, texto } = useTema();
   const styles = useEstilos(crearEstilos);
   const [progreso, setProgreso] = useState(null);
+  const { ejecutar } = useAccion();
   const [url, setUrl] = useState("");
   const [errorUrl, setErrorUrl] = useState(null);
   const lleno = fotos.length >= MAX_FOTOS;
@@ -35,15 +36,16 @@ export function GestorFotos({ fotos, onCambiar }) {
     const [foto] = eleccion.assets;
     setProgreso(0);
     anunciar("Subiendo la foto");
-    try {
-      const { url: subida } = await subirImagen(foto, setProgreso);
-      onCambiar([...fotos, subida]);
-      anunciar(`Foto subida. Ahora hay ${fotos.length + 1}`);
-    } catch (e) {
-      avisarError("No se pudo subir la foto", e.message);
-    } finally {
-      setProgreso(null);
-    }
+    await ejecutar(
+      "SUBIR",
+      async () => {
+        const { url: subida } = await subirImagen(foto, setProgreso);
+        onCambiar([...fotos, subida]);
+        anunciar(`Foto subida. Ahora hay ${fotos.length + 1}`);
+      },
+      { error: "No se pudo subir la foto" },
+    );
+    setProgreso(null);
   };
 
   const agregarUrl = () => {

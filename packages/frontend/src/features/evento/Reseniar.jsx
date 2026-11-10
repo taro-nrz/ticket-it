@@ -9,8 +9,8 @@ import { Campo } from "../../components/formulario/Campo.jsx";
 import { Estrellas } from "../../components/estrellas/Estrellas.jsx";
 import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { espacio, fuentes } from "../../theme.js";
-import { avisarError, avisarExito } from "../../utils/confirmar.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
+import { useAccion } from "../../hooks/useAccion.js";
 
 const ETIQUETAS = ["", "Malo", "Regular", "Bueno", "Muy bueno", "Excelente"];
 
@@ -22,19 +22,14 @@ export default function Reseniar() {
   const router = useRouter();
   const [puntuacion, setPuntuacion] = useState(0);
   const [detalle, setDetalle] = useState("");
-  const [enviando, setEnviando] = useState(false);
+  const { ejecutar, enCurso } = useAccion();
 
   const enviar = async () => {
-    setEnviando(true);
-    try {
-      await reseniarEvento(id, puntuacion, detalle.trim());
-      avisarExito("¡Gracias por tu reseña! Ya está publicada.");
-      router.back();
-    } catch (e) {
-      avisarError("No se pudo enviar la reseña", e.message);
-    } finally {
-      setEnviando(false);
-    }
+    const enviada = await ejecutar("ENVIAR", () => reseniarEvento(id, puntuacion, detalle.trim()), {
+      exito: "¡Gracias por tu reseña! Ya está publicada.",
+      error: "No se pudo enviar la reseña",
+    });
+    if (enviada) router.back();
   };
 
   return (
@@ -66,7 +61,7 @@ export default function Reseniar() {
           titulo="Enviar reseña"
           variante="acento"
           onPress={enviar}
-          cargando={enviando}
+          cargando={enCurso === "ENVIAR"}
           deshabilitado={puntuacion === 0 || !detalle.trim()}
           accessibilityHint={
             puntuacion === 0 || !detalle.trim()

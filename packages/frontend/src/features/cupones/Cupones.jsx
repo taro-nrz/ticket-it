@@ -18,10 +18,11 @@ import { useEstilos } from "../../hooks/useEstilos.js";
 import { useFormulario } from "../../hooks/useFormulario.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
-import { avisarError, avisarExito, confirmar } from "../../utils/confirmar.js";
+import { avisarExito, confirmar } from "../../utils/confirmar.js";
 import { formatearFecha } from "../../utils/formato.js";
 import { BarraCargando } from "../../components/carga/BarraCargando.jsx";
 import { EsqueletoFilas } from "../../components/carga/Esqueletos.jsx";
+import { useAccion } from "../../hooks/useAccion.js";
 
 const TIPOS = [
   { valor: "PORCENTAJE", etiqueta: "Porcentaje" },
@@ -61,6 +62,7 @@ export default function Cupones() {
     error,
     recargar,
   } = useCarga(() => getCupones(id), [id]);
+  const { ejecutar } = useAccion();
 
   if (cargandoInicial) {
     return (
@@ -83,13 +85,14 @@ export default function Cupones() {
       peligro: true,
     });
     if (!confirmado) return;
-    try {
-      await desactivarCupon(id, cupon.id);
-      avisarExito(`Desactivaste el cupón ${cupon.codigo}`);
-      recargar();
-    } catch (e) {
-      avisarError("No se pudo desactivar el cupón", e.message);
-    }
+    await ejecutar(
+      "DESACTIVAR",
+      async () => {
+        await desactivarCupon(id, cupon.id);
+        recargar();
+      },
+      { exito: `Desactivaste el cupón ${cupon.codigo}`, error: "No se pudo desactivar el cupón" },
+    );
   };
 
   return (

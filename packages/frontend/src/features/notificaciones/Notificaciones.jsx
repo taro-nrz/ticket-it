@@ -19,8 +19,8 @@ import { useNotificaciones } from "../../context/NotificacionesContext.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
 import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
-import { avisarError } from "../../utils/confirmar.js";
 import { formatearHace } from "../../utils/formato.js";
+import { useAccion } from "../../hooks/useAccion.js";
 
 const ICONOS = {
   NUEVA_VENTA: "cash-outline",
@@ -48,33 +48,36 @@ export default function Notificaciones() {
   } = useCarga(getNotificaciones, [], {
     alEnfocar: true,
   });
+  const { ejecutar } = useAccion();
 
-  const abrir = async (notificacion) => {
-    try {
-      if (notificacion.estado === "NO_LEIDA") {
-        await marcarNotificacionLeida(notificacion.id);
+  const abrir = (notificacion) =>
+    ejecutar(
+      "ABRIR",
+      async () => {
+        if (notificacion.estado === "NO_LEIDA") {
+          await marcarNotificacionLeida(notificacion.id);
+          recargarContador();
+        }
+        router.push(notificacion.link);
+      },
+      { error: "No se pudo abrir la notificación" },
+    );
+
+  const leerTodas = () =>
+    ejecutar(
+      "LEER_TODAS",
+      async () => {
+        await marcarTodasLeidas();
+        setDatos({
+          ...datos,
+          noLeidas: 0,
+          data: datos.data.map((n) => ({ ...n, estado: "LEIDA" })),
+        });
         recargarContador();
-      }
-      router.push(notificacion.link);
-    } catch (e) {
-      avisarError("No se pudo abrir la notificación", e.message);
-    }
-  };
-
-  const leerTodas = async () => {
-    try {
-      await marcarTodasLeidas();
-      setDatos({
-        ...datos,
-        noLeidas: 0,
-        data: datos.data.map((n) => ({ ...n, estado: "LEIDA" })),
-      });
-      recargarContador();
-      anunciar("Marcaste todas las notificaciones como leídas");
-    } catch (e) {
-      avisarError("No se pudieron marcar como leídas", e.message);
-    }
-  };
+        anunciar("Marcaste todas las notificaciones como leídas");
+      },
+      { error: "No se pudieron marcar como leídas" },
+    );
 
   return (
     <View style={{ flex: 1 }}>

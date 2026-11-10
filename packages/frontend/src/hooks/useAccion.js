@@ -23,7 +23,9 @@ export function useAccion() {
     setEnCurso(nombre);
     try {
       const resultado = await accion();
-      if (exito) avisarExito(typeof exito === "function" ? exito(resultado) : exito);
+      // `exito` puede depender del resultado (y no avisar nada si devuelve null)
+      const mensaje = typeof exito === "function" ? exito(resultado) : exito;
+      if (mensaje) avisarExito(mensaje);
       return true;
     } catch (e) {
       avisarError(error ?? "No se pudo completar la acción", e.message);

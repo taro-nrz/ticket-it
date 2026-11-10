@@ -7,8 +7,8 @@ import { Contador } from "../../components/contador/Contador.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { espacio, radio } from "../../theme.js";
-import { avisarError, avisarExito } from "../../utils/confirmar.js";
 import { formatearHora } from "../../utils/formato.js";
+import { useAccion } from "../../hooks/useAccion.js";
 
 // D-40: lista de espera dentro de la tarjeta de un tipo agotado (para compradores)
 export function ListaEspera({ evento, tipo, inscripcion, onCambio }) {
@@ -16,34 +16,32 @@ export function ListaEspera({ evento, tipo, inscripcion, onCambio }) {
   const styles = useEstilos(crearEstilos);
   const [abierto, setAbierto] = useState(false);
   const [cantidad, setCantidad] = useState(1);
-  const [enviando, setEnviando] = useState(false);
+  const { ejecutar, enCurso } = useAccion();
+  const enviando = enCurso !== null;
 
-  const anotarse = async () => {
-    setEnviando(true);
-    try {
-      await anotarseEnEspera(evento.id, tipo.id, cantidad);
-      avisarExito(`Te anotamos en la lista de espera de ${tipo.nombre}. Te avisamos si se libera.`);
-      setAbierto(false);
-      onCambio();
-    } catch (e) {
-      avisarError("No se pudo anotarte", e.message);
-    } finally {
-      setEnviando(false);
-    }
-  };
+  const anotarse = () =>
+    ejecutar(
+      "ANOTARSE",
+      async () => {
+        await anotarseEnEspera(evento.id, tipo.id, cantidad);
+        setAbierto(false);
+        onCambio();
+      },
+      {
+        exito: `Te anotamos en la lista de espera de ${tipo.nombre}. Te avisamos si se libera.`,
+        error: "No se pudo anotarte",
+      },
+    );
 
-  const salir = async () => {
-    setEnviando(true);
-    try {
-      await salirDeEspera(evento.id, tipo.id);
-      avisarExito("Saliste de la lista de espera");
-      onCambio();
-    } catch (e) {
-      avisarError("No se pudo salir de la lista", e.message);
-    } finally {
-      setEnviando(false);
-    }
-  };
+  const salir = () =>
+    ejecutar(
+      "SALIR",
+      async () => {
+        await salirDeEspera(evento.id, tipo.id);
+        onCambio();
+      },
+      { exito: "Saliste de la lista de espera", error: "No se pudo salir de la lista" },
+    );
 
   if (inscripcion?.estado === "ESPERANDO") {
     return (

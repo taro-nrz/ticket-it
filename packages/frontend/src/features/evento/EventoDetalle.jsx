@@ -24,11 +24,11 @@ import { estadoPresionado, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { espacio, fuentes, radio } from "../../theme.js";
-import { avisarError, avisarExito } from "../../utils/confirmar.js";
 import { formatearFecha, formatearPrecio, nombreCompleto, plural } from "../../utils/formato.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { EsqueletoDetalleEvento } from "../../components/carga/Esqueletos.jsx";
+import { useAccion } from "../../hooks/useAccion.js";
 
 const MAX_POR_COMPRA = 10;
 const RESENIAS_VISIBLES = 3;
@@ -52,7 +52,7 @@ export default function EventoDetalle() {
   } = useCarga(() => getEvento(id), [id], { alEnfocar: true });
   const [tipoElegido, setTipoElegido] = useState(null);
   const [cantidad, setCantidad] = useState(1);
-  const [comprando, setComprando] = useState(false);
+  const { ejecutar, enCurso } = useAccion();
   const [cancelando, setCancelando] = useState(false);
   const [cupon, setCupon] = useState(null);
 
@@ -94,44 +94,36 @@ export default function EventoDetalle() {
 
   const volver = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
-  const alternarFavorito = async () => {
-    try {
-      if (evento.esFavorito) {
-        await quitarFavorito(evento.id);
-      } else {
-        await agregarFavorito(evento.id);
-      }
-      setDatos({ ...evento, esFavorito: !evento.esFavorito });
-    } catch (e) {
-      avisarError("No se pudo actualizar favoritos", e.message);
-    }
-  };
+  const alternarFavorito = () =>
+    ejecutar(
+      "FAVORITO",
+      async () => {
+        await (evento.esFavorito ? quitarFavorito(evento.id) : agregarFavorito(evento.id));
+        setDatos({ ...evento, esFavorito: !evento.esFavorito });
+      },
+      { error: "No se pudo actualizar favoritos" },
+    );
 
-  const compartir = async () => {
-    try {
-      const resultado = await compartirEvento(evento);
-      if (resultado === "copiado")
-        avisarExito("Copiamos el enlace del evento para que lo compartas");
-    } catch (e) {
-      avisarError("No se pudo compartir el evento", e.message);
-    }
-  };
+  const compartir = () =>
+    ejecutar("COMPARTIR", () => compartirEvento(evento), {
+      exito: (resultado) =>
+        resultado === "copiado" ? "Copiamos el enlace del evento para que lo compartas" : null,
+      error: "No se pudo compartir el evento",
+    });
 
-  const confirmarCompra = async () => {
-    setComprando(true);
-    try {
-      const compra = await comprar(evento.id, tipo.id, cantidad, cupon?.cupon.codigo);
-      setTipoElegido(null);
-      setCantidad(1);
-      setCupon(null);
-      router.push(`/compra/${compra.id}`);
-    } catch (e) {
-      avisarError("No se pudo realizar la compra", e.message);
-      recargar();
-    } finally {
-      setComprando(false);
-    }
-  };
+  const confirmarCompra = () =>
+    ejecutar(
+      "COMPRAR",
+      async () => {
+        const compra = await comprar(evento.id, tipo.id, cantidad, cupon?.cupon.codigo);
+        setTipoElegido(null);
+        setCantidad(1);
+        setCupon(null);
+        router.push(`/compra/${compra.id}`);
+      },
+      // Si falla (ej. se agotó el cupo mientras elegía) se recarga para ver la disponibilidad real
+      { error: "No se pudo realizar la compra", alFallar: recargar },
+    );
 
   return (
     <View style={{ flex: 1, backgroundColor: colores.fondo }}>
@@ -431,7 +423,7 @@ export default function EventoDetalle() {
               accessibilityHint={`Compra ${cantidad} ${tipo.nombre} por ${formatearPrecio(total)}`}
               variante="acento"
               onPress={confirmarCompra}
-              cargando={comprando}
+              cargando={enCurso === "COMPRAR"}
               style={{ paddingHorizontal: 28 }}
             />
           </View>

@@ -21,12 +21,12 @@ import { useSesion } from "../../context/SesionContext.jsx";
 import { useNotificaciones } from "../../context/NotificacionesContext.jsx";
 import { anunciar, ocultoVisualmente } from "../../utils/accesibilidad.js";
 import { espacio, fuentes } from "../../theme.js";
-import { avisarError } from "../../utils/confirmar.js";
 import { formatearHora, nombreCompleto } from "../../utils/formato.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { EsqueletoChat } from "../../components/carga/Esqueletos.jsx";
 import { emitir, escuchar, estaConectado, useConexionEnVivo } from "../../service/tiempoReal.js";
+import { useAccion } from "../../hooks/useAccion.js";
 
 const INTERVALO_POLLING_MS = 4000;
 const MS_ESCRIBIENDO = 3000; // cuánto dura el "escribiendo…" sin novedades
@@ -46,7 +46,8 @@ export default function Chat() {
   const [mensajes, setMensajes] = useState(null);
   const [error, setError] = useState(null);
   const [texto_, setTexto] = useState("");
-  const [enviando, setEnviando] = useState(false);
+  const { ejecutar, enCurso } = useAccion();
+  const enviando = enCurso !== null;
   const [anuncio, setAnuncio] = useState("");
   const lista = useRef(null);
   const ultimoEnviado = useRef(null);
@@ -170,16 +171,15 @@ export default function Chat() {
   const enviar = async () => {
     const contenido = texto_.trim();
     if (!contenido) return;
-    setEnviando(true);
-    try {
-      agregar([await enviarMensaje(id, contenido)]);
-      setTexto("");
-      ultimoAvisoEscribiendo.current = 0;
-    } catch (e) {
-      avisarError("No se pudo enviar el mensaje", e.message);
-    } finally {
-      setEnviando(false);
-    }
+    await ejecutar(
+      "ENVIAR",
+      async () => {
+        agregar([await enviarMensaje(id, contenido)]);
+        setTexto("");
+        ultimoAvisoEscribiendo.current = 0;
+      },
+      { error: "No se pudo enviar el mensaje" },
+    );
   };
 
   if (error) return <ErrorVista error={error} />;
