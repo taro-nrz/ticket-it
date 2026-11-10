@@ -68,6 +68,7 @@ El backend se divide en **7 módulos** que se desarrollan en orden de dependenci
 | M22 — Compartir (pro) | Compartir el evento y exportarlo a .ics | HU-S1, HU-S2 | M2 | Implementado |
 | M23 — Recuperar contraseña (pro) | Código por email simulado | HU-R1 | M9 | Implementado |
 | M24 — Tiempo real (pro) | Chat, "escribiendo…" y notificaciones por WebSocket | HU-RT1, HU-RT2 | M5, M12 | Implementado |
+| M25 — Estructura del front (pro) | Estructura del ejercicio megasuper (`service/`, `context/`, un componente por carpeta, `.jsx`) + hooks `useFormulario` y `useAccion` | HT-1..HT-4 | M7–M24 | Implementado |
 
 Historias de usuario del enunciado y su módulo:
 
@@ -216,7 +217,7 @@ Formato: **contexto → opciones → decisión → justificación**.
   Las rutas de `app/` son archivos finos que delegan en `src/features/`, para conservar la estructura por features de clase.
 - **Grupos por rol**: `(comprador)` con tabs Explorar / Mis compras / Favoritos y `(organizador)` con tabs
   Mis eventos / Publicar evento. `app/index.js` redirige según la sesión y el rol.
-- Patrones de clase: **axios** con una función por endpoint (`src/api/api.js`), **Context API** para la sesión
+- Patrones de clase: **axios** con una función por endpoint (`src/api/api.js`; desde M25, un service por recurso en `src/service/`, ver D-46), **Context API** para la sesión
   (`SesionContext`, como `CartContext`), **custom hook** `useCarga` (como `useForm`), **polling** con `setInterval`
   y cleanup para el chat (como el popup de promociones).
 - Componentes propios con `StyleSheet` (sin librería de UI) para que se vean igual en mobile y web.
@@ -564,6 +565,79 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Sin consultar**: sólo transporte WebSocket (sin long-polling de Socket.IO, porque el sondeo propio ya es el
   respaldo); "escribiendo…" se anuncia al lector una vez por ráfaga, no en cada tecla.
 
+### D-46 — Front con la estructura del ejercicio de clase "megasuper" + custom hooks (M25)
+- **Contexto**: el usuario pidió que el front siga la estructura del ejercicio de clase `ejercicio-megasuper-2026`
+  (ramas `clase9-front-react-pt1` → `clase11-integracion-front-back`, `clase11-react-context-carrito` y
+  `chore/emotion-css-refactor`). Ese front es **React web** (CRA + MUI + React Router). Le pidió también que haya
+  custom hooks sólo donde fueran necesarios, como buena práctica de reutilización.
+- **Consultado**: el enunciado pide **React Native en un dispositivo mobile**. Se ofreció pasar el front a React web
+  y se eligió **mantener React Native** y adoptar la estructura del ejercicio. También se eligieron `ticket-it-pro`,
+  la spec primero (`specs/M25-estructura-front.md`), la extensión `.jsx` y los nombres en español.
+- **Estructura (equivalencias con megasuper)**:
+
+  | Megasuper | Ticket It Pro |
+  |---|---|
+  | `src/service/api.js` (axios + `mensajeDeError`) | `src/service/api.js`: `cliente` de axios, token, interceptor de errores y `datos()` |
+  | `src/service/productsService.js` (una función por endpoint) | Un service por recurso: `authService`, `usuariosService`, `eventosService`, `comprasService`, `mensajesService`, `cuponesService`, `imagenesService`, `notificacionesService`, `reseniasService` (+ `tiempoReal.js`, `almacenSesion.js`) |
+  | `src/context/CartContext.jsx` + `useCart()` | `src/context/`: `SesionContext`, `TemaContext`, `DialogosContext`, `NotificacionesContext`, cada uno con su `useX()` |
+  | `src/components/<nombre>/Componente.jsx` | Una carpeta por componente. `ui.js` (625 líneas), `Pantalla.js` (422) y `Carga.js` (478) se separaron en un archivo por componente, cada uno con sus estilos |
+  | `src/features/<pantalla>/` | Igual, con `.jsx` |
+  | `App.jsx` + `<Routes>` + `Layout` con `<Outlet/>` | `app/` de Expo Router (equivalente nativo, D-18) |
+  | `.css` / Emotion + `theme.js` | `StyleSheet` + `useEstilos` + `theme.js` (en React Native no hay CSS) |
+
+- **Custom hooks: sólo donde había repetición real**.
+  - **`useFormulario`** es el equivalente al `useForm` de la rama `evolutivo-9`. Lo usan los **7 formularios**: Login,
+    Registro, Recuperar (uno por paso), Perfil (datos y contraseña), Checkout, Cupones y Crear/Editar evento.
+    Antes cada uno repetía su propia versión de lo mismo:
+    - el estado de los valores;
+    - el "intento de envío" (los errores se muestran recién después de intentar enviar);
+    - los errores propios y los del backend por campo (`{ errores: [{ campo, mensaje }] }`);
+    - el error general y el estado "enviando";
+    - las refs de los campos, el foco en el primer error y el anuncio al lector de pantalla.
+
+    El hook también arma el resumen "Revisá 2 campos: nombre, email.". Las pantallas quedaron **200 líneas más
+    cortas** (+274 / −474).
+  - **`useAccion`** lo usan **9 pantallas, en 12 acciones**: comprar, favorito, compartir, reseñar, anotarse y salir
+    de la lista de espera, enviar mensaje, cancelar y utilizar la compra, abrir y leer notificaciones, desactivar un
+    cupón y subir una foto. Reemplaza el bloque que se repetía en cada una:
+    - marcar qué acción está en curso, para que su botón muestre "cargando";
+    - `try` → aviso de éxito / `catch` → diálogo de error / `finally`.
+
+    Acá el beneficio no son las líneas (quedan casi igual) sino que **todas las acciones se comportan igual** y el
+    manejo de errores está en un solo lugar.
+  - **Se mantienen** `useCarga` (17 pantallas) y `useEstilos` (todos los componentes). **Pasan a `hooks/`**
+    `useMovimientoReducido` y `usePulso`, que vivían escondidos dentro de `Carga.js`.
+  - **Descartados**:
+    - un hook para el sondeo o la conexión en vivo: el chat y la campana tienen lógicas distintas (el chat se
+      pone al día al reconectar y avisa quién escribe), y un hook común necesitaría tantas opciones que quedaría
+      más confuso que el código actual;
+    - `usePaginacion`: las listas no paginan en el cliente;
+    - hooks "por pantalla" que sólo moverían código a otro archivo sin reutilizarlo.
+- **Cómo se hizo**: la reestructuración (125 archivos) la hizo un script que movió y separó los archivos y reescribió
+  todos los imports. Un commit por historia técnica (HT-1+2, HT-3, HT-4), con los 262 E2E en verde en cada una. El
+  lint no detecta una clave de estilo faltante (`styles.x` indefinido no es un error), así que se verificó aparte
+  con un script.
+- **Cambios de comportamiento menores** (a favor de la consistencia):
+  - el formulario de Login también anuncia "Hay N campos para corregir";
+  - un error del backend por campo ahora siempre mueve el foco a ese campo (antes sólo lo hacía Registro);
+  - los resúmenes de errores de Recuperar y de cambiar la contraseña ahora nombran los campos.
+
+### D-47 — Prueba en un celular real con Expo Go
+- Hasta acá todo se probaba en web, con Playwright. Al abrir la app en un Samsung A54 con Expo Go aparecieron
+  **dos errores que sólo existen en el celular**:
+  1. **`Intl.RelativeTimeFormat` no existe en Hermes**, el motor de JavaScript de React Native. La app rompía
+     apenas abría, porque `formatearHace` ("hace 5 minutos") lo creaba al cargar el módulo. Se reemplazó por una
+     versión propia, que se comparó contra `Intl` en 57.046 fechas: da los mismos textos.
+  2. **`expo-secure-store` no acepta `:` en las claves**. Fallaba al iniciar sesión, porque la clave era
+     `ticket-it:token`. Pasó a llamarse `ticket-it.token`.
+- **Lección para la exposición**: los tests en el navegador no reemplazan a probar en el dispositivo real. Son
+  APIs que existen en Chrome pero no en Hermes, o que validan distinto en el celular.
+- **Para mostrarlo en la compu**:
+  - `scrcpy` duplica la pantalla del celular y se puede manejar con el mouse; se conecta por "Depuración
+    inalámbrica" con `adb pair` y `adb connect`;
+  - `REACT_NATIVE_PACKAGER_HOSTNAME=<IP de la PC> npm run start:dev` levanta el servidor con esa IP;
+  - `adb shell am start -d exp://<IP>:8081 host.exp.exponent` abre la app sin tocar el celular.
+
 ## 5. Avance
 
 ### Backend — completo (M0 a M6)
@@ -599,18 +673,18 @@ Formato: **contexto → opciones → decisión → justificación**.
 
 | Pantalla | Archivo | HU |
 |---|---|---|
-| Login (elegir usuario) | `src/features/login/Login.js` | D-03 |
-| Explorar | `src/features/explorar/Explorar.js` | HU-02, HU-03 |
-| Detalle de evento + compra | `src/features/evento/EventoDetalle.js` | HU-04, HU-12, favoritos |
-| Reseñas del organizador | `src/features/evento/ReseniasOrganizador.js` | HU-12 |
-| Calificar evento | `src/features/evento/Reseniar.js` | HU-11 |
-| Mis compras | `src/features/compras/MisCompras.js` | HU-05 |
-| Detalle de compra | `src/features/compras/CompraDetalle.js` | HU-09, HU-10, pagar, utilizar |
-| Chat | `src/features/compras/Chat.js` | HU-07, HU-08 |
-| Favoritos | `src/features/favoritos/Favoritos.js` | favoritos |
-| Mis eventos | `src/features/organizador/MisEventos.js` | ventas |
-| Compras de un evento | `src/features/organizador/ComprasDeEvento.js` | HU-06 |
-| Publicar evento | `src/features/organizador/CrearEvento.js` | HU-01 |
+| Login (elegir usuario) | `src/features/login/Login.jsx` | D-03 |
+| Explorar | `src/features/explorar/Explorar.jsx` | HU-02, HU-03 |
+| Detalle de evento + compra | `src/features/evento/EventoDetalle.jsx` | HU-04, HU-12, favoritos |
+| Reseñas del organizador | `src/features/evento/ReseniasOrganizador.jsx` | HU-12 |
+| Calificar evento | `src/features/evento/Reseniar.jsx` | HU-11 |
+| Mis compras | `src/features/compras/MisCompras.jsx` | HU-05 |
+| Detalle de compra | `src/features/compras/CompraDetalle.jsx` | HU-09, HU-10, pagar, utilizar |
+| Chat | `src/features/compras/Chat.jsx` | HU-07, HU-08 |
+| Favoritos | `src/features/favoritos/Favoritos.jsx` | favoritos |
+| Mis eventos | `src/features/organizador/MisEventos.jsx` | ventas |
+| Compras de un evento | `src/features/organizador/ComprasDeEvento.jsx` | HU-06 |
+| Publicar evento | `src/features/organizador/CrearEvento.jsx` | HU-01 |
 
 ### Versión pro — M9 a M14 + infraestructura (copia `ticket-it-pro/`)
 Hecha de forma autónoma a partir del TP terminado, una fase por commit (ver `git log` y `docs/RESUMEN-NOCHE.md`):
@@ -624,6 +698,27 @@ seguridad del backend, Docker, CI y lint del frontend.
 | `npm run lint` / `npm run format:check` | 0 errores, 0 avisos (backend **y frontend**) |
 | `expo-doctor` | 20/20 |
 | `docker compose up --build` | backend *healthy* + web; login y catálogo probados en un navegador sobre la build |
+
+### Estructura del front (M25, D-46)
+Misma organización que el ejercicio de clase `ejercicio-megasuper-2026`, en React Native:
+
+```
+packages/frontend/
+├── app/                      # rutas de Expo Router (como App.jsx + <Routes>); delegan en src/features
+└── src/
+    ├── service/              # api.js (axios + token + errores) y un service por recurso
+    │                         #   authService, usuariosService, eventosService, comprasService, mensajesService,
+    │                         #   cuponesService, imagenesService, notificacionesService, reseniasService,
+    │                         #   tiempoReal (Socket.IO), almacenSesion (token en SecureStore)
+    ├── context/              # SesionContext, TemaContext, DialogosContext, NotificacionesContext (+ useX)
+    ├── hooks/                # useCarga, useFormulario, useAccion, useEstilos, usePulso, useMovimientoReducido
+    ├── components/<nombre>/  # un componente por carpeta: boton/Boton.jsx, eventoCard/EventoCard.jsx,
+    │                         #   formulario/{Campo,CampoPassword,ResumenErrores}.jsx, carga/Esqueleto.jsx…
+    ├── features/<pantalla>/  # pantallas: explorar, evento, compras, checkout, organizador, perfil, login…
+    ├── mocks/                # MSW (D-39)
+    ├── utils/                # formato, accesibilidad, confirmar, compartir
+    └── theme.js
+```
 
 ## 6. Uso de IA durante el desarrollo (para la conclusión del video)
 
@@ -661,6 +756,18 @@ en lugar de asumir, errores detectados en el código de referencia, etc.
   el diseño estático no mostraba (la fecha tapada por la hoja del detalle, montos largos que no entraban, un avatar
   oscuro sobre cabecera oscura) y se corrigieron.
 
+- **Reestructurar con un script en vez de a mano (M25)**: mover y separar 125 archivos del front y reescribir
+  todos sus imports lo hizo un script que primero corrió "en seco" (mostrando qué iba a hacer). El script
+  también se equivocó: no reconocía `export async function` ni los nombres usados con `...spread`. El lint y
+  `expo export` lo detectaron antes de los tests, y una clave de estilo faltante (que el lint no ve) se buscó con
+  otro script. Las 3 historias técnicas pasaron los 262 E2E sin tocar los tests: los tests de comportamiento
+  son los que permiten refactorizar con confianza.
+- **Hooks sólo donde hay repetición**: antes de crear `useFormulario` y `useAccion` se midió cuántas pantallas
+  repetían cada patrón (7 formularios, 12 acciones). Los candidatos que no se repetían o tenían lógicas
+  distintas (sondeo, paginación) se descartaron, y quedaron registrados como descartados.
+- **El celular real encontró lo que 262 E2E no veían** (D-47): dos APIs que existen en Chrome pero no en Hermes
+  o en SecureStore. Los tests corrían todos en un navegador.
+
 - **Accesibilidad: la herramienta automática dio "0 violaciones" y estaba mal.** La primera auditoría con axe pasó
   limpia, pero al mirar el árbol de accesibilidad (lo que "escucha" un lector de pantalla) y navegar con Tab
   aparecieron barreras reales. Y al revés: cuando se agregó Playwright con más reglas (WCAG 2.1), axe marcó que los
@@ -683,6 +790,11 @@ en lugar de asumir, errores detectados en el código de referencia, etc.
 
 ## 7. Guion sugerido para la exposición
 
+> **Guion completo y actualizado**: [`docs/GUION-EXPOSICION.md`](GUION-EXPOSICION.md). Incluye el flujo minuto a
+> minuto (comprar sin superar el cupo → pagar → mis compras → cancelar con reembolso → el organizador ve el cupo
+> liberado), el checklist antes de grabar, el mapa "tema de la materia → dónde aparece" y las preguntas
+> posibles. Lo que sigue es la primera versión.
+
 1. Problema y dominio (diagrama de clases del enunciado).
 2. Metodología SDD + HU: mostrar una spec y su trazabilidad a tests.
 3. Flujo elegido — Back-End: ruta → controller → service → entidad → repositorio; manejo de errores.
@@ -692,9 +804,9 @@ en lugar de asumir, errores detectados en el código de referencia, etc.
    `CompraRepository.save` → `compraDTO` (estado, historial, acciones). Errores 403/422 por el `errorHandler` global.
    Mostrarlo en Swagger con la compra 1 (`x-user-id: 3`) y luego intentar cancelar la 5 (UTILIZADA → 422).
 4. Flujo elegido — Front-End: pantalla → api → estado. Para cancelar una compra:
-   `app/compra/[id]/index.js` → `CompraDetalle.js` (`useCarga(getCompra)`; los botones salen de
-   `accionesDisponibles`) → `confirmar()` → `cancelarCompra()` en `src/api/api.js` (axios + interceptor con
-   `x-user-id`) → se actualiza el estado con la respuesta (estado REEMBOLSADA + historial).
+   `app/compra/[id]/index.jsx` → `CompraDetalle.jsx` (`useCarga(getCompra)`; los botones salen de
+   `accionesDisponibles`) → `confirmar()` → `useAccion().ejecutar("CANCELAR", …)` → `cancelarCompra()` en
+   `src/service/comprasService.js` (axios + interceptor con el token JWT) → se actualiza el estado con la respuesta (estado REEMBOLSADA + historial).
 5. Demo en la interfaz: entrar como Sofía → Mis compras → compra "Noche Indie" confirmada → Cancelar → ver el
    seguimiento; luego entrar como Lucía → Mis eventos → Ver compras → el cupo liberado.
 6. Conclusión sobre IA: ventajas, desventajas, dificultades, aprendizajes, impacto en productividad/calidad.

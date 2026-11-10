@@ -32,6 +32,13 @@ Copia del TP en `ticket-it-pro/`, con repo git propio y un commit por fase (`git
 | M23 | Recuperar la contraseña con código por email simulado |
 | M24 | Chat y notificaciones en tiempo real con WebSockets (el sondeo queda de respaldo) |
 
+## Tercera tanda (a pedido)
+
+| Módulo | Qué agrega |
+|---|---|
+| M25 | Front con la estructura del ejercicio de clase megasuper (`service/`, `context/`, un componente por carpeta, `.jsx`) y los hooks `useFormulario` y `useAccion` (D-46) |
+| — | Dos arreglos que sólo aparecían en el celular real con Expo Go (D-47) |
+
 ## Cómo verificarlo
 
 ```bash

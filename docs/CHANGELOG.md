@@ -32,6 +32,13 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
 - **Recuperar contraseña (M23)** — código de 6 números por email simulado (D-44).
 - **Tiempo real (M24)** — chat, "escribiendo…" y notificaciones por WebSocket (Socket.IO), con el sondeo como
   respaldo si no hay conexión (D-45).
+- **Custom hooks `useFormulario` y `useAccion` (M25)** — los usan los 7 formularios y 12 acciones de 9 pantallas
+  (D-46).
+
+### Estructura del front (M25)
+- El front sigue la estructura del ejercicio de clase megasuper: `src/service/` (un service por recurso, antes
+  `src/api/api.js`), `src/context/` (antes `src/store/`), un componente por carpeta (`ui.js`, `Pantalla.js` y
+  `Carga.js` separados) y `.jsx` en todo archivo con JSX (D-46).
 
 ## Cambiado
 - El encabezado de las pantallas principales: saludo + campana + Cuenta arriba, título + acción abajo.
@@ -40,6 +47,8 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
 - `app.json`: modo oscuro del sistema también en el celular (`userInterfaceStyle: automatic`), colores de marca.
 
 ## Corregido
+- En el celular (Expo Go) la app rompía al abrir: Hermes no trae `Intl.RelativeTimeFormat` (D-47).
+- En el celular fallaba el inicio de sesión: SecureStore no acepta `:` en la clave del token (D-47).
 - El resumen de errores de "Publicar evento" usaba un color fijo que no respetaba el modo oscuro.
 - 38 avisos de lint en el frontend (imports y variables sin usar, un componente sin nombre).
 

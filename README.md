@@ -23,13 +23,17 @@ en el celular (Expo Go) y en el navegador.
 
 ## Arquitectura
 
-Monorepo con npm workspaces. El backend sigue la arquitectura en capas del repositorio de clase.
+Monorepo con npm workspaces. El backend sigue la arquitectura en capas del repositorio de clase y el front, la
+estructura del ejercicio de clase `ejercicio-megasuper-2026` (`service/`, `context/`, `hooks/`, un componente por
+carpeta; ver D-46).
 
 ```mermaid
 flowchart LR
   subgraph Frontend["packages/frontend · React Native + Expo Router"]
-    P[Pantallas<br/>src/features] --> C[Contexts<br/>sesión · tema · notificaciones]
-    P --> A[src/api<br/>axios + token JWT]
+    P[Pantallas<br/>src/features] --> C[src/context<br/>sesión · tema · notificaciones]
+    P --> H[src/hooks<br/>useCarga · useFormulario · useAccion]
+    P --> A[src/service<br/>un service por recurso · axios + token JWT]
+    H --> A
   end
   A -- "HTTP / JSON<br/>Authorization: Bearer" --> R
   subgraph Backend["packages/backend · Node + Express 5"]
@@ -46,8 +50,8 @@ ticket-it-pro/
 ├── packages/
 │   ├── backend/     # API REST (Express 5, Zod, JWT, Swagger) · Dockerfile
 │   └── frontend/    # App React Native + Expo (web y mobile) · Dockerfile + nginx
-├── specs/           # Una spec por módulo (SDD + historias de usuario), M0 a M24
-├── docs/            # Bitácora de decisiones (D-01 a D-45), alcance, changelog y capturas
+├── specs/           # Una spec por módulo (SDD + historias de usuario), M0 a M25
+├── docs/            # Bitácora de decisiones (D-01 a D-47), alcance, changelog y capturas
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
 ```

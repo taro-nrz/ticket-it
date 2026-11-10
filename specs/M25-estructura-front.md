@@ -1,6 +1,6 @@
 # M25 — Estructura del front como el ejercicio de clase (megasuper)
 
-**Estado**: En revisión
+**Estado**: Implementada (D-46)
 **Depende de**: M7–M24 (no agrega funciones: reorganiza el front que ya existe)
 **Historias incluidas**: HT-1 a HT-4 (historias técnicas)
 
@@ -68,10 +68,10 @@ duplicado que hoy existe en al menos 3 pantallas.
   reutilizarlo.
 
 ## Preguntas abiertas
-- [ ] P-1: ¿Extensión `.jsx` para todo lo que tiene JSX, como en megasuper? Propuesta: sí. Eso incluye
+- [x] P-1 (sí): ¿Extensión `.jsx` para todo lo que tiene JSX, como en megasuper? Propuesta: sí. Eso incluye
   componentes, pantallas y contexts, porque los contexts renderizan su Provider. `.js` queda para service,
   hooks y utils.
-- [ ] P-2: ¿Nombres de carpetas y archivos en español, como el resto del TP (`eventoCard/EventoCard.jsx`), o en
+- [x] P-2 (español): ¿Nombres de carpetas y archivos en español, como el resto del TP (`eventoCard/EventoCard.jsx`), o en
   inglés como megasuper (`productGrid`)? Propuesta: español, como el dominio y las decisiones anteriores.
 
 ---
@@ -105,8 +105,8 @@ en un único lugar.
 | 4 | Expo Go en el celular (Samsung A54) | Login, compra, QR y chat funcionan |
 
 ## Tareas (un commit por tarea)
-- [ ] HT-1: service por recurso
-- [ ] HT-2: context/, componentes en carpetas, `.jsx`
-- [ ] HT-3: `useFormulario` + los 7 formularios
-- [ ] HT-4: `useAccion` + sus usos
-- [ ] Documentar la decisión D-46 en `docs/DOCUMENTACION.md` y la estructura en el README
+- [x] HT-1: service por recurso
+- [x] HT-2: context/, componentes en carpetas, `.jsx`
+- [x] HT-3: `useFormulario` + los 7 formularios
+- [x] HT-4: `useAccion` + sus usos (12 acciones en 9 pantallas; en CrearEvento el error lo maneja `useFormulario`)
+- [x] Documentar la decisión D-46 en `docs/DOCUMENTACION.md` y la estructura en el README
