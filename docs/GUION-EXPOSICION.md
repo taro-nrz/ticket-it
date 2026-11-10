@@ -192,6 +192,58 @@ Decilo con tus palabras. Estos son los puntos con ejemplos concretos de este TP 
 
 ---
 
+## Teoría vs. implementación: qué remarcar
+
+Mencionar 2 o 3 de estos contrastes durante la explicación del back y del front demuestra que conocés la teoría
+**y** que tomaste decisiones conscientes. La fórmula es: *"la teoría dice X; acá hice Y, porque Z; el costo es W"*.
+
+### Back-End
+
+| Tema | Lo que dice la teoría | Lo que hice y por qué | El costo, o lo que cambiaría |
+|---|---|---|---|
+| **Arquitectura en capas** | Cada capa conoce sólo a la de abajo; el dominio no sabe nada de HTTP ni de la base | Se cumple: las entidades no importan Express ni los repositorios, y los controllers no tienen reglas de negocio | El service también arma el DTO (como en clase). En una arquitectura más estricta habría un *mapper* aparte |
+| **Modelo rico vs. anémico** | En POO, el objeto que tiene los datos tiene el comportamiento (los services de clase concentraban mucha lógica) | Las reglas viven en las entidades: `TipoEntrada.reservar`, `Compra.cancelar`, `accionesDisponiblesPara`. El service orquesta y chequea permisos | Hay que decidir caso por caso qué es regla de dominio (entidad) y qué es de aplicación (service: permisos, notificar) |
+| **Repositorio / persistencia** | El repositorio aísla la persistencia: cambiar de base no toca el resto | Interfaz async igual a la de Mongoose; cambiar a Mongo sólo toca `models/repositories/` | **Trampa del modo en memoria**: `findById` devuelve **la misma instancia**, así que modificar una entidad "persiste" aunque no se llame a `save`. Igual se llama siempre a `save`, porque con una base real sería obligatorio. Al reiniciar, se pierde todo |
+| **Transacciones (ACID)** | Una operación que modifica varias cosas tiene que ser atómica | Cancelar toca la compra, el cupo del evento y el cupón. En memoria es atómico de hecho (un hilo, sin `await` en el medio de la regla) | Con Mongo haría falta una **transacción** (`startSession` / `commitTransaction`, como en la rama `persistencia-odm-2026`) |
+| **REST** | Recursos + verbos: cambiar algo sería `PATCH /compra/:id { estado }` | Cada transición es una **acción**: `POST /compra/:id/cancelar`, `/pagar`, `/utilizar` | Es menos "REST puro", pero el estado **no se edita libremente**: cada transición tiene reglas y efectos (reembolso, liberar cupo). Un PATCH genérico invitaría a saltearlas |
+| **Códigos HTTP** | 400 = request mal formado; 409 = conflicto con el estado del recurso; 422 = bien formado pero inválido | 400 para Zod, 422 para reglas de negocio (`BusinessRuleError`), 409 para duplicados (email ya registrado) | Es una convención: lo importante es ser **consistente** y documentarlo (Swagger) |
+| **Máquina de estados** | Estados y transiciones explícitos, en vez de `if` dispersos | `TRANSICIONES_VALIDAS` + `actualizarEstado` (único punto que cambia el estado y registra el historial) | Agregar un estado (por ejemplo VENCIDA en M15) es agregar una fila a la tabla, no buscar `if` por todo el código |
+| **Diagrama del enunciado** | Es "tentativo" | Se respetó y se extendió: `CambioEstadoCompra` como historial, el estado VENCIDA, `TipoEntrada.vendidas` para el cupo | Los cambios están justificados en la bitácora (D-xx), no se hicieron "porque sí" |
+| **Autenticación stateless (JWT)** | El servidor no guarda sesiones: escala horizontalmente | El token firmado viaja en cada request y lo valida un middleware | **No se puede revocar**: cambiar la contraseña no invalida los tokens ya emitidos. Haría falta una lista de revocación o *refresh tokens* (D-30) |
+| **Validación** | No confiar nunca en el cliente | Zod en el back siempre; el front valida para dar una buena experiencia | Las reglas están **duplicadas** (front y back). Es un costo aceptado: defensa en profundidad vs. DRY |
+| **Inyección de dependencias** | Las dependencias entran desde afuera, para poder reemplazarlas (tests) | Por constructor en `app.js`, incluido un **reloj** inyectable: los tests fijan "hoy" sin depender de la fecha real | Sin un contenedor de DI, `app.js` crece con cada módulo (se acepta: es explícito y fácil de seguir) |
+| **Seguridad de pagos** | Nunca guardar datos sensibles de tarjetas (PCI) | La pasarela es simulada, pero sólo se guardan la marca y los **últimos 4 dígitos**, nunca el número completo ni el CVV | — |
+
+### Front-End
+
+| Tema | Lo que dice la teoría | Lo que hice y por qué | El costo, o lo que cambiaría |
+|---|---|---|---|
+| **Custom hooks** | Extraer lógica con estado para reutilizarla | `useFormulario` (7 formularios) y `useAccion` (12 acciones): se crearon **después de medir la repetición** | **No abstraer antes de tiempo**: un hook para el sondeo o la paginación se descartó, porque sumaba opciones y confusión sin reutilizar nada (D-46) |
+| **Context API** | Evita el *prop drilling* para el estado global | Sólo para lo realmente global: sesión, tema, diálogos, contador de notificaciones | Un cambio en el Context re-renderiza a todos sus consumidores: por eso **no** se puso todo el estado ahí. Los datos de cada pantalla viven en la pantalla (`useCarga`) |
+| **Fuente de verdad** | El back es dueño de las reglas | Los botones salen de `accionesDisponibles`: el front no decide si se puede cancelar | Si una regla cambia, cambia en un solo lugar. El front sólo muestra |
+| **Polling vs. push** | El sondeo es simple pero desperdicia requests y tiene demora; el push (WebSockets) es inmediato | El chat empezó con `setInterval` (como el popup de clase) y pasó a Socket.IO. El mensaje se **envía por REST** y el socket sólo **avisa** | Más complejidad (conexión, reconexión, permisos por sala). Por eso el sondeo quedó **de respaldo** si se cae el socket |
+| **Estados de carga** | Feedback inmediato al usuario | El tipo de carga se elige según la situación: esqueleto la primera vez, barra fina al recargar, aviso si tarda más de 8 s | Más componentes que un spinner único, pero la pantalla no "salta" cuando llegan los datos |
+| **Accesibilidad** | WCAG 2.2 AA: rol, nombre, estado, contraste, foco | Tests automáticos con axe en cada pantalla + revisión del árbol de accesibilidad | **Lo automático no alcanza**: axe dio "0 violaciones" y había barreras reales que sólo aparecieron navegando con el teclado y el lector |
+| **Testing** | Pirámide: muchos unitarios, menos de integración, pocos E2E | Más peso en integración (Supertest por criterio de aceptación) y en E2E por historia | Los E2E corren en un navegador: **no detectaron dos bugs que sólo existían en el celular** (D-47). Haría falta correr E2E en el dispositivo (por ejemplo con Detox o Maestro) |
+| **Multiplataforma** | "*Write once, run anywhere*" | El mismo código corre en web y en Android | No es 100 % igual: Hermes no trae todas las APIs de Chrome y SecureStore valida distinto. Hay que **probar en el dispositivo real** |
+
+### Cómo usarlo en el video (ejemplos de frases)
+- Al mostrar `Compra.cancelar()`:
+  > "En clase vimos que la lógica solía estar en el service. Yo la puse en la entidad, porque es la que tiene el
+  > estado y el cupo, y así ningún camino puede saltearse la regla."
+- Al mostrar la ruta `POST /compra/:id/cancelar`:
+  > "No es un PATCH del estado, porque el estado no se edita libremente: cada transición tiene reglas y efectos,
+  > como el reembolso o liberar el cupo."
+- Al mostrar el repositorio:
+  > "Es en memoria, como pide el enunciado, pero con la misma interfaz que uno de Mongoose. Lo que perdería al
+  > pasar a Mongo es la atomicidad gratis: cancelar necesitaría una transacción."
+- Al mostrar `useAccion`:
+  > "No hice hooks por hacer: medí que el mismo bloque se repetía en 9 pantallas. Los casos que no se repetían
+  > los dejé como estaban."
+- En la conclusión:
+  > "Los 262 tests pasaban y la app igual se rompía en el celular: los tests corrían en un navegador. Eso me
+  > enseñó que la IA y los tests ayudan, pero no reemplazan probar en el dispositivo real."
+
 ## Mapa: temas de la materia → dónde aparecen en el flujo
 
 Te sirve para responder preguntas o para nombrar los conceptos al pasar.
