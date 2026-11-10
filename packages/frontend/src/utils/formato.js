@@ -72,20 +72,42 @@ export function fechaParaLector(fechaISO) {
 }
 
 // D-32: "hace 5 minutos", "ayer", "hace 3 días"
-const relativo = new Intl.RelativeTimeFormat("es-AR", { numeric: "auto" });
+// Hecho a mano: Hermes (el motor de JS del celular) no trae Intl.RelativeTimeFormat.
+// Da los mismos textos que Intl.RelativeTimeFormat("es-AR", { numeric: "auto" }).
+const UNIDADES = [
+  {
+    duracion: 60 * 60 * 24 * 365,
+    nombres: ["año", "años"],
+    pasado: "el año pasado",
+    proximo: "el próximo año",
+  },
+  {
+    duracion: 60 * 60 * 24 * 30,
+    nombres: ["mes", "meses"],
+    pasado: "el mes pasado",
+    proximo: "el próximo mes",
+  },
+  {
+    duracion: 60 * 60 * 24 * 7,
+    nombres: ["semana", "semanas"],
+    pasado: "la semana pasada",
+    proximo: "la próxima semana",
+  },
+  { duracion: 60 * 60 * 24, nombres: ["día", "días"], pasado: "ayer", proximo: "mañana" },
+  { duracion: 60 * 60, nombres: ["hora", "horas"] },
+  { duracion: 60, nombres: ["minuto", "minutos"] },
+];
 export function formatearHace(fecha, ahora = new Date()) {
   const segundos = Math.round((new Date(fecha) - ahora) / 1000);
-  const unidades = [
-    ["year", 60 * 60 * 24 * 365],
-    ["month", 60 * 60 * 24 * 30],
-    ["week", 60 * 60 * 24 * 7],
-    ["day", 60 * 60 * 24],
-    ["hour", 60 * 60],
-    ["minute", 60],
-  ];
-  for (const [unidad, duracion] of unidades) {
-    if (Math.abs(segundos) >= duracion)
-      return relativo.format(Math.round(segundos / duracion), unidad);
+  for (const unidad of UNIDADES) {
+    if (Math.abs(segundos) < unidad.duracion) continue;
+    const valor = Math.round(segundos / unidad.duracion);
+    if (valor === -1 && unidad.pasado) return unidad.pasado;
+    if (valor === 1 && unidad.proximo) return unidad.proximo;
+    if (valor === -2 && unidad.duracion === 60 * 60 * 24) return "anteayer";
+    if (valor === 2 && unidad.duracion === 60 * 60 * 24) return "pasado mañana";
+    const texto = plural(Math.abs(valor), ...unidad.nombres);
+    return valor < 0 ? `hace ${texto}` : `dentro de ${texto}`;
   }
   return "recién";
 }

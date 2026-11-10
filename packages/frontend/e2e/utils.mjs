@@ -28,6 +28,6 @@ export async function entrarComo(page, usuarioId) {
   if (!respuesta.ok()) throw new Error(`No se pudo iniciar sesión como ${EMAILS[usuarioId]}`);
   const { token } = await respuesta.json();
   await page.addInitScript((valor) => {
-    window.localStorage.setItem("ticket-it:token", valor);
+    window.localStorage.setItem("ticket-it.token", valor);
   }, token);
 }

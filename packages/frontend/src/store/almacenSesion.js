@@ -2,7 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-const CLAVE_TOKEN = "ticket-it:token";
+// SecureStore sólo acepta letras, números, ".", "-" y "_" en la clave (sin ":")
+const CLAVE_TOKEN = "ticket-it.token";
 
 // D-29: en el celular el token se guarda cifrado (Keychain / Keystore con expo-secure-store);
 // en web no existe ese almacenamiento, así que se usa localStorage (AsyncStorage).
