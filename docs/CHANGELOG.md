@@ -22,7 +22,6 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
 ### Segunda tanda (M15–M23)
 - **Reserva con vencimiento (M15)** — una compra sin pagar vence a los 15 minutos y libera el cupo (D-36).
 - **Checkout (M16)** — pago con tarjeta y pasarela simulada; sólo se guardan marca y últimos 4 (D-37).
-- **Cupones (M17)** — porcentaje, monto fijo y 2×1 por evento, con polimorfismo (D-38).
 - **Estados de carga y MSW (M18)** — esqueletos, barra de recarga, imágenes progresivas, aviso de demora; MSW con
   latencia y modo sin backend con datos generados desde la API real (D-39).
 - **Lista de espera (M19)** — aviso y 30 minutos de prioridad cuando se libera cupo (D-40).
@@ -41,10 +40,18 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
   `Carga.js` separados) y `.jsx` en todo archivo con JSX (D-46).
 
 ## Cambiado
+- **Tipos de entrada del enunciado (M27, D-49)**: cada tipo es General, Platea o VIP (lista fija, validada en el
+  back y elegida con chips en el formulario).
+- **Estilo visual "Plastilina" (M26, D-48)**: fondo lila y pasteles, contorno grueso y sombra dura en lo que se
+  toca, Bagel Fat One + Figtree. No cambia ninguna funcionalidad.
+- "1 disponibles" pasó a "Queda 1" / "Quedan N".
 - El encabezado de las pantallas principales: saludo + campana + Cuenta arriba, título + acción abajo.
 - `CrearEvento` sirve también para editar. El menú "Cuenta" suma "Mi perfil" y muestra el email.
 - ESLint revisa también el frontend (React + hooks) y `npm run lint` falla ante cualquier aviso.
 - `app.json`: modo oscuro del sistema también en el celular (`userInterfaceStyle: automatic`), colores de marca.
+
+## Quitado
+- **Cupones de descuento (M17)**: el enunciado no los pide (D-49).
 
 ## Corregido
 - En el celular (Expo Go) la app rompía al abrir: Hermes no trae `Intl.RelativeTimeFormat` (D-47).

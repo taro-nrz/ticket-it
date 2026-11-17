@@ -1,5 +1,7 @@
 # Guion de la exposición (video de 5 a 10 minutos)
 
+> El texto exacto para decir, minuto a minuto, está en [`GUION-VIDEO.md`](GUION-VIDEO.md).
+
 Lo que pide el enunciado:
 - **un** flujo funcional explicado de punta a punta;
 - su implementación en el **Back-End**;
@@ -9,6 +11,16 @@ Lo que pide el enunciado:
 
 Se valora sobre todo el **criterio** y la **justificación de las decisiones**. Por eso el guion no sólo muestra
 *qué* hace cada archivo: también dice **por qué** está hecho así, que es lo que demuestra que entendiste los temas.
+
+## Cómo elegir el flujo
+
+El enunciado pide **un** flujo, a elección. Conviene el que más capas y reglas muestra en pocos minutos:
+
+| Flujo | HU | Qué muestra bien | Por qué sí o por qué no |
+|---|---|---|---|
+| **Comprar y cancelar con reembolso** (recomendado) | HU-04, 05, 06, 09, 10 | Cupo, máquina de estados, reembolso automático, permisos, errores 403/422, comprador y organizador | Es el corazón del dominio y se ve el efecto en las dos puntas (Juan y Martín) |
+| Publicar un evento y verlo en el catálogo | HU-01, 02, 03 | Formulario con validación, tipos General/Platea/VIP (D-49), búsqueda y filtros | Muy visual, pero las reglas de negocio son pocas (casi todo es validación) |
+| Comprar y reseñar después del evento | HU-04, 07, 12 | Reseñas y reputación del organizador | Depende de fechas: hay que usar datos de la semilla ya "pasados", y se explica peor en vivo |
 
 ## El flujo elegido: "Comprar una entrada y cancelarla con reembolso"
 
@@ -24,7 +36,7 @@ Es el ciclo de vida de una compra. Recorre todas las capas y toca 5 de las 12 hi
 
 Datos de la semilla que sirven para la demo:
 - **Evento**: "Superclásico de verano", organizado por Martín.
-- **Tipo de entrada**: Platea, con **cupo 2 y 1 ya vendida**. Queda exactamente 1, así que se ve el tope del cupo en vivo.
+- **Tipos de entrada**: los del enunciado, **General, Platea o VIP** (D-49). Platea tiene **cupo 2 y 1 ya vendida**. Queda exactamente 1, así que se ve el tope del cupo en vivo.
 - **Comprador**: Juan (`juan@ticketit.com` / `ticketit123`).
 - **Organizador**: Martín (`martin@ticketit.com` / `ticketit123`).
 
@@ -84,7 +96,7 @@ Datos de la semilla que sirven para la demo:
 1. Ingresá como **Juan**. Mostrá que el **login** te lleva a la sección de comprador (rol COMPRADOR).
 2. En **Explorar**, buscá "super" (búsqueda textual) y probá un filtro por categoría y el **orden**. Así se ven
    HU-02, HU-03 y HU-11 sin detenerte.
-3. Entrá al **Superclásico**. La Platea dice **"1 disponibles"**. Elegila e intentá subir la cantidad: **el `+` se
+3. Entrá al **Superclásico**. La Platea dice **"Queda 1"**. Elegila e intentá subir la cantidad: **el `+` se
    deshabilita en 1**.
    > "El front no deja superar el cupo, pero la regla real vive en el back. Ahora lo muestro."
 4. Comprá 1. La compra nace **PENDIENTE**, con 15 minutos para pagar. Pagá con la **tarjeta de prueba**.
@@ -100,7 +112,7 @@ Contalo como el viaje de `POST /compra` y después mostrá en qué cambia `POST 
 | Auth | `middlewares/usuarioMiddleware.js` | Lee `Authorization: Bearer <JWT>`, verifica la firma y deja `req.usuario`. Al pasar de `x-user-id` a JWT **no cambió ninguna ruta**, porque la identificación estaba aislada en un middleware |
 | Controller | `controllers/compraController.js` → `create` | Sólo HTTP: **valida el body con Zod** (`comprarSchema`: tipos y que la cantidad sea un entero positivo) → **400** con los errores por campo. Llama al service y responde **201**. `try/catch` → `next(error)` |
 | Service | `services/compraService.js` → `comprar` | **Orquesta**: busca el evento en el repositorio (**404** si no existe), revisa que no esté cancelado ni haya pasado (**422**) y pide al tipo de entrada que reserve. Las dependencias entran **por constructor**: repositorios, el **reloj** (para testear fechas), notificaciones. Devuelve un **DTO**, no la entidad |
-| Entidad | `models/entities/tipoEntrada.js` → `hayCupoPara` / `reservar` | **Modelo rico**: la regla "no superar el cupo" está en el objeto que tiene el dato. Si no hay cupo, `reservar` lanza `BusinessRuleError("…quedan N…")` |
+| Entidad | `models/entities/tipoEntrada.js` → `hayCupoPara` / `reservar` | **Modelo rico**: la regla "no superar el cupo" está en el objeto que tiene el dato. Si no hay cupo, `reservar` lanza `BusinessRuleError("…quedan N…")`. Los nombres posibles son el falso enum `NombreTipoEntrada` (General, Platea, VIP, como dice el enunciado) y Zod rechaza otros con 400 |
 | Entidad | `models/entities/compra.js` + `estadoCompra.js` | `EstadoCompra` es un **falso enum** (`Object.freeze`, como en clase). `TRANSICIONES_VALIDAS` define la **máquina de estados**, y `actualizarEstado` rechaza los saltos inválidos y guarda el **historial** (quién y cuándo) |
 | Repositorio | `models/repositories/compraRepository.js` | **En memoria**, pero con **interfaz async** (`findById`, `save`…) igual que uno de Mongoose: cambiar la persistencia sólo tocaría esta capa |
 | DTO | `dtos/compraDTO.js` | Arma lo que necesita la pantalla: estado, `diasRestantes` y **`accionesDisponibles`** (`PAGAR`, `CANCELAR`…). Así el front no duplica las reglas |
@@ -159,12 +171,29 @@ Mencioná también la **compra** (`features/evento/EventoDetalle.jsx`):
    el **historial** PENDIENTE → CONFIRMADA → CANCELADA → REEMBOLSADA, con quién y cuándo.
 2. Cerrá sesión y entrá como **Martín**. Aparece la **notificación** de la cancelación, que llega en tiempo real
    por WebSocket. Andá a **Mis eventos → Superclásico → Ver compras** (HU-06): la compra de Juan figura como
-   REEMBOLSADA y la Platea vuelve a mostrar **1 disponible**.
+   REEMBOLSADA y la Platea vuelve a mostrar **"Queda 1"**.
 
 ### 7. Conclusión sobre el uso de IA (8:15 – 9:30)
 
-Decilo con tus palabras. Estos son los puntos con ejemplos concretos de este TP (detalle en
-`docs/DOCUMENTACION.md`, sección 6):
+El enunciado pide cinco cosas: **ventajas, desventajas, dificultades, aprendizajes y una valoración personal**
+sobre la productividad y la calidad. Decilo con tus palabras; abajo hay una versión de ~70 segundos para usar de
+base y, después, los puntos con más detalle (también en `docs/DOCUMENTACION.md`, sección 6).
+
+**Versión para decir (≈ 70 s):**
+> "Usé IA en todo el proceso, pero con un método: primero la spec con historias de usuario y criterios de
+> aceptación, después el código y un test por criterio. **La ventaja** más clara fue la velocidad: el backend con
+> tests y Swagger salió en una sesión, y me ayudó a seguir el estilo del repo de clase, incluso marcando errores que
+> tenía ese código. **La desventaja** es que genera mucho y se equivoca con seguridad: un import que corría antes que
+> `dotenv`, una auditoría de accesibilidad que daba cero errores y no era cierto, y dos bugs que sólo aparecieron en
+> el celular aunque pasaban los 262 tests del navegador. **La dificultad** fue revisar: sin specs ni tests no hubiera
+> sabido si lo que generaba estaba bien. También vi que la IA es probabilística: sin una dirección propia, todos los
+> TPs terminan pareciéndose, así que el diseño visual lo elegí yo comparando opciones. Y facilita agregar cosas que
+> nadie pidió: saqué los cupones porque no estaban en el enunciado. **Aprendí** que las decisiones tienen que ser
+> mías y quedar escritas, que hay que probar en el dispositivo real y que la IA rinde cuando hay contra qué medirla.
+> **En mi valoración**, me hizo bastante más productivo, y la calidad depende de cuánto reviso: la IA escribe
+> rápido, pero el criterio lo pongo yo."
+
+**Puntos con más detalle:**
 
 - **Ventajas**:
   - **Velocidad**: el backend completo, con tests y Swagger, salió en una sesión.
@@ -183,8 +212,13 @@ Decilo con tus palabras. Estos son los puntos con ejemplos concretos de este TP 
   - Que la IA **pregunte** en vez de asumir en las reglas de negocio (reembolso, roles, cupo máximo por compra).
 - **Aprendizajes**:
   - Con **specs y tests** primero, la IA se vuelve útil: hay contra qué medir lo que genera.
-  - Las **decisiones** las toma una persona y quedan registradas (47 decisiones en la bitácora).
+  - Las **decisiones** las toma una persona y quedan registradas (49 decisiones en la bitácora).
   - Siempre **probar en el dispositivo real**.
+  - La IA **no tiene gusto propio**: sus respuestas son probabilísticas y tienden a lo más común. El estilo visual
+    se eligió comparando prototipos (D-48), para que la app no se parezca a la de otros TPs.
+  - **Controlar el alcance**: con IA agregar funciones es barato, pero cada una suma código para mantener y
+    explicar. Los cupones se sacaron porque el enunciado no los pedía; los tipos de entrada quedaron como dice el
+    enunciado: General, Platea o VIP (D-49).
 - **Valoración personal** (completala vos):
   - ¿cuánto te ahorró?
   - ¿qué no delegarías?
@@ -204,7 +238,7 @@ Mencionar 2 o 3 de estos contrastes durante la explicación del back y del front
 | **Arquitectura en capas** | Cada capa conoce sólo a la de abajo; el dominio no sabe nada de HTTP ni de la base | Se cumple: las entidades no importan Express ni los repositorios, y los controllers no tienen reglas de negocio | El service también arma el DTO (como en clase). En una arquitectura más estricta habría un *mapper* aparte |
 | **Modelo rico vs. anémico** | En POO, el objeto que tiene los datos tiene el comportamiento (los services de clase concentraban mucha lógica) | Las reglas viven en las entidades: `TipoEntrada.reservar`, `Compra.cancelar`, `accionesDisponiblesPara`. El service orquesta y chequea permisos | Hay que decidir caso por caso qué es regla de dominio (entidad) y qué es de aplicación (service: permisos, notificar) |
 | **Repositorio / persistencia** | El repositorio aísla la persistencia: cambiar de base no toca el resto | Interfaz async igual a la de Mongoose; cambiar a Mongo sólo toca `models/repositories/` | **Trampa del modo en memoria**: `findById` devuelve **la misma instancia**, así que modificar una entidad "persiste" aunque no se llame a `save`. Igual se llama siempre a `save`, porque con una base real sería obligatorio. Al reiniciar, se pierde todo |
-| **Transacciones (ACID)** | Una operación que modifica varias cosas tiene que ser atómica | Cancelar toca la compra, el cupo del evento y el cupón. En memoria es atómico de hecho (un hilo, sin `await` en el medio de la regla) | Con Mongo haría falta una **transacción** (`startSession` / `commitTransaction`, como en la rama `persistencia-odm-2026`) |
+| **Transacciones (ACID)** | Una operación que modifica varias cosas tiene que ser atómica | Cancelar toca la compra y el cupo del evento. En memoria es atómico de hecho (un hilo, sin `await` en el medio de la regla) | Con Mongo haría falta una **transacción** (`startSession` / `commitTransaction`, como en la rama `persistencia-odm-2026`) |
 | **REST** | Recursos + verbos: cambiar algo sería `PATCH /compra/:id { estado }` | Cada transición es una **acción**: `POST /compra/:id/cancelar`, `/pagar`, `/utilizar` | Es menos "REST puro", pero el estado **no se edita libremente**: cada transición tiene reglas y efectos (reembolso, liberar cupo). Un PATCH genérico invitaría a saltearlas |
 | **Códigos HTTP** | 400 = request mal formado; 409 = conflicto con el estado del recurso; 422 = bien formado pero inválido | 400 para Zod, 422 para reglas de negocio (`BusinessRuleError`), 409 para duplicados (email ya registrado) | Es una convención: lo importante es ser **consistente** y documentarlo (Swagger) |
 | **Máquina de estados** | Estados y transiciones explícitos, en vez de `if` dispersos | `TRANSICIONES_VALIDAS` + `actualizarEstado` (único punto que cambia el estado y registra el historial) | Agregar un estado (por ejemplo VENCIDA en M15) es agregar una fila a la tabla, no buscar `if` por todo el código |
@@ -253,7 +287,7 @@ Te sirve para responder preguntas o para nombrar los conceptos al pasar.
 | Arquitectura en capas | ruta → controller → service → entidad → repositorio |
 | Inyección de dependencias | `app.js` arma repositorios → services → controllers por constructor; el reloj inyectable permite testear fechas |
 | Modelo de dominio rico | `TipoEntrada.reservar`, `Compra.cancelar`, `accionesDisponiblesPara` |
-| Enums y máquina de estados | `EstadoCompra` (`Object.freeze`) + `TRANSICIONES_VALIDAS` |
+| Enums y máquina de estados | `EstadoCompra` y `NombreTipoEntrada` (General, Platea, VIP) con `Object.freeze` + `TRANSICIONES_VALIDAS` |
 | Validación de entrada | Zod en el controller → 400 con errores por campo |
 | Manejo de errores | jerarquía `AppError` + `errorHandler` global + 404 de rutas |
 | Middlewares | auth JWT, roles, logger con request-id, mantenimiento (vence las reservas) |

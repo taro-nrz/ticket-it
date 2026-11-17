@@ -60,7 +60,7 @@ El backend se divide en **7 módulos** que se desarrollan en orden de dependenci
 | M14 — Estadísticas (pro) | Panel de números del evento con gráficos accesibles | HU-E1 | M3, M4, M6 | Implementado |
 | M15 — Vencimiento (pro) | Reservas sin pagar que vencen a los 15 min | HU-V1 | M3, M4 | Implementado |
 | M16 — Checkout (pro) | Pago con tarjeta y pasarela simulada | HU-C1 | M4, M15 | Implementado |
-| M17 — Cupones (pro) | Porcentaje, monto fijo y 2×1 con polimorfismo | HU-D1, HU-D2 | M2, M3 | Implementado |
+| M17 — Cupones (pro) | Porcentaje, monto fijo y 2×1 con polimorfismo | HU-D1, HU-D2 | M2, M3 | **Retirado en M27** (D-49) |
 | M18 — Estados de carga (pro) | Esqueletos, barras, imágenes progresivas y MSW | HU-L1, HU-L2 | M7 | Implementado |
 | M19 — Lista de espera (pro) | Aviso y 30 min de prioridad al liberarse cupo | HU-W1, HU-W2 | M3, M15 | Implementado |
 | M20 — Transferir (pro) | Pasar la entrada a otra cuenta con QR nuevo | HU-T1 | M13 | Implementado |
@@ -69,6 +69,8 @@ El backend se divide en **7 módulos** que se desarrollan en orden de dependenci
 | M23 — Recuperar contraseña (pro) | Código por email simulado | HU-R1 | M9 | Implementado |
 | M24 — Tiempo real (pro) | Chat, "escribiendo…" y notificaciones por WebSocket | HU-RT1, HU-RT2 | M5, M12 | Implementado |
 | M25 — Estructura del front (pro) | Estructura del ejercicio megasuper (`service/`, `context/`, un componente por carpeta, `.jsx`) + hooks `useFormulario` y `useAccion` | HT-1..HT-4 | M7–M24 | Implementado |
+| M27 — Tipos de entrada del enunciado (pro) | General, Platea o VIP como lista fija; se retiran los cupones | HU-01, HT-1 | M2, M11, M17 | Implementado |
+| M26 — Estilo "Plastilina" (pro) | Nueva identidad visual (lila y pasteles, contorno grueso, sombra dura) sin cambiar ninguna funcionalidad | HT-1..HT-4 | M25 | Implementado |
 
 Historias de usuario del enunciado y su módulo:
 
@@ -233,6 +235,7 @@ Formato: **contexto → opciones → decisión → justificación**.
 - **Errores del backend** (`message` / `errores`) se convierten en un mensaje legible en un interceptor de axios.
 
 ### D-20 — Rediseño visual con Claude Design
+> Reemplazado en la versión pro por D-48 (estilo "Plastilina"). Se conserva como historia de la decisión.
 - Contexto: la primera versión del front era funcional pero genérica (componentes por defecto, tipografía del sistema).
 - Proceso: se diseñaron 8 pantallas en un lienzo de **Claude Design** (https://claude.ai/artifact/W4Ry9dSekypnmXKmWdbVBx),
   se revisaron y recién después se llevaron al código.
@@ -476,6 +479,7 @@ Formato: **contexto → opciones → decisión → justificación**.
   cobra, para no cobrar algo que no se puede confirmar.
 
 ### D-38 — Cupones de descuento con polimorfismo (M17)
+> Retirado en M27 (D-49): el enunciado no pide cupones. El código queda en el historial de git.
 - Decisión (consultada): cupones **por evento** creados por su organizador: porcentaje, monto fijo o 2×1, con
   código, usos máximos y vencimiento opcionales.
 - Diseño: jerarquía `Cupon` → `CuponPorcentaje` / `CuponMontoFijo` / `CuponDosPorUno`, cada una con su
@@ -578,7 +582,7 @@ Formato: **contexto → opciones → decisión → justificación**.
   | Megasuper | Ticket It Pro |
   |---|---|
   | `src/service/api.js` (axios + `mensajeDeError`) | `src/service/api.js`: `cliente` de axios, token, interceptor de errores y `datos()` |
-  | `src/service/productsService.js` (una función por endpoint) | Un service por recurso: `authService`, `usuariosService`, `eventosService`, `comprasService`, `mensajesService`, `cuponesService`, `imagenesService`, `notificacionesService`, `reseniasService` (+ `tiempoReal.js`, `almacenSesion.js`) |
+  | `src/service/productsService.js` (una función por endpoint) | Un service por recurso: `authService`, `usuariosService`, `eventosService`, `comprasService`, `mensajesService`, `imagenesService`, `notificacionesService`, `reseniasService` (+ `tiempoReal.js`, `almacenSesion.js`) |
   | `src/context/CartContext.jsx` + `useCart()` | `src/context/`: `SesionContext`, `TemaContext`, `DialogosContext`, `NotificacionesContext`, cada uno con su `useX()` |
   | `src/components/<nombre>/Componente.jsx` | Una carpeta por componente. `ui.js` (625 líneas), `Pantalla.js` (422) y `Carga.js` (478) se separaron en un archivo por componente, cada uno con sus estilos |
   | `src/features/<pantalla>/` | Igual, con `.jsx` |
@@ -587,7 +591,7 @@ Formato: **contexto → opciones → decisión → justificación**.
 
 - **Custom hooks: sólo donde había repetición real**.
   - **`useFormulario`** es el equivalente al `useForm` de la rama `evolutivo-9`. Lo usan los **7 formularios**: Login,
-    Registro, Recuperar (uno por paso), Perfil (datos y contraseña), Checkout, Cupones y Crear/Editar evento.
+    Registro, Recuperar (uno por paso), Perfil (datos y contraseña), Checkout, Cupones (retirado en M27) y Crear/Editar evento.
     Antes cada uno repetía su propia versión de lo mismo:
     - el estado de los valores;
     - el "intento de envío" (los errores se muestran recién después de intentar enviar);
@@ -637,6 +641,63 @@ Formato: **contexto → opciones → decisión → justificación**.
     inalámbrica" con `adb pair` y `adb connect`;
   - `REACT_NATIVE_PACKAGER_HOSTNAME=<IP de la PC> npm run start:dev` levanta el servidor con esa IP;
   - `adb shell am start -d exp://<IP>:8081 host.exp.exponent` abre la app sin tocar el celular.
+
+### D-48 — Estilo visual "Plastilina" (M26)
+- **Por qué**: el estilo de D-20 (fondo crema, tinta oscura, un único acento coral, grotesca pesada) es uno de los
+  looks que más generan las IA cuando no se les pide otra cosa, y lo más probable era que otros TPs se vieran igual.
+- **Cómo se eligió**:
+  - se compararon 5 direcciones visuales (Taquilla, Marcador, Afiche, Filete, Plastilina);
+  - también 8 formas de uso (cartelera, mazo, agenda, mapa…) y 6 formas de ordenar las pantallas (Programa, Estantes…);
+  - se descartaron los cambios de navegación, porque la usabilidad actual ya era buena y los patrones conocidos
+    son más fáciles de usar (ley de Jakob);
+  - la decisión fue **mismas funcionalidades, misma navegación, otra identidad**.
+- **Qué cambia**:
+  - fondo lila, botón principal rosa con texto tinta, paneles menta y entrada manteca;
+  - categorías en pasteles (durazno, menta, manteca, celeste, lima);
+  - **contorno de 2,5 px y sombra dura `3px 3px 0`** en todo lo que se toca;
+  - al presionar, el elemento se "hunde": la sombra desaparece y se corre 3 px. No hay animación, así que no
+    depende de "reducir movimiento";
+  - lo que no se toca no lleva sombra, así el relieve indica qué es interactivo;
+  - el tipo de entrada elegido queda "hundido";
+  - tipografías: **Bagel Fat One** en títulos grandes y números destacados, **Figtree** en el resto. Bagel tiene
+    un solo peso y en subtítulos haría las listas pesadas;
+  - la fecha de cada evento es un sticker redondo girado.
+- **Implementación**:
+  - `src/theme.js` cambia los valores de las paletas sin cambiar los nombres de los tokens, así que los
+    componentes siguieron funcionando;
+  - tokens nuevos: `contorno` y `sombra`;
+  - la función `relieve(colores, presionado)` arma el contorno, la sombra (prop `boxShadow` de React Native 0.88)
+    y el corrimiento, y la usan Boton, Tarjeta, Chips, CompraCard, el detalle del evento, notificaciones y login.
+- **Accesibilidad**:
+  - cada par de colores se verificó con la fórmula de WCAG, en claro y oscuro (tabla en `specs/M26-estilo-plastilina.md`);
+  - el rosa del botón principal (`#FF6FB0`) no llega a 3:1 sobre blanco. Para íconos y marcas se usa un rosa más
+    intenso (`acento` `#EC4D96`, 3,5:1), y el botón se distingue por su contorno tinta;
+  - en oscuro el contorno es lila claro y la sombra casi negra (efecto "recortado"), y el contorno cumple 3:1
+    como borde de control;
+  - el anillo de foco pasó a tener halo blanco.
+- **Decisiones tomadas con la recomendación de la spec**:
+  - P-1: contorno claro en oscuro;
+  - P-2: reemplazar el estilo anterior, sin tercer tema;
+  - P-3: Bagel sólo en títulos;
+  - P-4: "1 disponibles" pasó a "Queda 1" / "Quedan N" (`textoDisponibles`), el único cambio de texto.
+
+### D-49 — Tipos de entrada del enunciado y retiro de cupones (M27)
+- **Tipos de entrada**:
+  - el enunciado nombra "General, Platea o VIP". Antes el nombre era libre y la semilla tenía Popular, Pullman,
+    Campo y Estudiante;
+  - ahora es una lista fija, con el falso enum `NombreTipoEntrada` (`Object.freeze`, como `EstadoCompra`);
+  - Zod lo valida (`z.enum`) y responde **400** con un mensaje claro. Como no se pueden repetir, un evento tiene
+    como máximo 3 tipos;
+  - el valor del enum es el nombre visible ("General"), así no hay que traducir en el DTO ni en la app;
+  - en el formulario se elige con chips, y sólo se ofrecen los tipos que no usa otra entrada;
+  - en la semilla, lo que distinguía al tipo pasó a la descripción (General "Tribuna popular",
+    General "Pullman, primer piso").
+- **Cupones (M17)**:
+  - se retiraron de punta a punta porque el enunciado no los pide y sumaban código para mantener y explicar;
+  - la compra volvió a tener sólo `total` (precio × cantidad), sin `subtotal`, `descuento` ni `cupon`;
+  - se borraron 7 archivos del back, 4 del front y sus tests (8 de integración, 4 unitarios y el E2E).
+- **Por qué importa para la exposición**: con IA agregar funcionalidades es barato. El criterio es **ajustarse al
+  alcance**: lo que no pide el enunciado y no aporta al flujo es costo sin beneficio.
 
 ## 5. Avance
 
@@ -708,7 +769,7 @@ packages/frontend/
 └── src/
     ├── service/              # api.js (axios + token + errores) y un service por recurso
     │                         #   authService, usuariosService, eventosService, comprasService, mensajesService,
-    │                         #   cuponesService, imagenesService, notificacionesService, reseniasService,
+    │                         #   imagenesService, notificacionesService, reseniasService,
     │                         #   tiempoReal (Socket.IO), almacenSesion (token en SecureStore)
     ├── context/              # SesionContext, TemaContext, DialogosContext, NotificacionesContext (+ useX)
     ├── hooks/                # useCarga, useFormulario, useAccion, useEstilos, usePulso, useMovimientoReducido
@@ -739,6 +800,11 @@ en lugar de asumir, errores detectados en el código de referencia, etc.
 - **Errores de la IA detectados en el proceso**: un `sed` para cambiar los scripts de test rompió las comillas del
   `package.json` (lo detectó Prettier y se corrigió); el `import` de ES Modules ejecuta antes que `dotenv.config()`,
   un problema sutil que hubiese pasado inadvertido copiando el código de clase.
+- **Las respuestas de la IA son probabilísticas, y eso se nota en el diseño (D-48)**: sin una dirección propia,
+  la IA tiende a los mismos looks (por ejemplo crema + un acento + grotesca pesada, que era el estilo de D-20).
+  Como todos los TPs usan IA, se pidió explícitamente alejarse de eso. Se compararon opciones de estilo, formas de
+  uso y composición en prototipos HTML, y se eligió con criterio propio: mantener la usabilidad (navegación
+  conocida) y cambiar sólo la identidad visual.
 - **Riesgo observado**: el volumen de código generado es grande; sin specs y tests sería difícil revisar que haga lo
   que dice. La revisión humana se apoya en los criterios de aceptación y en Swagger para probar a mano.
 - **"No confiar en lo que la IA recuerda"**: la plantilla de Expo trae un `AGENTS.md` que advierte que Expo cambia en

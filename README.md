@@ -6,7 +6,7 @@ con QR, estadísticas, Docker y CI. Las diferencias con el TP original están en
 
 | Comprador | Organizador |
 |---|---|
-| Busca y filtra eventos, guarda favoritos, compra con **cupones** y paga con tarjeta (**checkout** simulado), tiene **15 minutos** para pagar, se anota en la **lista de espera** si está agotado, chatea **en vivo** con el organizador, **transfiere** o cancela su entrada, la muestra con **QR** en la puerta, **comparte** el evento o lo agrega al **calendario** y lo califica. | Publica eventos con **fotos subidas** desde el dispositivo, los **edita y cancela**, crea **cupones**, ve ventas, **estadísticas** y la lista de espera, responde chats, **valida entradas** escaneando el QR y lee las reseñas. |
+| Busca y filtra eventos, guarda favoritos, compra y paga con tarjeta (**checkout** simulado), tiene **15 minutos** para pagar, se anota en la **lista de espera** si está agotado, chatea **en vivo** con el organizador, **transfiere** o cancela su entrada, la muestra con **QR** en la puerta, **comparte** el evento o lo agrega al **calendario** y lo califica. | Publica eventos con **fotos subidas** desde el dispositivo, los **edita y cancela**, define entradas **General, Platea o VIP**, ve ventas, **estadísticas** y la lista de espera, responde chats, **valida entradas** escaneando el QR y lee las reseñas. |
 
 Además: cuentas con **email y contraseña** (con recuperación por código), **notificaciones** dentro de la app,
 **estados de carga** según la situación (esqueletos, barras, imágenes progresivas) y **MSW** para probar con
@@ -50,8 +50,8 @@ ticket-it-pro/
 ├── packages/
 │   ├── backend/     # API REST (Express 5, Zod, JWT, Swagger) · Dockerfile
 │   └── frontend/    # App React Native + Expo (web y mobile) · Dockerfile + nginx
-├── specs/           # Una spec por módulo (SDD + historias de usuario), M0 a M25
-├── docs/            # Bitácora de decisiones (D-01 a D-47), alcance, changelog y capturas
+├── specs/           # Una spec por módulo (SDD + historias de usuario), M0 a M27
+├── docs/            # Bitácora de decisiones (D-01 a D-49), alcance, changelog y capturas
 ├── docker-compose.yml
 └── .github/workflows/ci.yml
 ```
@@ -115,7 +115,6 @@ Todos con la contraseña **`ticketit123`**. En la pantalla de ingreso, "Cuentas 
 | `juan@ticketit.com` | Juan Rodríguez | Comprador | entrada **`TK-JUAN-H7Y5`** para el stand-up de hoy; compra 6 utilizada sin reseñar |
 
 Más datos para la demo:
-- **Cupones**: `INDIE20` (20 %) e `INDIE2X1` (2×1) en Noche Indie; `RISAS` ($ 2.000) en el stand-up.
 - **Tarjetas de prueba**: `4242 4242 4242 4242` aprobada · `4000 0000 0000 0002` rechazada (sin fondos).
 - **Lista de espera**: comprá la última Platea del superclásico con un usuario y anotate con otro.
 - **Recuperar contraseña**: el código llega al email simulado (consola del backend o `GET /dev/emails`).
