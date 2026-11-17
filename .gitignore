@@ -7,3 +7,8 @@ playwright-report
 .expo
 dist
 packages/backend/uploads
+
+# Documentación de trabajo (specs, bitácora y guiones): queda sólo en local
+specs
+docs
+packages/frontend/AGENTS.md

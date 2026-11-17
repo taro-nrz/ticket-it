@@ -34,8 +34,7 @@ ticket-it-pro/
 ├── packages/
 │   ├── backend/    # Express en capas: routes → controllers → services → entidades → repositorios
 │   └── frontend/   # Expo: app/ (rutas), src/features (pantallas), components, hooks, context, service
-├── specs/          # Una spec por módulo, con historias de usuario y criterios de aceptación
-└── docs/           # Decisiones de diseño, changelog y guion de la exposición
+└── docker-compose.yml
 ```
 
 ## Cómo correrlo
