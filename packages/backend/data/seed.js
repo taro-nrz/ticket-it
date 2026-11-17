@@ -8,7 +8,7 @@ import { Usuario } from "../models/entities/usuario.js";
 import { Notificacion, TipoNotificacion } from "../models/entities/notificacion.js";
 import { sumarDias, sumarHoras } from "../utils/reloj.js";
 
-// D-29: contraseña de todos los usuarios demo (documentada en el README)
+// D-29: contraseña de todos los usuarios demo (documentada en docs/DOCUMENTACION.md)
 export const PASSWORD_DEMO = "ticketit123";
 
 // Datos de prueba en memoria. Las fechas son relativas a "ahora" para que la demo funcione cualquier día:
