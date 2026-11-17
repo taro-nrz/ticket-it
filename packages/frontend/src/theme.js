@@ -1,68 +1,75 @@
-// Sistema visual (diseñado en Claude Design, D-20) con modo claro y oscuro (D-22).
+// Sistema visual "Plastilina" (D-48, reemplaza la paleta de D-20) con modo claro y oscuro (D-22).
 // Los colores tienen nombres por ROL (fondo, texto, primario, panel...) y cada tema define su valor.
-// Todos los pares texto/fondo cumplen WCAG AA (≥ 4.5:1) en ambos temas.
+// Todos los pares texto/fondo cumplen WCAG AA (≥ 4.5:1) y los bordes de controles ≥ 3:1, en ambos temas.
+// Lo que se puede tocar lleva `contorno` grueso y `sombra` dura; al presionarlo se "hunde" (ver `relieve`).
 
 const claro = {
-  fondo: "#F5F3EE",
+  fondo: "#E8DCFF",
   superficie: "#FFFFFF",
-  apagado: "#ECEAE6",
-  borde: "#E6E2DA",
-  bordeControl: "#857F8F", // 3,87:1 sobre blanco (WCAG 1.4.11)
-  troquel: "#D5D0C6",
-  texto: "#16112A",
-  textoSecundario: "#5D5866",
+  apagado: "#F3EDFF",
+  borde: "#D6CBF0", // separadores finos (decorativos)
+  bordeControl: "#1B1530", // 17,6:1 sobre blanco (WCAG 1.4.11)
+  troquel: "#B9A9E6",
+  texto: "#1B1530",
+  textoSecundario: "#4B4463",
   // botones principales, chip activo, mensajes propios
-  primario: "#16112A",
-  sobrePrimario: "#F5F3EE",
-  sobrePrimarioSuave: "#C9C3D9",
-  // cabeceras y paneles oscuros (login, panel del organizador, entrada)
-  panel: "#16112A",
-  panelSuave: "#251C42",
-  sobrePanel: "#F5F3EE",
-  sobrePanelSuave: "#C9C3D9",
-  ticket: "#F5F3EE",
-  acento: "#FF5A36",
-  sobreAcento: "#16112A",
-  acentoSuave: "#FFE3DB",
-  acentoTexto: "#9C2A12",
-  acentoOscuro: "#B8361A",
-  // D-34: color de las marcas de los gráficos (validado con la guía de dataviz contra la superficie)
-  dato: "#FF5A36",
-  error: "#A82E14",
-  errorFondo: "#FBE9E5",
+  primario: "#FF6FB0",
+  sobrePrimario: "#1B1530",
+  sobrePrimarioSuave: "#4A1030",
+  // paneles (login, panel del organizador, entrada): menta con tinta
+  panel: "#B8F2D6",
+  panelSuave: "#9BE6C3",
+  sobrePanel: "#1B1530",
+  sobrePanelSuave: "#2F4A3E",
+  ticket: "#FFE58A",
+  // íconos y marcas: 3,5:1 sobre blanco y 5:1 con tinta encima
+  acento: "#EC4D96",
+  sobreAcento: "#1B1530",
+  acentoSuave: "#FFE0EF",
+  acentoTexto: "#A3155C",
+  acentoOscuro: "#A3155C",
+  dato: "#C2185B",
+  error: "#B3261E",
+  errorFondo: "#FDE7E4",
   exito: "#1D6B3A",
   exitoBoton: "#1D6B3A",
   estrella: "#E8A317",
+  // D-48: contorno y sombra dura de los elementos tocables
+  contorno: "#1B1530",
+  sombra: "#1B1530",
 };
 
 const oscuro = {
-  fondo: "#121018",
-  superficie: "#1C1826",
-  apagado: "#2A2536",
-  borde: "#343046",
-  bordeControl: "#7D7690", // 4,03:1 sobre la superficie
-  troquel: "#4A4459",
-  texto: "#F2EFF7",
-  textoSecundario: "#B5AFC2",
-  primario: "#F2EFF7",
-  sobrePrimario: "#16112A",
-  sobrePrimarioSuave: "#5D5866",
-  panel: "#241D3B",
-  panelSuave: "#2F2750",
-  sobrePanel: "#F5F3EE",
-  sobrePanelSuave: "#C9C3D9",
-  ticket: "#1C1826",
-  acento: "#FF5A36",
-  sobreAcento: "#16112A",
-  acentoSuave: "#4A2418",
-  acentoTexto: "#FFB49F",
-  acentoOscuro: "#FF8A6B",
-  dato: "#F0532F",
+  fondo: "#17122B",
+  superficie: "#241D3F",
+  apagado: "#2E2650",
+  borde: "#3A3160",
+  bordeControl: "#CFC3F7", // 9,7:1 sobre la superficie
+  troquel: "#5A4F86",
+  texto: "#F3EEFF",
+  textoSecundario: "#BDB3DA",
+  primario: "#FF7FBA",
+  sobrePrimario: "#1B1530",
+  sobrePrimarioSuave: "#4A1030",
+  panel: "#8FDDB8",
+  panelSuave: "#7CCFA8",
+  sobrePanel: "#1B1530",
+  sobrePanelSuave: "#2F4A3E",
+  ticket: "#3A2F17",
+  acento: "#FF7FBA",
+  sobreAcento: "#1B1530",
+  acentoSuave: "#4A1F3A",
+  acentoTexto: "#FFA8CF",
+  acentoOscuro: "#FFA8CF",
+  dato: "#FF7FBA",
   error: "#FF8A73",
   errorFondo: "#3A1A14",
   exito: "#6FD39A",
   exitoBoton: "#1D6B3A",
   estrella: "#E8A317",
+  // P-1 de M26: en oscuro el contorno es lila claro y la sombra casi negra (efecto "recortado")
+  contorno: "#CFC3F7",
+  sombra: "#0A0716",
 };
 
 export const paletas = { claro, oscuro };
@@ -108,19 +115,35 @@ export function estadosDelTema(nombreTema) {
 // Etiquetas de los estados (no dependen del tema)
 export const estadosCompra = ETIQUETAS_ESTADO;
 
-// Bricolage Grotesque para títulos (estilo cartel) y DM Sans para el texto
+// D-48: Bagel Fat One (un solo peso, muy redonda) sólo para los títulos grandes y los números destacados;
+// Figtree para subtítulos y texto, así las listas no quedan pesadas (P-3 de M26)
 export const fuentes = {
-  titulo: "BricolageGrotesque_800ExtraBold",
-  subtitulo: "BricolageGrotesque_700Bold",
-  texto: "DMSans_400Regular",
-  medio: "DMSans_500Medium",
-  semi: "DMSans_600SemiBold",
-  negrita: "DMSans_700Bold",
+  titulo: "BagelFatOne_400Regular",
+  subtitulo: "Figtree_800ExtraBold",
+  texto: "Figtree_400Regular",
+  medio: "Figtree_500Medium",
+  semi: "Figtree_600SemiBold",
+  negrita: "Figtree_700Bold",
 };
 
 export const espacio = { xs: 4, s: 8, m: 12, l: 16, xl: 20, xxl: 28 };
 
 export const radio = { s: 12, m: 16, l: 20, xl: 26 };
+
+// D-48: grosor del contorno y desplazamiento de la sombra dura
+export const relieveBase = { grosor: 2.5, desplazamiento: 3 };
+
+// Contorno + sombra dura de lo que se puede tocar. Presionado, la sombra desaparece y el elemento
+// se corre lo mismo que medía la sombra, como si se hundiera (sin animación: no depende de "reducir movimiento").
+export function relieve(colores, presionado = false) {
+  const { grosor, desplazamiento: d } = relieveBase;
+  return {
+    borderWidth: grosor,
+    borderColor: colores.contorno,
+    boxShadow: presionado ? "none" : `${d}px ${d}px 0px ${colores.sombra}`,
+    transform: presionado ? [{ translateX: d }, { translateY: d }] : [],
+  };
+}
 
 // Estilos de texto reutilizables (dependen del tema por el color)
 export function estilosDeTexto(colores) {
@@ -128,13 +151,11 @@ export function estilosDeTexto(colores) {
     tituloGrande: {
       fontFamily: fuentes.titulo,
       fontSize: 30,
-      letterSpacing: -0.8,
       color: colores.texto,
     },
     titulo: {
       fontFamily: fuentes.subtitulo,
       fontSize: 19,
-      letterSpacing: -0.3,
       color: colores.texto,
     },
     seccion: { fontFamily: fuentes.subtitulo, fontSize: 18, color: colores.texto },
@@ -158,15 +179,20 @@ export function estilosDeTexto(colores) {
   };
 }
 
-// Color de bloque por categoría (detrás de la foto del evento; igual en ambos temas)
+// Color pastel por categoría (detrás de la foto del evento; igual en ambos temas). La tinta sobre
+// cada uno supera 11:1. `marca` es la marca de agua con el nombre de la categoría y `circulo` el adorno.
 export const coloresCategoria = {
-  Recitales: { fondo: "#2B1E52", marca: "#3A2B6B" },
-  Teatro: { fondo: "#0F4C47", marca: "#186058" },
-  Festivales: { fondo: "#7A2E12", marca: "#8F3A1C" },
-  Conferencias: { fondo: "#1F3A6B", marca: "#2A4A80" },
-  Deportes: { fondo: "#2D5016", marca: "#3A6420" },
+  Recitales: { fondo: "#FFC3A8", marca: "#F2A584", circulo: "#FFE58A" },
+  Teatro: { fondo: "#B8F2D6", marca: "#93E0BB", circulo: "#A9D8FF" },
+  Festivales: { fondo: "#FFE58A", marca: "#F2D263", circulo: "#FF9FCB" },
+  Conferencias: { fondo: "#A9D8FF", marca: "#86C2F2", circulo: "#C9F29B" },
+  Deportes: { fondo: "#C9F29B", marca: "#AEDE79", circulo: "#FFE58A" },
 };
 
+// Tinta y fondo del sticker de fecha que va encima del color de categoría (iguales en ambos temas)
+export const tintaCategoria = "#1B1530";
+export const stickerCategoria = "#FFFFFF";
+
 export function colorDeCategoria(nombre) {
-  return coloresCategoria[nombre] ?? { fondo: "#16112A", marca: "#251C42" };
+  return coloresCategoria[nombre] ?? { fondo: "#E8DCFF", marca: "#D3C2F7", circulo: "#FFE58A" };
 }

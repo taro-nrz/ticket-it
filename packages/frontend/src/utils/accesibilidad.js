@@ -13,12 +13,12 @@ export function configurarAccesibilidadWeb() {
   const estilos = document.createElement("style");
   estilos.id = "estilos-accesibilidad";
   estilos.textContent = `
-    /* Pauta 4 · WCAG 2.4.7: foco visible sólo con teclado. Anillo azul con halo crema:
-       contrasta tanto sobre el fondo claro como sobre las cabeceras oscuras. */
+    /* Pauta 4 · WCAG 2.4.7: foco visible sólo con teclado. Anillo azul con halo blanco: contrasta sobre el
+       lila, la menta y el fondo oscuro, y reemplaza a la sombra dura mientras dura el foco (D-48). */
     :focus-visible {
       outline: 3px solid #1F4FB8 !important;
       outline-offset: 2px !important;
-      box-shadow: 0 0 0 6px #F5F3EE !important;
+      box-shadow: 0 0 0 6px #FFFFFF !important;
       border-radius: 10px;
     }
     :focus:not(:focus-visible) { outline: none; }

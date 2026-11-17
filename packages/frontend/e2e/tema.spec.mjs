@@ -23,16 +23,16 @@ test("el tema se elige en el menú Cuenta y se recuerda", async ({ page }) => {
   // ACTUAR + VERIFICAR: claro
   await menu.getByRole("radio", { name: "Claro" }).click();
   await expect(menu.getByRole("radio", { name: "Claro" })).toBeChecked();
-  expect(await fondoDeLaPagina(page)).toBe("rgb(245, 243, 238)");
+  expect(await fondoDeLaPagina(page)).toBe("rgb(232, 220, 255)");
 
   // oscuro
   await menu.getByRole("radio", { name: "Oscuro" }).click();
   await expect(menu.getByRole("radio", { name: "Oscuro" })).toBeChecked();
-  expect(await fondoDeLaPagina(page)).toBe("rgb(18, 16, 24)");
+  expect(await fondoDeLaPagina(page)).toBe("rgb(23, 18, 43)");
   await expect(page.locator("html")).toHaveCSS("color-scheme", "dark");
 
   // la preferencia sobrevive a recargar la página
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  expect(await fondoDeLaPagina(page)).toBe("rgb(18, 16, 24)");
+  expect(await fondoDeLaPagina(page)).toBe("rgb(23, 18, 43)");
 });
