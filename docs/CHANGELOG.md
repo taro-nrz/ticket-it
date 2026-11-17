@@ -15,8 +15,7 @@ Diferencias respecto del TP original (`ticket-it/`, módulos M0–M8). Cada entr
   el organizador con cámara (celular) o código escrito (D-33).
 - **Estadísticas (M14)** — ocupación, recaudación, ticket promedio, cancelaciones, asistencia, ventas por día y
   por tipo, con resumen en texto y tabla accesible (D-34).
-- **Infraestructura (D-35)** — Dockerfiles + `docker-compose.yml`, GitHub Actions (lint, formato, cobertura,
-  E2E + axe, build de imágenes), `helmet`, `X-Request-Id`, límite de tamaño del body, configuración validada
+- **Infraestructura (D-35)** — Dockerfiles + `docker-compose.yml`, `helmet`, `X-Request-Id`, límite de tamaño del body, configuración validada
   al arrancar, cierre ordenado, pantalla 404, "deslizar para recargar".
 
 ### Segunda tanda (M15–M23)

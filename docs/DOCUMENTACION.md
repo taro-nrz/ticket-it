@@ -452,7 +452,9 @@ Formato: **contexto → opciones → decisión → justificación**.
   (build estático de la web servido con nginx, con fallback para el router), `docker-compose.yml` con puertos
   configurables (`API_PORT`, `WEB_PORT`). Verificado: compose levanta los dos servicios sanos y un navegador hace
   login y ve el catálogo sobre la build de producción.
-- **CI** (`.github/workflows/ci.yml`): lint, formato, tests con cobertura (artefacto), E2E + axe y build de imágenes.
+- **CI**: había un workflow de GitHub Actions (lint, formato, tests, E2E + axe y build de imágenes). Se quitó a
+  pedido: no se usaba y la cuenta tiene Actions bloqueado. Las mismas verificaciones se corren en local con
+  `npm run verificar` y `npm run test:e2e`.
 - **Lint**: ESLint ahora revisa también el frontend con las reglas de React y de hooks (antes estaba excluido): se
   corrigieron 38 avisos (imports sin usar, un componente sin nombre) y `npm run lint` falla ante cualquier aviso.
   Prettier con `npm run format:check`. Cobertura del backend: 95 % de líneas, 82 % de ramas (umbral 90/80).
@@ -888,4 +890,4 @@ en lugar de asumir, errores detectados en el código de referencia, etc.
 4. **Reseña** (HU-11): Juan recibe "¡Que disfrutes…!" y califica; Lucía recibe "Nueva reseña".
 5. **Cancelar un evento** (M11): Lucía cancela un evento futuro con motivo → las compras pagadas quedan
    REEMBOLSADAS reutilizando `Compra.cancelar()`; el comprador lo ve en su compra y en sus notificaciones.
-6. **Calidad**: correr `npm run verificar` y mostrar el CI, el chequeo de accesibilidad con axe y `docker compose up`.
+6. **Calidad**: correr `npm run verificar` y mostrar el chequeo de accesibilidad con axe y `docker compose up`.
