@@ -1,9 +1,13 @@
 import { z } from "zod";
+import { NombreTipoEntrada } from "../models/entities/tipoEntrada.js";
 import { OrdenEvento } from "../services/eventoService.js";
 import { parsearId, validar } from "../utils/validacion.js";
 
 const tipoEntradaSchema = z.object({
-  nombre: z.string().trim().min(1).max(50),
+  // D-49: sólo General, Platea o VIP (los repetidos los rechaza el service)
+  nombre: z.enum(Object.values(NombreTipoEntrada), {
+    error: "El tipo de entrada debe ser General, Platea o VIP",
+  }),
   descripcion: z.string().trim().max(200).default(""),
   precio: z.number().nonnegative(),
   cupo: z.number().int().positive(),
@@ -17,7 +21,7 @@ const crearEventoSchema = z.object({
   lugar: z.string().trim().min(2).max(100),
   direccion: z.string().trim().min(3).max(200),
   multimedia: z.array(z.url()).max(10).default([]),
-  tiposEntrada: z.array(tipoEntradaSchema).min(1).max(10),
+  tiposEntrada: z.array(tipoEntradaSchema).min(1).max(Object.keys(NombreTipoEntrada).length),
 });
 
 // D-31: al editar, los tipos de entrada existentes llevan su id; los nuevos no
@@ -25,7 +29,7 @@ const editarEventoSchema = crearEventoSchema.extend({
   tiposEntrada: z
     .array(tipoEntradaSchema.extend({ id: z.number().int().positive().optional() }))
     .min(1)
-    .max(10),
+    .max(Object.keys(NombreTipoEntrada).length),
 });
 
 const cancelarEventoSchema = z.object({

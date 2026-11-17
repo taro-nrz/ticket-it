@@ -295,7 +295,7 @@ components:
       type: object
       properties:
         id: { type: integer, example: 1 }
-        nombre: { type: string, example: General }
+        nombre: { type: string, enum: [General, Platea, VIP], example: General }
         descripcion: { type: string, example: Campo de pie }
         precio: { type: number, example: 15000 }
         cupo: { type: integer, description: Capacidad total, example: 500 }
@@ -307,7 +307,11 @@ components:
       type: object
       required: [nombre, precio, cupo]
       properties:
-        nombre: { type: string, minLength: 1, maxLength: 50, example: VIP }
+        nombre:
+          type: string
+          enum: [General, Platea, VIP]
+          description: Los tipos que nombra el enunciado (D-49); no se pueden repetir en un evento
+          example: VIP
         descripcion: { type: string, maxLength: 200, example: Acceso preferencial }
         precio: { type: number, minimum: 0, example: 50000 }
         cupo: { type: integer, minimum: 1, example: 50 }
@@ -389,8 +393,8 @@ components:
         tiposEntrada:
           type: array
           minItems: 1
-          maxItems: 10
-          description: Nombres únicos dentro del evento
+          maxItems: 3
+          description: Hasta uno de cada tipo (General, Platea, VIP)
           items: { $ref: "#/components/schemas/TipoEntradaInput" }
 
     VentasEvento:

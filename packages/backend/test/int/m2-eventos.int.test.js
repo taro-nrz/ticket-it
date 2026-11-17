@@ -90,10 +90,22 @@ describe("M2 - Eventos", () => {
           ...eventoValido(),
           tiposEntrada: [
             { nombre: "General", precio: 1, cupo: 1 },
-            { nombre: "general", precio: 2, cupo: 2 },
+            { nombre: "General", precio: 2, cupo: 2 },
           ],
         });
       expect(res.status).toBe(400);
+    });
+
+    test("D-49: un tipo de entrada que no es General, Platea o VIP responde 400", async () => {
+      const res = await request(app)
+        .post("/evento")
+        .set(auth(ORGANIZADORA_LUCIA))
+        .send({ ...eventoValido(), tiposEntrada: [{ nombre: "Palco", precio: 1, cupo: 1 }] });
+      expect(res.status).toBe(400);
+      expect(res.body.errores[0]).toMatchObject({
+        campo: "tiposEntrada.0.nombre",
+        mensaje: "El tipo de entrada debe ser General, Platea o VIP",
+      });
     });
 
     test("CA-6: una fecha pasada responde 400", async () => {
@@ -208,7 +220,7 @@ describe("M2 - Eventos", () => {
       const res = await request(app).get("/evento/5");
       expect(res.status).toBe(200);
       expect(res.body.tiposEntrada).toEqual([
-        expect.objectContaining({ nombre: "Popular", cupo: 2000, vendidas: 0, disponibles: 2000 }),
+        expect.objectContaining({ nombre: "General", cupo: 2000, vendidas: 0, disponibles: 2000 }),
         expect.objectContaining({ nombre: "Platea", cupo: 2, vendidas: 1, disponibles: 1 }),
       ]);
       expect(res.body.organizador).toMatchObject({ puntajePromedio: 3.5, cantidadResenias: 2 });

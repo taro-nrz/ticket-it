@@ -42,28 +42,31 @@ describe("M11 - Gestión de eventos del organizador (D-31)", () => {
 
   describe("Editar", () => {
     test("el organizador edita datos, precios y agrega un tipo de entrada", async () => {
-      const evento = await detalle(1);
+      // Festival Primavera tiene General y VIP: se le agrega Platea (D-49: General, Platea o VIP)
+      const evento = await detalle(3);
       expect(evento.puedeEditarse).toBe(true);
       const tipos = bodyDesde(evento).tiposEntrada;
-      tipos[0].precio = 18000;
+      tipos[0].precio = 35000;
       const res = await editar(
-        1,
+        3,
         bodyDesde(evento, {
-          nombre: "Noche Indie en Obras (edición especial)",
-          tiposEntrada: [...tipos, { nombre: "Palco", descripcion: "", precio: 80000, cupo: 10 }],
+          nombre: "Festival Primavera (edición especial)",
+          tiposEntrada: [...tipos, { nombre: "Platea", descripcion: "", precio: 50000, cupo: 10 }],
         }),
       );
       expect(res.status).toBe(200);
-      expect(res.body.nombre).toBe("Noche Indie en Obras (edición especial)");
+      expect(res.body.nombre).toBe("Festival Primavera (edición especial)");
       expect(res.body.tiposEntrada.map((tipo) => tipo.nombre)).toEqual([
         "General",
-        "Platea",
         "VIP",
-        "Palco",
+        "Platea",
       ]);
-      expect(res.body.tiposEntrada[3].id).toBe(4);
+      expect(res.body.tiposEntrada[2].id).toBe(3);
       // Las ventas existentes se mantienen
-      expect(res.body.tiposEntrada[0]).toMatchObject({ precio: 18000, vendidas: 2 });
+      expect(res.body.tiposEntrada[0]).toMatchObject({
+        precio: 35000,
+        vendidas: evento.tiposEntrada[0].vendidas,
+      });
     });
 
     test("las compras ya hechas conservan su total aunque cambie el precio", async () => {

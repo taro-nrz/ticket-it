@@ -1,5 +1,13 @@
 import { BusinessRuleError } from "../../error/appError.js";
 
+// D-49: los tipos de entrada son los que nombra el enunciado ("General, Platea o VIP"), como falso enum.
+// El valor es el nombre que se muestra, así los DTO y la app no necesitan traducirlo.
+export const NombreTipoEntrada = Object.freeze({
+  GENERAL: "General",
+  PLATEA: "Platea",
+  VIP: "VIP",
+});
+
 export class TipoEntrada {
   id;
   // Entradas reservadas por compras activas (PENDIENTE, CONFIRMADA o UTILIZADA)

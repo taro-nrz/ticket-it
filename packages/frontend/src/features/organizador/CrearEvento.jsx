@@ -24,7 +24,16 @@ import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useFormulario } from "../../hooks/useFormulario.js";
 
-const tipoVacio = () => ({ nombre: "", descripcion: "", precio: "", cupo: "", vendidas: 0 });
+// D-49: los tipos de entrada son los del enunciado (General, Platea o VIP); el back rechaza otros
+const TIPOS_ENTRADA = ["General", "Platea", "VIP"];
+
+const tipoVacio = (nombre = "") => ({ nombre, descripcion: "", precio: "", cupo: "", vendidas: 0 });
+
+// Los tipos que todavía no usa otra entrada del evento (no se pueden repetir)
+const tiposLibres = (tiposEntrada, indice) =>
+  TIPOS_ENTRADA.filter(
+    (nombre) => !tiposEntrada.some((tipo, i) => i !== indice && tipo.nombre === nombre),
+  );
 
 // D-31: para editar, el formulario arranca con los datos del evento (los tipos conservan su id)
 const valoresDesdeEvento = (evento) => {
@@ -84,8 +93,8 @@ function validar(valores) {
   if (valores.lugar.trim().length < 2) errores.lugar = "Indicá dónde se hace el evento";
   if (valores.direccion.trim().length < 3) errores.direccion = "Indicá la dirección del lugar";
   valores.tiposEntrada.forEach((tipo, indice) => {
-    if (!tipo.nombre.trim()) {
-      errores[`tipo${indice}nombre`] = "Poné un nombre, por ejemplo General o VIP";
+    if (!TIPOS_ENTRADA.includes(tipo.nombre)) {
+      errores[`tipo${indice}nombre`] = "Elegí si es General, Platea o VIP";
     }
     if (tipo.precio === "" || isNaN(Number(tipo.precio)) || Number(tipo.precio) < 0) {
       errores[`tipo${indice}precio`] = "Escribí un precio en números (0 si es gratis)";
@@ -178,7 +187,8 @@ export default function CrearEvento({ evento = null }) {
     });
 
   const agregarTipo = () => {
-    setValores({ ...valores, tiposEntrada: [...valores.tiposEntrada, tipoVacio()] });
+    const [libre] = tiposLibres(valores.tiposEntrada, -1);
+    setValores({ ...valores, tiposEntrada: [...valores.tiposEntrada, tipoVacio(libre)] });
     anunciar(`Se agregó la entrada ${valores.tiposEntrada.length + 1}`);
   };
 
@@ -312,15 +322,23 @@ export default function CrearEvento({ evento = null }) {
                   )
                 )}
               </View>
-              <Campo
-                ref={registrar(`tipo${indice}nombre`)}
-                etiqueta={`Nombre de la entrada ${indice + 1}`}
-                value={tipo.nombre}
-                onChangeText={(v) => cambiarTipo(indice, "nombre", v)}
-                placeholder="General, Platea, VIP..."
-                autoComplete="off"
-                error={error(`tipo${indice}nombre`)}
+              <Text style={styles.etiqueta}>Tipo</Text>
+              <Chips
+                opciones={tiposLibres(valores.tiposEntrada, indice).map((nombre) => ({
+                  valor: nombre,
+                  etiqueta: nombre,
+                }))}
+                seleccionada={tipo.nombre}
+                onSeleccionar={(nombre) => cambiarTipo(indice, "nombre", nombre)}
+                etiqueta={`Tipo de la entrada ${indice + 1}`}
               />
+              {error(`tipo${indice}nombre`) && (
+                <View style={styles.errorFila}>
+                  <Icono name="alert-circle" size={16} color={colores.error} />
+                  <Text style={styles.error}>{error(`tipo${indice}nombre`)}</Text>
+                </View>
+              )}
+              <View style={{ height: espacio.m }} />
               <Campo
                 etiqueta="Descripción (opcional)"
                 value={tipo.descripcion}
@@ -361,7 +379,7 @@ export default function CrearEvento({ evento = null }) {
             variante="secundario"
             icono="add"
             onPress={agregarTipo}
-            deshabilitado={valores.tiposEntrada.length >= 10}
+            deshabilitado={valores.tiposEntrada.length >= TIPOS_ENTRADA.length}
           />
         </Seccion>
 

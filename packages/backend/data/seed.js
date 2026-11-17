@@ -96,7 +96,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
       multimedia: [imagen("hamlet")],
       tiposEntrada: [
         tipo("Platea", "Planta baja", 18000, 150),
-        tipo("Pullman", "Primer piso", 12000, 100),
+        tipo("General", "Pullman, primer piso", 12000, 100),
       ],
       organizador: martin,
     },
@@ -109,7 +109,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
       direccion: "Av. del Libertador 4101, CABA",
       multimedia: [imagen("primavera1"), imagen("primavera2"), imagen("primavera3")],
       tiposEntrada: [
-        tipo("Campo", "Acceso general a ambos escenarios", 30000, 1000),
+        tipo("General", "Campo, acceso a ambos escenarios", 30000, 1000),
         tipo("VIP", "Sector elevado con vista preferencial", 70000, 100),
       ],
       organizador: lucia,
@@ -123,8 +123,8 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
       direccion: "Av. Medrano 951, CABA",
       multimedia: [imagen("ia-conf")],
       tiposEntrada: [
-        tipo("Estudiante", "Con libreta universitaria", 0, 200),
-        tipo("General", "Público general", 8000, 100),
+        tipo("General", "Entrada libre con inscripción", 0, 200),
+        tipo("VIP", "Primeras filas y material del taller", 8000, 100),
       ],
       organizador: martin,
     },
@@ -137,7 +137,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
       direccion: "Av. 32 y 25, La Plata",
       multimedia: [imagen("superclasico")],
       tiposEntrada: [
-        tipo("Popular", "Tribuna popular", 20000, 2000),
+        tipo("General", "Tribuna popular", 20000, 2000),
         tipo("Platea", "Platea techada", 45000, 2),
       ],
       organizador: martin,
@@ -185,7 +185,7 @@ export async function cargarDatosSemilla(repositorios, ahora, { hashDemo }) {
       lugar: "Parque de la Ciudad",
       direccion: "Av. Escalada y Av. Fernández de la Cruz, CABA",
       multimedia: [imagen("verano")],
-      tiposEntrada: [tipo("Campo", "Acceso general", 25000, 800)],
+      tiposEntrada: [tipo("General", "Campo", 25000, 800)],
       organizador: lucia,
     },
   ];
