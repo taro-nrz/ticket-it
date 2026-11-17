@@ -1,8 +1,8 @@
 import { cliente, datos } from "./api.js";
 
 // ---------- COMPRAS ----------
-export const comprar = (eventoId, tipoEntradaId, cantidad, codigoCupon) =>
-  datos(cliente.post("/compra", { eventoId, tipoEntradaId, cantidad, codigoCupon }));
+export const comprar = (eventoId, tipoEntradaId, cantidad) =>
+  datos(cliente.post("/compra", { eventoId, tipoEntradaId, cantidad }));
 
 export const getMisCompras = (estado) =>
   datos(cliente.get("/compra/mias", { params: { estado, limit: 100 } }));

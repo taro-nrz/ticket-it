@@ -173,7 +173,7 @@ export function EsqueletoEstadisticas(props) {
   );
 }
 
-// Formulario (editar evento, checkout, cupones)
+// Formulario (editar evento, checkout)
 export function EsqueletoFormulario({ campos = 5, etiqueta = "Cargando", ...props }) {
   return (
     <Esqueleto etiqueta={etiqueta} {...props}>

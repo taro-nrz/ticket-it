@@ -10,7 +10,6 @@ import { getReseniasDeEvento } from "../../service/reseniasService.js";
 import { ImagenEvento } from "../../components/eventoCard/EventoCard.jsx";
 import { ReseniaItem } from "../../components/reseniaItem/ReseniaItem.jsx";
 import { CancelarEvento } from "../organizador/CancelarEvento.jsx";
-import { CampoCupon } from "./CampoCupon.jsx";
 import { agregarAlCalendario, compartirEvento } from "../../utils/compartir.js";
 import { AvisoPrioridad, ListaEspera } from "./ListaEspera.jsx";
 import { TituloPagina } from "../../components/pantalla/Pantalla.jsx";
@@ -60,7 +59,6 @@ export default function EventoDetalle() {
   const [cantidad, setCantidad] = useState(1);
   const { ejecutar, enCurso } = useAccion();
   const [cancelando, setCancelando] = useState(false);
-  const [cupon, setCupon] = useState(null);
 
   if (cargandoInicial) {
     return (
@@ -96,7 +94,7 @@ export default function EventoDetalle() {
   // Si el evento ya pasó, sus reseñas tienen su propia sección: acá van las de los otros eventos
   const otrasResenias = evento.ultimasResenias.filter((r) => r.evento.id !== evento.id);
 
-  const total = tipo ? (cupon?.total ?? tipo.precio * cantidad) : 0;
+  const total = tipo ? tipo.precio * cantidad : 0;
 
   const volver = () => (router.canGoBack() ? router.back() : router.replace("/"));
 
@@ -121,10 +119,9 @@ export default function EventoDetalle() {
     ejecutar(
       "COMPRAR",
       async () => {
-        const compra = await comprar(evento.id, tipo.id, cantidad, cupon?.cupon.codigo);
+        const compra = await comprar(evento.id, tipo.id, cantidad);
         setTipoElegido(null);
         setCantidad(1);
-        setCupon(null);
         router.push(`/compra/${compra.id}`);
       },
       // Si falla (ej. se agotó el cupo mientras elegía) se recarga para ver la disponibilidad real
@@ -221,12 +218,6 @@ export default function EventoDetalle() {
                   icono="stats-chart-outline"
                   variante="secundario"
                   onPress={() => router.push(`/evento/${evento.id}/estadisticas`)}
-                />
-                <Boton
-                  titulo="Cupones de descuento"
-                  icono="pricetags-outline"
-                  variante="secundario"
-                  onPress={() => router.push(`/evento/${evento.id}/cupones`)}
                 />
                 {evento.puedeEditarse && (
                   <View style={styles.filaAcciones}>
@@ -344,16 +335,6 @@ export default function EventoDetalle() {
               );
             })}
 
-            {tipo && puedeComprar && (
-              <CampoCupon
-                eventoId={evento.id}
-                tipo={tipo}
-                cantidad={cantidad}
-                aplicado={cupon}
-                onCambiar={setCupon}
-              />
-            )}
-
             {evento.yaSeRealizo && <Text style={styles.aviso}>Este evento ya se realizó.</Text>}
             {evento.yaSeRealizo && (
               <ReseniasDeEsteEvento
@@ -411,19 +392,8 @@ export default function EventoDetalle() {
             <View aria-live="polite" accessibilityLiveRegion="polite">
               <Text style={styles.barraDetalle}>
                 {cantidad} × {tipo.nombre}
-                {cupon ? ` · ${cupon.cupon.codigo}` : ""}
               </Text>
-              <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-                <Text style={styles.barraTotal}>{formatearPrecio(total)}</Text>
-                {cupon && (
-                  <Text
-                    style={styles.barraSubtotal}
-                    accessibilityLabel={`antes ${formatearPrecio(cupon.subtotal)}`}
-                  >
-                    {formatearPrecio(cupon.subtotal)}
-                  </Text>
-                )}
-              </View>
+              <Text style={styles.barraTotal}>{formatearPrecio(total)}</Text>
             </View>
             <Boton
               titulo="Comprar"
@@ -626,10 +596,4 @@ const crearEstilos = ({ colores, texto }) => ({
   },
   barraDetalle: { fontFamily: fuentes.texto, fontSize: 13, color: colores.sobrePanelSuave },
   barraTotal: { fontFamily: fuentes.titulo, fontSize: 26, color: colores.sobrePanel },
-  barraSubtotal: {
-    fontFamily: fuentes.texto,
-    fontSize: 15,
-    color: colores.sobrePanelSuave,
-    textDecorationLine: "line-through",
-  },
 });

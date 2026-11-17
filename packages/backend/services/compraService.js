@@ -25,7 +25,6 @@ export class CompraService {
     {
       notificaciones = SIN_NOTIFICACIONES,
       pasarelaPago = new PasarelaPagoSimulada(),
-      cuponRepository = null,
       listaEspera = SIN_LISTA_ESPERA,
       usuarioRepository = null,
     } = {},
@@ -38,13 +37,12 @@ export class CompraService {
     this.minutosReserva = config.minutosReserva ?? MINUTOS_RESERVA;
     this.notificaciones = notificaciones;
     this.pasarelaPago = pasarelaPago;
-    this.cuponRepository = cuponRepository;
     this.listaEspera = listaEspera;
     this.usuarioRepository = usuarioRepository;
   }
 
   // HU-04: comprar un tipo de entrada sin superar el cupo
-  async comprar(comprador, { eventoId, tipoEntradaId, cantidad, codigoCupon }) {
+  async comprar(comprador, { eventoId, tipoEntradaId, cantidad }) {
     const ahora = this.reloj.ahora();
     if (cantidad > this.maxEntradasPorCompra) {
       throw new ValidationError("Datos de validación inválidos", [
@@ -71,10 +69,6 @@ export class CompraService {
       );
     }
 
-    // D-38: el cupón se valida antes de reservar el cupo (si no aplica, no se toca nada)
-    const cupon = codigoCupon ? await this.buscarCupon(evento.id, codigoCupon) : null;
-    cupon?.aplicar(tipoEntrada.precio, cantidad, ahora);
-
     // D-40: si la persona tenía prioridad por la lista de espera, puede usar las entradas retenidas para ella
     const prioridad = await this.listaEspera.prioridadDe(comprador, evento, tipoEntrada);
     if (prioridad && cantidad <= tipoEntrada.disponibles() + prioridad.cantidad) {
@@ -83,9 +77,7 @@ export class CompraService {
     tipoEntrada.reservar(cantidad);
     const compra = new Compra(comprador, evento, tipoEntrada, cantidad, ahora, {
       minutosReserva: this.minutosReserva,
-      cupon,
     });
-    if (cupon) await this.cuponRepository.save(cupon);
     await this.eventoRepository.save(evento);
     const guardada = await this.compraRepository.save(compra);
     return this.aDTO(guardada, comprador, { conDetalle: true });
@@ -115,14 +107,6 @@ export class CompraService {
       ...tipoEntradaDTO(tipo),
       enEspera: enEspera[tipo.id] ?? 0,
     }));
-  }
-
-  async buscarCupon(eventoId, codigo) {
-    const cupon = await this.cuponRepository?.findByCodigoYEvento(codigo, eventoId);
-    if (!cupon) {
-      throw new NotFoundError("Ese cupón no existe para este evento");
-    }
-    return cupon;
   }
 
   // HU-05: compras del comprador con estado, días restantes y acciones

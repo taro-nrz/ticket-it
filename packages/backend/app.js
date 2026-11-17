@@ -14,7 +14,6 @@ import { EventoRepository } from "./models/repositories/eventoRepository.js";
 import { CompraRepository } from "./models/repositories/compraRepository.js";
 import { ReseniaRepository } from "./models/repositories/reseniaRepository.js";
 import { NotificacionRepository } from "./models/repositories/notificacionRepository.js";
-import { CuponRepository } from "./models/repositories/cuponRepository.js";
 import { InscripcionEsperaRepository } from "./models/repositories/inscripcionEsperaRepository.js";
 import { ListaEsperaService } from "./services/listaEsperaService.js";
 import { ListaEsperaController } from "./controllers/listaEsperaController.js";
@@ -33,7 +32,6 @@ import { CompraService } from "./services/compraService.js";
 import { MensajeService } from "./services/mensajeService.js";
 import { ReseniaService } from "./services/reseniaService.js";
 import { NotificacionService } from "./services/notificacionService.js";
-import { CuponService } from "./services/cuponService.js";
 
 import { AuthController } from "./controllers/authController.js";
 import { UsuarioController } from "./controllers/usuarioController.js";
@@ -43,7 +41,6 @@ import { CompraController } from "./controllers/compraController.js";
 import { MensajeController } from "./controllers/mensajeController.js";
 import { ReseniaController } from "./controllers/reseniaController.js";
 import { NotificacionController } from "./controllers/notificacionController.js";
-import { CuponController } from "./controllers/cuponController.js";
 import { DevController } from "./controllers/devController.js";
 
 // Arma la aplicación completa (inyección de dependencias manual, como en clase).
@@ -62,7 +59,6 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     compraRepository: new CompraRepository(),
     reseniaRepository: new ReseniaRepository(),
     notificacionRepository: new NotificacionRepository(),
-    cuponRepository: new CuponRepository(),
     inscripcionEsperaRepository: new InscripcionEsperaRepository(),
     codigoRecuperacionRepository: new CodigoRecuperacionRepository(),
   };
@@ -73,7 +69,6 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     compraRepository,
     reseniaRepository,
     notificacionRepository,
-    cuponRepository,
     inscripcionEsperaRepository,
   } = repositorios;
 
@@ -115,12 +110,10 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
     {
       notificaciones: notificacionService,
       pasarelaPago: new PasarelaPagoSimulada(),
-      cuponRepository,
       listaEspera: listaEsperaService,
       usuarioRepository,
     },
   );
-  const cuponService = new CuponService(cuponRepository, eventoService, reloj);
   const mensajeService = new MensajeService(
     compraService,
     compraRepository,
@@ -167,7 +160,6 @@ export async function crearApp({ reloj = new RelojSistema(), config = obtenerCon
   server.setController(CompraController, new CompraController(compraService));
   server.setController(MensajeController, new MensajeController(mensajeService));
   server.setController(ReseniaController, new ReseniaController(reseniaService));
-  server.setController(CuponController, new CuponController(cuponService));
   server.setController(ListaEsperaController, new ListaEsperaController(listaEsperaService));
   server.setController(
     ArchivoController,

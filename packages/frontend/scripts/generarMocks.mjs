@@ -71,12 +71,10 @@ for (const [id, email] of Object.entries(USUARIOS)) {
     datos.misEventos = await get("/evento/mios?limit=100", token);
     datos.comprasDeEvento = {};
     datos.estadisticas = {};
-    datos.cupones = {};
     for (const evento of datos.misEventos.data) {
       const compras = await get(`/evento/${evento.id}/compras?limit=100`, token);
       datos.comprasDeEvento[evento.id] = compras;
       datos.estadisticas[evento.id] = await get(`/evento/${evento.id}/estadisticas`, token);
-      datos.cupones[evento.id] = await get(`/evento/${evento.id}/cupones`, token);
       for (const compra of compras.data) {
         datos.compras[compra.id] = await get(`/compra/${compra.id}`, token);
         datos.mensajes[compra.id] = await get(`/compra/${compra.id}/mensajes`, token);

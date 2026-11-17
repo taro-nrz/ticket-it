@@ -143,12 +143,6 @@ const modoSinBackend = (base) => [
     }),
   ),
   http.get(
-    `${base}/evento/:id/cupones`,
-    responder(({ usuario, params }) => json(usuario.cupones?.[params.id] ?? []), {
-      conSesion: true,
-    }),
-  ),
-  http.get(
     `${base}/evento/:id/resenias`,
     responder(({ params }) => jsonO404(datos.publico.reseniasDeEvento[params.id])),
   ),
