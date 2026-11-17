@@ -14,7 +14,7 @@ import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useFormulario } from "../../hooks/useFormulario.js";
 import { useTema } from "../../context/TemaContext.jsx";
-import { espacio, fuentes, radio } from "../../theme.js";
+import { espacio, fuentes, radio, relieveBase } from "../../theme.js";
 import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { avisarExito } from "../../utils/confirmar.js";
 import { formatearHora, formatearPrecio } from "../../utils/formato.js";
@@ -257,8 +257,8 @@ const crearEstilos = ({ colores }) => ({
     gap: 8,
     flexWrap: "wrap",
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.s,
     paddingHorizontal: 12,
     paddingVertical: 10,

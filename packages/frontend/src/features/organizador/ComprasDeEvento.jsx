@@ -12,7 +12,7 @@ import { Progreso } from "../../components/progreso/Progreso.jsx";
 import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { Vacio } from "../../components/estados/Vacio.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
-import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
+import { espacio, estadosCompra, fuentes, radio, relieveBase } from "../../theme.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { EsqueletoFilas } from "../../components/carga/Esqueletos.jsx";
@@ -149,8 +149,8 @@ export default function ComprasDeEvento() {
 const crearEstilos = ({ colores }) => ({
   disponibilidad: {
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.l,
     padding: espacio.l,
     gap: 14,

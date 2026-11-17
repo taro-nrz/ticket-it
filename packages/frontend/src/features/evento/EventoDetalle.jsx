@@ -23,8 +23,14 @@ import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { estadoPresionado, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../context/SesionContext.jsx";
-import { espacio, fuentes, radio } from "../../theme.js";
-import { formatearFecha, formatearPrecio, nombreCompleto, plural } from "../../utils/formato.js";
+import { espacio, fuentes, radio, relieve, relieveBase } from "../../theme.js";
+import {
+  formatearFecha,
+  formatearPrecio,
+  nombreCompleto,
+  plural,
+  textoDisponibles,
+} from "../../utils/formato.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { EsqueletoDetalleEvento } from "../../components/carga/Esqueletos.jsx";
@@ -65,7 +71,7 @@ export default function EventoDetalle() {
             onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
             accessibilityRole="button"
             accessibilityLabel="Volver"
-            style={styles.botonRedondo}
+            style={({ pressed }) => [styles.botonRedondo, relieve(colores, pressed)]}
           >
             <Icono name="chevron-back" size={22} color={colores.texto} />
           </Pressable>
@@ -135,7 +141,7 @@ export default function EventoDetalle() {
               onPress={volver}
               accessibilityRole="button"
               accessibilityLabel="Volver"
-              style={styles.botonRedondo}
+              style={({ pressed }) => [styles.botonRedondo, relieve(colores, pressed)]}
             >
               <Icono name="chevron-back" size={22} color={colores.texto} />
             </Pressable>
@@ -145,7 +151,7 @@ export default function EventoDetalle() {
                 onPress={compartir}
                 accessibilityRole="button"
                 accessibilityLabel="Compartir el evento"
-                style={styles.botonRedondo}
+                style={({ pressed }) => [styles.botonRedondo, relieve(colores, pressed)]}
               >
                 <Icono name="share-social-outline" size={21} color={colores.texto} />
               </Pressable>
@@ -155,7 +161,7 @@ export default function EventoDetalle() {
                   accessibilityRole="button"
                   accessibilityLabel="Guardar en favoritos"
                   {...estadoPresionado(!!evento.esFavorito)}
-                  style={styles.botonRedondo}
+                  style={({ pressed }) => [styles.botonRedondo, relieve(colores, pressed)]}
                 >
                   <Icono
                     name={evento.esFavorito ? "heart" : "heart-outline"}
@@ -304,7 +310,7 @@ export default function EventoDetalle() {
                     disabled={!seleccionable}
                     accessibilityRole="button"
                     {...etiquetaMobile(
-                      `${t.nombre}, ${formatearPrecio(t.precio)}, ${t.disponibles} disponibles${t.descripcion ? `, ${t.descripcion}` : ""}`,
+                      `${t.nombre}, ${formatearPrecio(t.precio)}, ${textoDisponibles(t.disponibles)}${t.descripcion ? `, ${t.descripcion}` : ""}`,
                     )}
                     accessibilityHint={seleccionable ? "Elige este tipo de entrada" : undefined}
                     {...estadoPresionado(seleccionado)}
@@ -317,7 +323,8 @@ export default function EventoDetalle() {
                     <View style={{ flex: 1 }}>
                       <Text style={styles.tipoNombre}>{t.nombre}</Text>
                       <Text style={styles.disponibles}>
-                        {t.disponibles} disponibles{t.descripcion ? ` · ${t.descripcion}` : ""}
+                        {textoDisponibles(t.disponibles)}
+                        {t.descripcion ? ` · ${t.descripcion}` : ""}
                       </Text>
                     </View>
                     <Text style={styles.tipoPrecio}>{formatearPrecio(t.precio)}</Text>
@@ -358,7 +365,7 @@ export default function EventoDetalle() {
 
             <Pressable
               onPress={() => router.push(`/organizador/${evento.organizador.id}`)}
-              style={styles.organizador}
+              style={({ pressed }) => [styles.organizador, relieve(colores, pressed)]}
               accessibilityRole="button"
               {...etiquetaMobile(
                 `Organiza ${nombreCompleto(evento.organizador)}. ${
@@ -525,7 +532,6 @@ const crearEstilos = ({ colores, texto }) => ({
     fontFamily: fuentes.titulo,
     fontSize: 30,
     lineHeight: 33,
-    letterSpacing: -0.8,
     color: colores.texto,
     marginTop: 6,
     marginBottom: espacio.l,
@@ -534,28 +540,29 @@ const crearEstilos = ({ colores, texto }) => ({
   dato: {
     flex: 1,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     padding: 12,
     gap: 2,
   },
   datoValor: { fontFamily: fuentes.negrita, fontSize: 15, color: colores.texto },
   descripcion: { ...texto.cuerpo, lineHeight: 22, marginBottom: espacio.xl },
+  // D-48: el tipo de entrada tiene relieve; el elegido queda "hundido" (sin sombra) y resaltado
   tipo: {
+    ...relieve(colores),
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
     borderRadius: radio.m,
     paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: 8,
   },
   tipoFila: { flexDirection: "row", alignItems: "center", gap: espacio.m, minHeight: 44 },
-  tipoSeleccionado: { borderWidth: 2, borderColor: colores.texto },
+  tipoSeleccionado: { ...relieve(colores, true), backgroundColor: colores.acentoSuave },
   tipoAgotado: {
     backgroundColor: colores.apagado,
-    borderColor: colores.apagado,
+    borderColor: colores.borde,
+    boxShadow: "none",
   },
   tipoFilaAgotado: { flexDirection: "row", alignItems: "center", gap: 10 },
   tipoNombre: { fontFamily: fuentes.negrita, fontSize: 16, color: colores.texto },
@@ -592,8 +599,8 @@ const crearEstilos = ({ colores, texto }) => ({
     alignItems: "center",
     gap: 12,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     padding: 14,
     marginTop: espacio.l,
@@ -601,8 +608,8 @@ const crearEstilos = ({ colores, texto }) => ({
   ver: { fontFamily: fuentes.negrita, fontSize: 14, color: colores.texto },
   resenias: {
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     paddingHorizontal: 14,
     paddingTop: 14,

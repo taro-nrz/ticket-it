@@ -1,5 +1,5 @@
 import { Pressable, ScrollView, Text } from "react-native";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieve } from "../../theme.js";
 import { Icono } from "../icono/Icono.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { estadoPresionado } from "../../utils/accesibilidad.js";
@@ -29,8 +29,9 @@ export function Chips({ opciones, seleccionada, onSeleccionar, etiqueta }) {
             accessibilityRole="button"
             accessibilityLabel={opcion.etiquetaAccesible ?? opcion.etiqueta}
             {...estadoPresionado(activa)}
-            style={[
+            style={({ pressed }) => [
               styles.chip,
+              relieve(colores, pressed),
               opcion.fondo && { backgroundColor: opcion.fondo, borderColor: opcion.color },
               activa && styles.chipActiva,
             ]}
@@ -53,7 +54,8 @@ export function Chips({ opciones, seleccionada, onSeleccionar, etiqueta }) {
 }
 
 const crearEstilos = ({ colores }) => ({
-  chips: { gap: espacio.s, paddingVertical: 2 },
+  // margen para que no se corte la sombra dura del último chip ni la de abajo
+  chips: { gap: espacio.s, paddingTop: 2, paddingBottom: 5, paddingRight: 4 },
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -61,11 +63,9 @@ const crearEstilos = ({ colores }) => ({
     minHeight: 44,
     paddingHorizontal: 16,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colores.bordeControl,
     backgroundColor: colores.superficie,
   },
-  chipActiva: { backgroundColor: colores.primario, borderColor: colores.primario },
+  chipActiva: { backgroundColor: colores.primario },
   chipTexto: { fontFamily: fuentes.medio, fontSize: 14, color: colores.texto },
   chipTextoActiva: { color: colores.sobrePrimario, fontFamily: fuentes.negrita },
 });

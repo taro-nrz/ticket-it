@@ -1,7 +1,7 @@
 import { etiquetaMobile } from "../../utils/accesibilidad.js";
 import { Icono } from "../icono/Icono.jsx";
 import { Pressable, Text, View } from "react-native";
-import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
+import { espacio, estadosCompra, fuentes, radio, relieve, relieveBase } from "../../theme.js";
 import {
   fechaParaLector,
   formatearDiasRestantes,
@@ -54,7 +54,7 @@ export function CompraCard({ compra, onPress }) {
       accessibilityRole="button"
       {...etiquetaMobile(resumen)}
       accessibilityHint="Abre el detalle de la compra"
-      style={({ pressed }) => [styles.ticket, pressed && { opacity: 0.88 }]}
+      style={({ pressed }) => [styles.ticket, relieve(colores, pressed)]}
     >
       <View
         style={[styles.talon, { backgroundColor: confirmada ? colores.primario : estado.fondo }]}
@@ -108,7 +108,7 @@ export function CompraCard({ compra, onPress }) {
 
 // Fila de una compra vista por el organizador (HU-06)
 export function CompraFila({ compra, onPress }) {
-  const { texto } = useTema();
+  const { colores, texto } = useTema();
   const styles = useEstilos(crearEstilos);
 
   return (
@@ -127,7 +127,7 @@ export function CompraFila({ compra, onPress }) {
           .join(". "),
       )}
       accessibilityHint="Abre el detalle de la compra"
-      style={({ pressed }) => [styles.fila, pressed && { opacity: 0.88 }]}
+      style={({ pressed }) => [styles.fila, relieve(colores, pressed)]}
     >
       <Avatar usuario={compra.comprador} />
       <View style={{ flex: 1, gap: 2 }}>
@@ -147,8 +147,8 @@ const crearEstilos = ({ colores, estados }) => ({
   ticket: {
     flexDirection: "row",
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.l,
     marginBottom: 14,
   },
@@ -180,8 +180,8 @@ const crearEstilos = ({ colores, estados }) => ({
     alignItems: "center",
     gap: espacio.m,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     paddingVertical: 12,
     paddingHorizontal: 14,

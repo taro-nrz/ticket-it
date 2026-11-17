@@ -1,6 +1,6 @@
 import { forwardRef, useId } from "react";
 import { Text, TextInput, View } from "react-native";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieveBase } from "../../theme.js";
 import { Icono } from "../icono/Icono.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
@@ -57,7 +57,8 @@ const crearEstilos = ({ colores, texto }) => ({
   input: {
     minHeight: 48,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
+    // D-48: contorno grueso sin sombra (el campo no es un botón); con foco lo marca el anillo azul
+    borderWidth: relieveBase.grosor,
     borderColor: colores.bordeControl,
     borderRadius: 14,
     paddingHorizontal: 14,
@@ -67,7 +68,7 @@ const crearEstilos = ({ colores, texto }) => ({
     color: colores.texto,
   },
   inputMultilinea: { minHeight: 96, textAlignVertical: "top" },
-  inputError: { borderColor: colores.error, borderWidth: 2 },
+  inputError: { borderColor: colores.error, borderWidth: 3 },
   ayuda: { ...texto.chico, marginTop: 4 },
   error: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   textoError: { flex: 1, fontFamily: fuentes.medio, color: colores.error, fontSize: 14 },

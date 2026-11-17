@@ -14,7 +14,7 @@ import { BarraCargando } from "../../components/carga/BarraCargando.jsx";
 import { EsqueletoListaEventos } from "../../components/carga/Esqueletos.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../context/SesionContext.jsx";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieveBase } from "../../theme.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 
@@ -208,11 +208,11 @@ const crearEstilos = ({ colores }) => ({
     gap: 10,
     backgroundColor: colores.superficie,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     paddingLeft: 14,
     paddingRight: 5,
-    height: 50,
+    height: 52,
   },
   input: {
     flex: 1,
@@ -224,6 +224,8 @@ const crearEstilos = ({ colores }) => ({
   botonBuscar: {
     backgroundColor: colores.primario,
     borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colores.contorno,
     paddingHorizontal: 14,
     height: 40,
     justifyContent: "center",

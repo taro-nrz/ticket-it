@@ -58,7 +58,6 @@ const crearEstilos = ({ colores }) => ({
     fontFamily: fuentes.titulo,
     fontSize: 40,
     lineHeight: 43,
-    letterSpacing: -1.5,
     color: colores.sobrePanel,
   },
   subtitulo: { fontFamily: fuentes.texto, fontSize: 16, color: colores.sobrePanelSuave },

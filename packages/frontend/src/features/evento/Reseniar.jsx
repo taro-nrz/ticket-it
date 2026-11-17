@@ -8,7 +8,7 @@ import { Boton } from "../../components/boton/Boton.jsx";
 import { Campo } from "../../components/formulario/Campo.jsx";
 import { Estrellas } from "../../components/estrellas/Estrellas.jsx";
 import { Titulo } from "../../components/titulo/Titulo.jsx";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieveBase } from "../../theme.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useAccion } from "../../hooks/useAccion.js";
 
@@ -79,8 +79,8 @@ const crearEstilos = ({ colores, texto }) => ({
     alignItems: "center",
     gap: espacio.m,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: 24,
     paddingVertical: espacio.xxl,
     marginBottom: espacio.xl,

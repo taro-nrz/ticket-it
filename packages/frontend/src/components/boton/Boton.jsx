@@ -1,17 +1,17 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieve } from "../../theme.js";
 import { Icono } from "../icono/Icono.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
 
 const variantesBoton = (colores) => ({
-  primario: { fondo: colores.primario, texto: colores.sobrePrimario, borde: colores.primario },
-  acento: { fondo: colores.acento, texto: colores.sobreAcento, borde: colores.acento },
-  secundario: { fondo: "transparent", texto: colores.texto, borde: colores.texto },
+  primario: { fondo: colores.primario, texto: colores.sobrePrimario, borde: colores.contorno },
+  acento: { fondo: colores.acento, texto: colores.sobreAcento, borde: colores.contorno },
+  secundario: { fondo: colores.superficie, texto: colores.texto, borde: colores.contorno },
   peligro: { fondo: "transparent", texto: colores.error, borde: colores.error },
   // acción destructiva confirmada (ej. en un modal): fondo lleno, contraste ≥ 5.8:1 en ambos temas
-  peligroLleno: { fondo: colores.error, texto: colores.fondo, borde: colores.error },
-  exito: { fondo: colores.exitoBoton, texto: "#FFFFFF", borde: colores.exitoBoton },
+  peligroLleno: { fondo: colores.error, texto: colores.fondo, borde: colores.contorno },
+  exito: { fondo: colores.exitoBoton, texto: "#FFFFFF", borde: colores.contorno },
 });
 
 // Pauta 5: un <button> real (rol, foco y teclado). Pauta 6: alto mínimo 50 px.
@@ -38,10 +38,12 @@ export function Boton({
       accessibilityLabel={titulo}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: !!inactivo, busy: !!cargando }}
+      // D-48: contorno y sombra dura; presionado se "hunde" y deshabilitado pierde la sombra
       style={({ pressed }) => [
         styles.boton,
+        relieve(colores, pressed || inactivo),
         { backgroundColor: v.fondo, borderColor: v.borde },
-        (pressed || inactivo) && { opacity: inactivo ? 0.45 : 0.85 },
+        inactivo && { opacity: 0.45, transform: [] },
         style,
       ]}
     >
@@ -62,8 +64,7 @@ const crearEstilos = () => ({
   boton: {
     minHeight: 50,
     paddingHorizontal: espacio.xl,
-    borderRadius: 14,
-    borderWidth: 1.5,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
   },

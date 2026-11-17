@@ -13,7 +13,7 @@ import { EstadoBadge } from "../../components/estadoBadge/EstadoBadge.jsx";
 import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../context/SesionContext.jsx";
-import { espacio, estadosCompra, fuentes, radio } from "../../theme.js";
+import { espacio, estadosCompra, fuentes, radio, relieveBase } from "../../theme.js";
 import { confirmar } from "../../utils/confirmar.js";
 import {
   formatearDiasRestantes,
@@ -388,8 +388,8 @@ const crearEstilos = ({ colores, estados }) => ({
     alignItems: "center",
     gap: 10,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     padding: 12,
     marginBottom: espacio.l,
@@ -430,8 +430,7 @@ const crearEstilos = ({ colores, estados }) => ({
   evento: {
     fontFamily: fuentes.titulo,
     fontSize: 26,
-    lineHeight: 28,
-    letterSpacing: -0.6,
+    lineHeight: 30,
     color: colores.texto,
   },
   troquel: {

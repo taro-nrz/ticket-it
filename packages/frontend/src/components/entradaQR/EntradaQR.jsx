@@ -2,7 +2,7 @@ import { Text, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useTema } from "../../context/TemaContext.jsx";
-import { espacio, fuentes, radio } from "../../theme.js";
+import { espacio, fuentes, radio, relieveBase } from "../../theme.js";
 import { Icono } from "../icono/Icono.jsx";
 
 // D-33: la entrada digital. El QR siempre es negro sobre blanco (los lectores lo necesitan con buen contraste,
@@ -46,8 +46,8 @@ const crearEstilos = ({ colores }) => ({
     alignItems: "center",
     gap: espacio.m,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.l,
     padding: espacio.xl,
     marginBottom: espacio.l,

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef } from "react";
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEstilos } from "../../hooks/useEstilos.js";
-import { espacio } from "../../theme.js";
+import { espacio, relieveBase } from "../../theme.js";
 import { Titulo } from "../titulo/Titulo.jsx";
 
 // Modal propio y accesible (D-23). Sobre el Modal de React Native:
@@ -86,8 +86,9 @@ const crearEstilos = ({ colores, texto }) => ({
   fondoAbajo: { justifyContent: "flex-end" },
   contenido: {
     backgroundColor: colores.superficie,
-    borderColor: colores.borde,
-    borderWidth: 1,
+    borderColor: colores.contorno,
+    borderWidth: relieveBase.grosor,
+    boxShadow: `4px 4px 0px ${colores.sombra}`,
     width: "100%",
     maxWidth: 520,
     alignSelf: "center",

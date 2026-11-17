@@ -12,7 +12,7 @@ import { Tarjeta } from "../../components/tarjeta/Tarjeta.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useTema } from "../../context/TemaContext.jsx";
-import { espacio, fuentes, radio } from "../../theme.js";
+import { espacio, fuentes, radio, relieveBase } from "../../theme.js";
 import { formatearMonto, formatearMontoCompacto, plural } from "../../utils/formato.js";
 import { EsqueletoEstadisticas } from "../../components/carga/Esqueletos.jsx";
 
@@ -268,8 +268,8 @@ const crearEstilos = ({ colores }) => ({
     flexGrow: 1,
     flexBasis: 150,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     padding: 14,
   },

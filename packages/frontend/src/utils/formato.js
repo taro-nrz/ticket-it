@@ -41,6 +41,11 @@ export function plural(cantidad, singular, pluralTexto = `${singular}s`) {
   return `${cantidad} ${cantidad === 1 ? singular : pluralTexto}`;
 }
 
+// Entradas que quedan de un tipo: "Queda 1" / "Quedan 2.000" (antes decía "1 disponibles")
+export function textoDisponibles(cantidad) {
+  return cantidad === 1 ? "Queda 1" : `Quedan ${cantidad.toLocaleString("es-AR")}`;
+}
+
 // D-26: "1 mensaje sin leer" / "3 mensajes sin leer"
 export function textoSinLeer(cantidad) {
   return `${plural(cantidad, "mensaje")} sin leer`;

@@ -20,7 +20,7 @@ import { Vacio } from "../../components/estados/Vacio.jsx";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { useNotificaciones } from "../../context/NotificacionesContext.jsx";
 import { anunciar, ocultoVisualmente } from "../../utils/accesibilidad.js";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieveBase } from "../../theme.js";
 import { formatearHora, nombreCompleto } from "../../utils/formato.js";
 import { useTema } from "../../context/TemaContext.jsx";
 import { useEstilos } from "../../hooks/useEstilos.js";
@@ -302,8 +302,8 @@ const crearEstilos = ({ colores }) => ({
     marginHorizontal: espacio.xl,
     marginTop: 14,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -345,8 +345,8 @@ const crearEstilos = ({ colores }) => ({
   ajena: {
     alignSelf: "flex-start",
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: 18,
     borderBottomLeftRadius: 4,
   },

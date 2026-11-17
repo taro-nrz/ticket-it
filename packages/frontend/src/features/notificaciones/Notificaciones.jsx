@@ -17,7 +17,7 @@ import { useCarga } from "../../hooks/useCarga.js";
 import { useEstilos } from "../../hooks/useEstilos.js";
 import { useNotificaciones } from "../../context/NotificacionesContext.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
-import { espacio, fuentes, radio } from "../../theme.js";
+import { espacio, fuentes, radio, relieve, relieveBase } from "../../theme.js";
 import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { formatearHace } from "../../utils/formato.js";
 import { useAccion } from "../../hooks/useAccion.js";
@@ -145,11 +145,7 @@ function ItemNotificacion({ notificacion, onPress }) {
       {...etiquetaMobile(
         `${nueva ? "Nueva. " : ""}${titulo}. ${notificacion.mensaje}. ${formatearHace(notificacion.fecha)}`,
       )}
-      style={({ pressed }) => [
-        styles.item,
-        nueva && styles.itemNueva,
-        pressed && { opacity: 0.85 },
-      ]}
+      style={({ pressed }) => [styles.item, relieve(colores, pressed), nueva && styles.itemNueva]}
     >
       <View style={[styles.icono, nueva && { backgroundColor: colores.acentoSuave }]}>
         <Icono
@@ -179,8 +175,8 @@ const crearEstilos = ({ colores }) => ({
     flexDirection: "row",
     gap: 12,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.m,
     padding: 14,
     marginBottom: 10,

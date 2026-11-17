@@ -14,7 +14,7 @@ import { Titulo } from "../../components/titulo/Titulo.jsx";
 import { Vacio } from "../../components/estados/Vacio.jsx";
 import { useCarga } from "../../hooks/useCarga.js";
 import { useSesion } from "../../context/SesionContext.jsx";
-import { espacio, fuentes, radio } from "../../theme.js";
+import { espacio, fuentes, radio, relieveBase } from "../../theme.js";
 import {
   fechaParaLector,
   formatearFecha,
@@ -285,8 +285,8 @@ const crearEstilos = ({ colores }) => ({
   metricaEtiqueta: { fontFamily: fuentes.texto, fontSize: 12, color: colores.sobrePanelSuave },
   evento: {
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: radio.l,
     padding: espacio.l,
     gap: 12,

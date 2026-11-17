@@ -1,7 +1,15 @@
 import { etiquetaMobile } from "../../utils/accesibilidad.js";
 import { Icono } from "../icono/Icono.jsx";
 import { StyleSheet, Text, View } from "react-native";
-import { colorDeCategoria, espacio, fuentes, radio } from "../../theme.js";
+import {
+  colorDeCategoria,
+  espacio,
+  fuentes,
+  radio,
+  relieveBase,
+  stickerCategoria,
+  tintaCategoria,
+} from "../../theme.js";
 import { fechaParaLector, formatearPrecio } from "../../utils/formato.js";
 import { Galeria } from "../galeria/Galeria.jsx";
 import { ImagenConCarga } from "../carga/ImagenConCarga.jsx";
@@ -22,7 +30,7 @@ export function ImagenEvento({
 }) {
   const styles = useEstilos(crearEstilos);
 
-  const { fondo, marca } = colorDeCategoria(evento.categoria.nombre);
+  const { fondo, marca, circulo } = colorDeCategoria(evento.categoria.nombre);
   const fecha = new Date(evento.fecha);
   const imagen = evento.imagen ?? evento.multimedia?.[0];
   const conGaleria = galeria && evento.multimedia?.length > 1;
@@ -33,6 +41,8 @@ export function ImagenEvento({
         { height: alto, backgroundColor: fondo, paddingBottom: margenInferior },
       ]}
     >
+      {/* D-48: adorno pastel detrás de la foto (se ve si el evento no tiene foto) */}
+      <View style={[styles.circulo, { backgroundColor: circulo }]} aria-hidden />
       <Text style={[styles.marcaAgua, { color: marca }]} numberOfLines={1} aria-hidden>
         {evento.categoria.nombre.toUpperCase()}
       </Text>
@@ -128,24 +138,29 @@ export function EventoCard({ evento, onPress, pie }) {
 const crearEstilos = ({ colores }) => ({
   tarjeta: { padding: 0, overflow: "hidden", borderRadius: radio.l + 2 },
   imagenContenedor: { overflow: "hidden", justifyContent: "flex-end", padding: 14 },
+  circulo: { position: "absolute", right: 24, top: 18, width: 70, height: 70, borderRadius: 35 },
   marcaAgua: {
     position: "absolute",
     right: -10,
     top: -16,
     fontFamily: fuentes.titulo,
     fontSize: 100,
-    letterSpacing: -4,
   },
+  // D-48: la fecha es un sticker redondo, blanco con contorno y levemente girado (igual en ambos temas)
   fecha: {
     alignSelf: "flex-start",
-    backgroundColor: colores.fondo,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: stickerCategoria,
+    borderWidth: relieveBase.grosor,
+    borderColor: tintaCategoria,
     alignItems: "center",
+    justifyContent: "center",
+    transform: [{ rotate: "-8deg" }],
   },
-  fechaDia: { fontFamily: fuentes.titulo, fontSize: 22, lineHeight: 24, color: colores.texto },
-  fechaMes: { fontFamily: fuentes.negrita, fontSize: 11, letterSpacing: 1, color: colores.texto },
+  fechaDia: { fontFamily: fuentes.titulo, fontSize: 20, lineHeight: 22, color: tintaCategoria },
+  fechaMes: { fontFamily: fuentes.negrita, fontSize: 10, letterSpacing: 1, color: tintaCategoria },
   favorito: {
     position: "absolute",
     right: 12,
@@ -154,6 +169,8 @@ const crearEstilos = ({ colores }) => ({
     height: 38,
     borderRadius: 19,
     backgroundColor: colores.fondo,
+    borderWidth: 2,
+    borderColor: colores.contorno,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -165,6 +182,8 @@ const crearEstilos = ({ colores }) => ({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colores.contorno,
   },
   agotadoTexto: {
     fontFamily: fuentes.negrita,

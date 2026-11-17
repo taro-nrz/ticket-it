@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { fuentes } from "../../theme.js";
+import { fuentes, relieveBase } from "../../theme.js";
 import { Icono } from "../icono/Icono.jsx";
 
 // Opciones comunes a las tabs del comprador y del organizador (dependen del tema).
@@ -11,28 +11,36 @@ export function opcionesTabs(colores) {
     tabBarInactiveTintColor: colores.textoSecundario,
     tabBarStyle: {
       backgroundColor: colores.superficie,
-      borderTopColor: colores.borde,
-      height: 72,
-      paddingTop: 8,
+      borderTopColor: colores.contorno,
+      borderTopWidth: relieveBase.grosor,
+      height: 76,
+      paddingTop: 10,
     },
     tabBarLabelStyle: { fontFamily: fuentes.semi, fontSize: 12 },
     sceneStyle: { backgroundColor: colores.fondo },
   };
 }
 
-// Ícono con "píldora" coral detrás cuando la tab está activa
+// Ícono con "píldora" rosa con contorno detrás cuando la tab está activa
 export function iconoTab(nombre, colores) {
   function IconoTab({ focused, color }) {
     return (
       <View
         style={{
-          paddingHorizontal: 18,
-          paddingVertical: 3,
+          paddingHorizontal: 16,
+          paddingVertical: 1,
+          marginBottom: 2,
           borderRadius: 999,
-          backgroundColor: focused ? colores.acentoSuave : "transparent",
+          borderWidth: 2,
+          borderColor: focused ? colores.contorno : "transparent",
+          backgroundColor: focused ? colores.primario : "transparent",
         }}
       >
-        <Icono name={focused ? nombre : `${nombre}-outline`} color={color} size={22} />
+        <Icono
+          name={focused ? nombre : `${nombre}-outline`}
+          color={focused ? colores.sobrePrimario : color}
+          size={22}
+        />
       </View>
     );
   }

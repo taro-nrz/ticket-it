@@ -11,7 +11,7 @@ import { useEstilos } from "../../hooks/useEstilos.js";
 import { useFormulario } from "../../hooks/useFormulario.js";
 import { useSesion } from "../../context/SesionContext.jsx";
 import { useTema } from "../../context/TemaContext.jsx";
-import { espacio, fuentes } from "../../theme.js";
+import { espacio, fuentes, relieve, relieveBase } from "../../theme.js";
 import { anunciar, etiquetaMobile } from "../../utils/accesibilidad.js";
 import { MarcoAcceso } from "./MarcoAcceso.jsx";
 
@@ -141,7 +141,7 @@ export default function Login() {
               onPress={() => usarCuentaDemo(cuenta)}
               accessibilityRole="button"
               {...etiquetaMobile(`Usar la cuenta de ${cuenta.nombre}, ${cuenta.rol.toLowerCase()}`)}
-              style={({ pressed }) => [styles.cuenta, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [styles.cuenta, relieve(colores, pressed)]}
             >
               <Avatar usuario={cuenta} tamanio={34} />
               <View style={{ flex: 1 }}>
@@ -198,8 +198,8 @@ const crearEstilos = ({ colores }) => ({
     alignItems: "center",
     gap: 10,
     backgroundColor: colores.superficie,
-    borderWidth: 1,
-    borderColor: colores.borde,
+    borderWidth: relieveBase.grosor,
+    borderColor: colores.contorno,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
